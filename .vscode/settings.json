@@ -3,6 +3,10 @@
         "data",
         "game",
         "defines",
-        "script"
+        "script",
+        "serpent"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
     ]
 }
