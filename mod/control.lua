@@ -14,6 +14,7 @@ script.on_event({defines.events.on_player_selected_area},
          local count =0;
          for i, entity in ipairs(event.entities) do
             if can_place_pumpjack(event.surface, entity.position) then
+               place_pumpjack(event.surface, entity.position)
                count = count + 1
             end
          end
@@ -40,4 +41,15 @@ function can_place_pumpjack(surface, position)
          force="player", 
          build_check_type=defines.build_check_type.ghost_place                  
       })
+end
+
+function place_pumpjack(surface, position)
+   surface.create_entity
+      {
+        name = "entity-ghost",
+        inner_name = "pumpjack",
+        position = position,
+        direction = defines.direction.north,
+        force = "player"
+      }
 end
