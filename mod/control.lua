@@ -5,7 +5,7 @@ script.on_event({defines.events.on_player_selected_area}, function(event)
 
         if #event.entities == 0 then
             player.print(
-                "P.U.M.P. cannot place pumpjacks, becayse there are no oil wells found in selected area.")
+                "P.U.M.P. cannot place pumpjacks, because there are no oil wells found in selected area.")
             return
         end
 
@@ -21,11 +21,8 @@ script.on_event({defines.events.on_player_selected_area}, function(event)
             local direction = defines.direction.east
             if can_place_pumpjack(event.surface, entity.position, direction) then
                 place_pumpjack(event.surface, entity.position, direction)
-                count = count + 1
             end
         end
-
-        player.print(count);
     end
 end)
 
