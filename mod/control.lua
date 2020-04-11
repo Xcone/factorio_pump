@@ -1,4 +1,5 @@
--- control.lua
+require "planner"
+
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
         process_selected_area_with_this_mod(event)
@@ -23,12 +24,19 @@ function process_selected_area_with_this_mod(event)
     end
 
     local planner_input = prepare_planner_input(event)
+    dump_as_json(planner_input, "planner_input")
+    local construct_entities = plan(planner_input)
+    dump_as_json(construct_entities, "construct_entities")
 
-    for i, entity in ipairs(event.entities) do
-
-        local direction = defines.direction.east
-        if can_place_pumpjack(event.surface, entity.position, direction) then
-            place_pumpjack(event.surface, entity.position, direction)
+    for entity_name, entities_to_place in pairs(construct_entities) do
+        for i, parameters in ipairs(entities_to_place) do
+            event.surface.create_entity {
+                name = "entity-ghost",
+                inner_name = entity_name,
+                position = parameters.position,
+                direction = parameters.direction,
+                force = "player"
+            }
         end
     end
 end
@@ -93,8 +101,6 @@ function prepare_planner_input(event)
         end
     end
 
-    dump_planner_input(planner_input, "undefined-only")
-
     -- mark where the pumps will be
     for i, entity in ipairs(event.entities) do
         local direction = defines.direction.east
@@ -119,8 +125,6 @@ function prepare_planner_input(event)
         end
     end
 
-    dump_planner_input(planner_input, "with-pump-reservations")
-
     for x, reservations in pairs(planner_input.area) do
         for y, reservation in pairs(reservations) do
             if reservation == "undefined" then
@@ -133,17 +137,14 @@ function prepare_planner_input(event)
         end
     end
 
-    dump_planner_input(planner_input, "with-buildable")
-
     return planner_input
 end
 
-function dump_planner_input(planner_input, step)
+function dump_as_json(planner_input, step)
     local planner_input_as_block = serpent.block(planner_input)
-    game.write_file("pump-selection-" .. step .. ".block",
-                    planner_input_as_block)
+    game.write_file("pump_" .. step .. ".block", planner_input_as_block)
     local planner_input_as_json = game.table_to_json(planner_input)
-    game.write_file("pump-selection-" .. step .. ".json", planner_input_as_json)
+    game.write_file("pump_" .. step .. ".json", planner_input_as_json)
 end
 
 function can_place_pumpjack(surface, position, direction)
@@ -164,32 +165,4 @@ function can_place_pipe(surface, position)
         force = "player",
         build_check_type = defines.build_check_type.ghost_place
     })
-end
-
-function place_pumpjack(surface, position, direction)
-    surface.create_entity {
-        name = "entity-ghost",
-        inner_name = "pumpjack",
-        position = position,
-        direction = direction,
-        force = "player"
-    }
-
-    local offset = get_pump_output_offset(direction);
-
-    local pipePosition = {x = position.x + offset.x, y = position.y + offset.y}
-
-    surface.create_entity {
-        name = "entity-ghost",
-        inner_name = "pipe",
-        position = pipePosition,
-        force = "player"
-    }
-end
-
-function get_pump_output_offset(direction)
-    if direction == defines.direction.north then return {x = 1, y = -2} end
-    if direction == defines.direction.east then return {x = 2, y = -1} end
-    if direction == defines.direction.south then return {x = -1, y = 2} end
-    if direction == defines.direction.west then return {x = -2, y = 1} end
 end
