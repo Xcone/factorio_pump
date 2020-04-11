@@ -24,9 +24,9 @@ function process_selected_area_with_this_mod(event)
     end
 
     local planner_input = prepare_planner_input(event)
-    dump_as_json(planner_input, "planner_input")
+    dump_to_file(planner_input, "planner_input")
     local construct_entities = plan(planner_input)
-    dump_as_json(construct_entities, "construct_entities")
+    dump_to_file(construct_entities, "construct_entities")
 
     for entity_name, entities_to_place in pairs(construct_entities) do
         for i, parameters in ipairs(entities_to_place) do
@@ -140,11 +140,11 @@ function prepare_planner_input(event)
     return planner_input
 end
 
-function dump_as_json(planner_input, step)
-    local planner_input_as_block = serpent.block(planner_input)
-    game.write_file("pump_" .. step .. ".block", planner_input_as_block)
-    local planner_input_as_json = game.table_to_json(planner_input)
-    game.write_file("pump_" .. step .. ".json", planner_input_as_json)
+function dump_to_file(table_to_write, description)
+    local planner_input_as_block = serpent.block(table_to_write)
+    game.write_file("pump_" .. description .. ".block", planner_input_as_block)
+    local planner_input_as_json = game.table_to_json(table_to_write)
+    game.write_file("pump_" .. description .. ".json", planner_input_as_json)
 end
 
 function can_place_pumpjack(surface, position, direction)
