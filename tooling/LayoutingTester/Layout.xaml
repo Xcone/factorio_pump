@@ -1,0 +1,89 @@
+﻿<UserControl x:Class="LayoutingTester.Layout"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <DockPanel DataContext="{Binding TestLayout}">
+        <TextBox DockPanel.Dock="Bottom" Text="{Binding TextualFeedback,  Mode=OneWay}"/>
+
+        <ItemsControl ItemsSource="{Binding Columns}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"></StackPanel>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <ItemsControl ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical"></StackPanel>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderThickness="1" Width="15" Height="15">
+                                    <Border.Style>
+                                        <Style>
+                                            <Setter Property="Border.Background" Value="Blue"></Setter>
+                                            <Setter Property="Border.BorderBrush" Value="CornflowerBlue"></Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Content}" Value="can-build">
+                                                    <Setter Property="Border.Background" Value="Green"></Setter>
+                                                    <Setter Property="Border.BorderBrush" Value="MediumSeaGreen"></Setter>
+                                                </DataTrigger>
+
+                                                <DataTrigger Binding="{Binding Content}" Value="oil-well">
+                                                    <Setter Property="Border.Background" Value="DarkGray"></Setter>
+                                                    <Setter Property="Border.BorderBrush" Value="Gray"></Setter>
+                                                </DataTrigger>
+
+                                                <DataTrigger Binding="{Binding Content}" Value="can-not-build">
+                                                    <Setter Property="Border.Background" Value="DarkRed"></Setter>
+                                                    <Setter Property="Border.BorderBrush" Value="OrangeRed"></Setter>
+                                                </DataTrigger>
+
+                                                <DataTrigger Binding="{Binding Content}" Value="reserved-for-pump">
+                                                    <Setter Property="Border.Background" Value="DarkOrange"></Setter>
+                                                    <Setter Property="Border.BorderBrush" Value="Orange"></Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border BorderBrush="White">
+                                        <Border.Style>
+                                            <Style>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding EntityToConstructDirection}" Value="0">
+                                                        <Setter Property="Border.BorderThickness" Value="0,1,0,0"></Setter>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding EntityToConstructDirection}" Value="2">
+                                                        <Setter Property="Border.BorderThickness" Value="0,0,1,0"></Setter>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding EntityToConstructDirection}" Value="4">
+                                                        <Setter Property="Border.BorderThickness" Value="0,0,0,1"></Setter>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding EntityToConstructDirection}" Value="6">
+                                                        <Setter Property="Border.BorderThickness" Value="1,0,0,0"></Setter>
+                                                    </DataTrigger>
+
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding EntityToConstruct}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </DockPanel>
+</UserControl>

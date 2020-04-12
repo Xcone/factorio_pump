@@ -1,1 +1,4 @@
 ﻿.build/*
+*/LayoutingTester/.vs/*
+*/LayoutingTester/bin/*
+*/LayoutingTester/obj/*
