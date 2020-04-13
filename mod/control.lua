@@ -93,6 +93,8 @@ end
 function prepare_planner_input(event)
     local planner_input = {area = {}}
 
+    planner_input.area_bounds = event.area
+
     -- fill the map with default data 
     for x = event.area.left_top.x, event.area.right_bottom.x, 1 do
         planner_input.area[x] = {}

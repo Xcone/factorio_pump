@@ -31,13 +31,8 @@ namespace LayoutingTester
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
                 lua.NewTable("planner_input_stage");
-                lua.NewTable("planner_input_stage.area");
-                var areaTable = lua["planner_input_stage.area"] as LuaTable;
-                
-                foreach (var c in Columns)
-                {
-                    c.AddToTable(lua, areaTable);
-                }
+                var plannerInputTable = lua["planner_input_stage"] as LuaTable;
+                PlannerInput.AddToTable(lua, plannerInputTable);
 
                 // Act
                 var plannerInput = lua["planner_input_stage"];
@@ -87,18 +82,6 @@ namespace LayoutingTester
             Cells = cells;
         }
 
-        public void AddToTable(Lua lua, LuaTable table)
-        {
-
-            table[X] = lua.DoString("return {}").First();
-            var tableXAsObject = table[X];
-            var tableXAsTable = tableXAsObject as LuaTable;
-            foreach (var cell in Cells)
-            {
-                cell.AddToTable(lua, tableXAsTable);
-            }
-        }
-
         public void AddConstructionResult(string name, double y, long direction)
         {
             Cells.First(c => c.Y == y).AddConstructionResult(name, direction);
@@ -117,11 +100,6 @@ namespace LayoutingTester
         {
             Y = float.Parse(y);
             Content = content;
-        }
-
-        public void AddToTable(Lua lua, LuaTable table)
-        {
-            table[Y] = Content;
         }
 
         public void AddConstructionResult(string name, long direction)
@@ -144,6 +122,9 @@ namespace LayoutingTester
         [JsonProperty("area")]
         public Dictionary<string, Dictionary<string, string>> AreaFromJson { get; set; }
 
+        [JsonProperty("area_bounds")]
+        public BoundingBox AreaBoundsFromJson { get; set; }
+
         public TestLayoutColumn[] ToColumns()
         {
             return AreaFromJson
@@ -152,6 +133,71 @@ namespace LayoutingTester
                         .Select(y_reservation => new TestLayoutCell(y_reservation.Key, y_reservation.Value))
                         .ToArray()))
                 .ToArray();
+        }
+
+        public void AddToTable(Lua lua, LuaTable table)
+        {
+            var areaBoundsTable = LuaHelper.AddSubTable(lua, table, "area_bounds");
+            AreaBoundsFromJson.AddToTable(lua, areaBoundsTable);
+
+            var areaTable = LuaHelper.AddSubTable(lua, table, "area");
+            foreach (var column in AreaFromJson)
+            {
+                var columnTable = areaTable.AddSubTable(lua, double.Parse(column.Key));
+                foreach (var cell in column.Value)
+                {
+                    columnTable[double.Parse(cell.Key)] = cell.Value;
+                }
+            }
+        }
+    }
+
+    public class BoundingBox
+    {
+        [JsonProperty("left_top")]
+        public Position LeftTop { get; set; }
+
+        [JsonProperty("right_bottom")]
+        public Position RightBottom { get; set; }
+
+        public void AddToTable(Lua lua, LuaTable table)
+        {
+            var leftTopTable = LuaHelper.AddSubTable(lua, table, "left_top");
+            LeftTop.AddToTable(lua, leftTopTable);
+            var rightBottomTable = LuaHelper.AddSubTable(lua, table, "right_bottom");
+            RightBottom.AddToTable(lua, rightBottomTable);
+        }
+    }
+
+    public class Position
+    {
+        [JsonProperty("x")]
+        public double X { get; set; }
+
+        [JsonProperty("y")]
+        public double Y { get; set; }
+
+        public void AddToTable(Lua lua, LuaTable table)
+        {
+            table["x"] = X;
+            table["y"] = Y;
+        }
+    }
+
+    public static class LuaHelper
+    {
+        public static LuaTable AddSubTable(Lua lua, LuaTable outerTable, object key)
+        {
+            var createTableResult = lua.DoString("return {}").First();
+            outerTable[key] = createTableResult;
+            var newTableAsObject = outerTable[key];
+            var newTable = newTableAsObject as LuaTable;
+            return newTable;
+        }
+
+        public static LuaTable AddSubTable(this LuaTable outerTable, Lua lua, object key)
+        {
+            return AddSubTable(lua, outerTable, key);
         }
     }
 }

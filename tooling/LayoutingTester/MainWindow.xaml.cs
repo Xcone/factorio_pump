@@ -16,7 +16,6 @@ namespace LayoutingTester
             InitializeComponent();
 
             TestItems.Add(new TestLayoutInput(nameof(Properties.Resources.Oilfield1), Properties.Resources.Oilfield1));
-            TestItems.Add(new TestLayoutInput(nameof(Properties.Resources.OilfieldWithFactories), Properties.Resources.OilfieldWithFactories));
 
             TestLayouts.ItemsSource = TestItems;
         }

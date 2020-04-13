@@ -68,14 +68,5 @@ namespace LayoutingTester.Properties {
                 return ResourceManager.GetString("Oilfield1", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {&quot;area&quot;:{&quot;432.5&quot;:{&quot;762.5&quot;:&quot;can-build&quot;,&quot;763.5&quot;:&quot;can-build&quot;,&quot;764.5&quot;:&quot;can-build&quot;,&quot;765.5&quot;:&quot;can-build&quot;,&quot;766.5&quot;:&quot;can-build&quot;,&quot;767.5&quot;:&quot;can-build&quot;,&quot;768.5&quot;:&quot;can-build&quot;,&quot;769.5&quot;:&quot;can-build&quot;,&quot;770.5&quot;:&quot;can-build&quot;,&quot;771.5&quot;:&quot;can-build&quot;,&quot;772.5&quot;:&quot;can-build&quot;,&quot;773.5&quot;:&quot;can-build&quot;,&quot;774.5&quot;:&quot;can-build&quot;,&quot;775.5&quot;:&quot;can-build&quot;,&quot;776.5&quot;:&quot;can-build&quot;,&quot;777.5&quot;:&quot;can-build&quot;,&quot;778.5&quot;:&quot;can-build&quot;,&quot;779.5&quot;:&quot;can-build&quot;,&quot;780.5&quot;:&quot;can-build&quot;,&quot;781.5&quot;:&quot;can-build&quot;,&quot;782.5&quot;:&quot;can-build&quot;,&quot;783.5&quot;:&quot;can-build&quot;,&quot;784.5&quot;:&quot;can-build&quot;,&quot;785.5&quot;:&quot;can-build&quot;,&quot;786.5&quot;:&quot....
-        /// </summary>
-        internal static string OilfieldWithFactories {
-            get {
-                return ResourceManager.GetString("OilfieldWithFactories", resourceCulture);
-            }
-        }
     }
 }
