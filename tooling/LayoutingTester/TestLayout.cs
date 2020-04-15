@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using NLua;
 
@@ -11,7 +12,8 @@ namespace LayoutingTester
         public TestLayoutColumn[] Columns { get; }
         public PlannerInput PlannerInput { get; }
 
-        public string TextualFeedback { get; private set; }
+        public StringBuilder textOutputBuilder = new StringBuilder();
+        public string TextualFeedback => textOutputBuilder.ToString();
 
         public TestLayout(string plannerInputAsJson)
         {
@@ -21,12 +23,43 @@ namespace LayoutingTester
             RunLua();
         }
 
+        public void Print(object message)
+        {
+            if (message is LuaTable t)
+            {
+                PrintTable(t);
+            }
+            else
+            {
+                textOutputBuilder.AppendLine(message.ToString());
+            }
+        }
+
+        public void PrintTable(LuaTable table, string prefix = "")
+        {
+            foreach (var key in table.Keys)
+            {
+                if (table[key] is LuaTable subTable)
+                {
+                    PrintTable(subTable, $"{prefix}[{key}]");
+                }
+                else
+                {
+                    textOutputBuilder
+                        .Append(prefix)
+                        .AppendLine($"[{key}]={table[key]}");
+                }
+            }
+        }
+
         public void RunLua()
         {
             try
             {
                 // Arrange
                 using var lua = new Lua();
+                lua.NewTable("game");
+                lua.RegisterFunction("game.print", this, GetType().GetMethod(nameof(Print)));
                 lua.DoFile("../../../../../mod/planner.lua");
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
@@ -56,7 +89,7 @@ namespace LayoutingTester
             }
             catch (Exception e)
             {
-                TextualFeedback = e.ToString();
+                textOutputBuilder.AppendLine(e.ToString());
             }
         }
 
