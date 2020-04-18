@@ -212,6 +212,15 @@ function find_split_horizontal(segment)
         end
     end
 
+    pump_log({
+        could_not_split_hotizontal = {
+            level = segment.number_of_splits,
+            bounds = segment.area_bounds,
+            result_a = result_a,
+            result_b = result_b
+        }
+    })
+
     return {found_split = false, value = middle}
 end
 
@@ -271,6 +280,15 @@ function find_split_vertical(segment)
             result_b.query_value = result_b.query_value - 1
         end
     end
+
+    pump_log({
+        could_not_split_vertical = {
+            level = segment.number_of_splits,
+            bounds = segment.area_bounds,
+            result_a = result_a,
+            result_b = result_b
+        }
+    })
 
     return {found_split = false, value = middle}
 end
