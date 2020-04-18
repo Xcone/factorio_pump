@@ -353,3 +353,8 @@ function table.deepcopy(orig)
     end
     return copy
 end
+
+-- custom log method used for the 
+function pump_log(object_to_log)
+    if pumpdebug then pumpdebug.log(object_to_log) end
+end
