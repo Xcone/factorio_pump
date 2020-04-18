@@ -4,6 +4,7 @@ function plan(planner_input)
     planner_input["split_direction"] = "none"
     planner_input["connectable_edges"] =
         {top = false, left = false, bottom = false, right = false}
+    planner_input.number_of_splits = 0
 
     segmentate(planner_input, "none")
 
@@ -114,14 +115,16 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
         area = area_1,
         area_bounds = bounds_1,
         split_direction = "none",
-        connectable_edges = table.deepcopy(segment.connectable_edges)
+        connectable_edges = table.deepcopy(segment.connectable_edges),
+        number_of_splits = segment.number_of_splits + 1
     }
 
     segment.sub_segment_2 = {
         area = area_2,
         area_bounds = bounds_2,
         split_direction = "none",
-        connectable_edges = table.deepcopy(segment.connectable_edges)
+        connectable_edges = table.deepcopy(segment.connectable_edges),
+        number_of_splits = segment.number_of_splits + 1
     }
 
     if split_direction == "split_horizontal" then
