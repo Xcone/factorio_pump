@@ -24,7 +24,6 @@ function merge_construct_entities(segment, construct_entities)
             for k, v in pairs(segment.construct_entities.pumpjack) do
                 table.insert(construct_entities.pumpjack, v)
             end
-
         end
     else
         merge_construct_entities(segment.sub_segment_1, construct_entities)
@@ -374,17 +373,8 @@ function construct_pipes_on_splits(segment, construct_entities)
 end
 
 function try_connect_pumps(segment)
-    local oilwells = {}
+    local oilwells = find_oilwells(segment)
     local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
-
-    for x = segment.area_bounds.left_top.x, segment.area_bounds.right_bottom.x do
-        for y = segment.area_bounds.left_top.y, segment.area_bounds.right_bottom
-            .y do
-            if segment.area[x][y] == "oil-well" then
-                table.insert(oilwells, {position = {x = x, y = y}})
-            end
-        end
-    end
 
     for i = 1, #oilwells do
 
@@ -397,97 +387,18 @@ function try_connect_pumps(segment)
                 y = pumpjack_position.y + offset.y
             }
 
-            local distance_to_top = 1000
-            if is_on_top_edge(segment, pipe_start_position) then
-                distance_to_top = 0
-            elseif (not is_on_edge(segment, pipe_start_position)) and
-                segment.connectable_edges.top then
-                local lt = to_top_edge(pipe_start_position, segment.area_bounds)
-                local rb = pipe_start_position
-
-                if not area_contains_obstruction(segment.area, lt, rb) then
-                    distance_to_top = rb.y - lt.y
-                end
-            end
-
-            local distance_to_left = 1000
-            if is_on_left_edge(segment, pipe_start_position) then
-                distance_to_left = 0
-            elseif (not is_on_edge(segment, pipe_start_position)) and
-                segment.connectable_edges.left then
-                local lt =
-                    to_left_edge(pipe_start_position, segment.area_bounds)
-                local rb = pipe_start_position
-
-                if not area_contains_obstruction(segment.area, lt, rb) then
-                    distance_to_left = rb.x - lt.x
-                end
-            end
-
-            local distance_to_bottom = 1000
-            if is_on_bottom_edge(segment, pipe_start_position) then
-                distance_to_bottom = 0
-            elseif (not is_on_edge(segment, pipe_start_position)) and
-                segment.connectable_edges.bottom then
-                local lt = pipe_start_position
-                local rb = to_bottom_edge(pipe_start_position,
-                                          segment.area_bounds)
-
-                if not area_contains_obstruction(segment.area, lt, rb) then
-                    distance_to_bottom = rb.y - lt.y
-                end
-            end
-
-            local distance_to_right = 1000
-            if is_on_right_edge(segment, pipe_start_position) then
-                distance_to_right = 0
-            elseif (not is_on_edge(segment, pipe_start_position)) and
-                segment.connectable_edges.right then
-                local lt = pipe_start_position
-                local rb = to_right_edge(pipe_start_position,
-                                         segment.area_bounds)
-
-                if not area_contains_obstruction(segment.area, lt, rb) then
-                    distance_to_right = rb.x - lt.x
-                end
-            end
-
-            local smallest_distance = distance_to_top
-            local smallest_distance_direction = defines.direction.north
-            if distance_to_left < smallest_distance then
-                smallest_distance = distance_to_left
-                smallest_distance_direction = defines.direction.west
-            end
-            if distance_to_bottom < smallest_distance then
-                smallest_distance = distance_to_bottom
-                smallest_distance_direction = defines.direction.south
-            end
-            if distance_to_right < smallest_distance then
-                smallest_distance = distance_to_right
-                smallest_distance_direction = defines.direction.east
-            end
-
-            if smallest_distance < 9 then
-                table.insert(oilwells[i].construction_analysis, {
-                    pump_direction = direction,
-                    edge_distance = smallest_distance,
-                    edge_direction = smallest_distance_direction,
-                    pipe_start_position = pipe_start_position
-                })
+            local pipe_placement_result =
+                get_best_pipe_placement_to_edge(segment, pipe_start_position)
+            if pipe_placement_result ~= nil then
+                pipe_placement_result.pump_direction = direction
+                table.insert(oilwells[i].construction_analysis,
+                             pipe_placement_result)
             end
         end
 
-        local can_connect_pump_to_edge =
-            #(oilwells[i].construction_analysis) > 0
-        if can_connect_pump_to_edge then
-            local best_option = nil
-            for i, analysis in pairs(oilwells[i].construction_analysis) do
-                if best_option == nil or analysis.edge_distance <
-                    best_option.edge_distance then
-                    best_option = analysis
-                end
-            end
-
+        local best_option = get_best_pumpjack_placement(
+                                oilwells[i].construction_analysis)
+        if best_option ~= nil then
             table.insert(construct_entities.pumpjack, {
                 position = pumpjack_position,
                 direction = best_option.pump_direction
@@ -525,6 +436,114 @@ function try_connect_pumps(segment)
     end
 
     return true
+end
+
+function find_oilwells(segment)
+    local oilwells = {}
+
+    for x = segment.area_bounds.left_top.x, segment.area_bounds.right_bottom.x do
+        for y = segment.area_bounds.left_top.y, segment.area_bounds.right_bottom
+            .y do
+            if segment.area[x][y] == "oil-well" then
+                table.insert(oilwells, {position = {x = x, y = y}})
+            end
+        end
+    end
+
+    return oilwells
+end
+
+function get_best_pumpjack_placement(oilwell_construction_analysis)
+    local best_option = nil
+    local can_connect_pump_to_edge = #oilwell_construction_analysis > 0
+
+    if can_connect_pump_to_edge then
+        for i, analysis in pairs(oilwell_construction_analysis) do
+            if best_option == nil or analysis.edge_distance <
+                best_option.edge_distance then best_option = analysis end
+        end
+    end
+
+    return best_option
+end
+
+function get_best_pipe_placement_to_edge(segment, pipe_start_position)
+    local distance_to_top = 1000
+    if is_on_top_edge(segment, pipe_start_position) then
+        distance_to_top = 0
+    elseif (not is_on_edge(segment, pipe_start_position)) and
+        segment.connectable_edges.top then
+        local lt = to_top_edge(pipe_start_position, segment.area_bounds)
+        local rb = pipe_start_position
+
+        if not area_contains_obstruction(segment.area, lt, rb) then
+            distance_to_top = rb.y - lt.y
+        end
+    end
+
+    local distance_to_left = 1000
+    if is_on_left_edge(segment, pipe_start_position) then
+        distance_to_left = 0
+    elseif (not is_on_edge(segment, pipe_start_position)) and
+        segment.connectable_edges.left then
+        local lt = to_left_edge(pipe_start_position, segment.area_bounds)
+        local rb = pipe_start_position
+
+        if not area_contains_obstruction(segment.area, lt, rb) then
+            distance_to_left = rb.x - lt.x
+        end
+    end
+
+    local distance_to_bottom = 1000
+    if is_on_bottom_edge(segment, pipe_start_position) then
+        distance_to_bottom = 0
+    elseif (not is_on_edge(segment, pipe_start_position)) and
+        segment.connectable_edges.bottom then
+        local lt = pipe_start_position
+        local rb = to_bottom_edge(pipe_start_position, segment.area_bounds)
+
+        if not area_contains_obstruction(segment.area, lt, rb) then
+            distance_to_bottom = rb.y - lt.y
+        end
+    end
+
+    local distance_to_right = 1000
+    if is_on_right_edge(segment, pipe_start_position) then
+        distance_to_right = 0
+    elseif (not is_on_edge(segment, pipe_start_position)) and
+        segment.connectable_edges.right then
+        local lt = pipe_start_position
+        local rb = to_right_edge(pipe_start_position, segment.area_bounds)
+
+        if not area_contains_obstruction(segment.area, lt, rb) then
+            distance_to_right = rb.x - lt.x
+        end
+    end
+
+    local smallest_distance = distance_to_top
+    local smallest_distance_direction = defines.direction.north
+    if distance_to_left < smallest_distance then
+        smallest_distance = distance_to_left
+        smallest_distance_direction = defines.direction.west
+    end
+    if distance_to_bottom < smallest_distance then
+        smallest_distance = distance_to_bottom
+        smallest_distance_direction = defines.direction.south
+    end
+    if distance_to_right < smallest_distance then
+        smallest_distance = distance_to_right
+        smallest_distance_direction = defines.direction.east
+    end
+
+    if smallest_distance < 9 then
+        return {
+            edge_distance = smallest_distance,
+            edge_direction = smallest_distance_direction,
+            pipe_start_position = pipe_start_position
+        }
+    end
+
+    return nil
 end
 
 function is_on_edge(segment, position)
