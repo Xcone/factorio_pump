@@ -10,8 +10,26 @@ function plan(planner_input)
 
     local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
     construct_pipes_on_splits(planner_input, construct_entities)
+    merge_construct_entities(planner_input, construct_entities)
 
     return construct_entities
+end
+
+function merge_construct_entities(segment, construct_entities)
+    if segment.split_direction == "none" then
+        if segment.construct_entities ~= nil then
+            for k, v in pairs(segment.construct_entities.pipe) do
+                table.insert(construct_entities.pipe, v)
+            end
+            for k, v in pairs(segment.construct_entities.pumpjack) do
+                table.insert(construct_entities.pumpjack, v)
+            end
+
+        end
+    else
+        merge_construct_entities(segment.sub_segment_1, construct_entities)
+        merge_construct_entities(segment.sub_segment_2, construct_entities)
+    end
 end
 
 --[[
@@ -69,9 +87,9 @@ function segmentate(segment, previous_split)
     end
 
     if previous_split == "split_vertical" then
-        if size_vertical > 18 then next_split = "split_horizontal" end
+        if size_vertical > 10 then next_split = "split_horizontal" end
     elseif previous_split == "split_horizontal" then
-        if size_horizontal > 18 then next_split = "split_vertical" end
+        if size_horizontal > 10 then next_split = "split_vertical" end
     end
 
     if next_split == "split_horizontal" then
@@ -135,8 +153,12 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
         segment.sub_segment_2.connectable_edges.left = true
     end
 
-    segmentate(segment.sub_segment_1, split_direction)
-    segmentate(segment.sub_segment_2, split_direction)
+    if not try_connect_pumps(segment.sub_segment_1) then
+        segmentate(segment.sub_segment_1, split_direction)
+    end
+    if not try_connect_pumps(segment.sub_segment_2) then
+        segmentate(segment.sub_segment_2, split_direction)
+    end
 end
 
 function make_sub_area(area, bounds)
@@ -208,7 +230,7 @@ function find_split_horizontal(segment)
         if result_b.found_split and result_b.found_obstruction then
             return result_b
         else
-            result_b.query_value = result_b.query_value - 1
+            result_b.query_value = result_b.query_value + 1
         end
     end
 
@@ -277,7 +299,7 @@ function find_split_vertical(segment)
         if result_b.found_split and result_b.found_obstruction then
             return result_b
         else
-            result_b.query_value = result_b.query_value - 1
+            result_b.query_value = result_b.query_value + 1
         end
     end
 
@@ -351,11 +373,227 @@ function construct_pipes_on_splits(segment, construct_entities)
     construct_pipes_on_splits(segment.sub_segment_2, construct_entities)
 end
 
-function get_pump_output_offset(direction)
-    if direction == defines.direction.north then return {x = 1, y = -2} end
-    if direction == defines.direction.east then return {x = 2, y = -1} end
-    if direction == defines.direction.south then return {x = -1, y = 2} end
-    if direction == defines.direction.west then return {x = -2, y = 1} end
+function try_connect_pumps(segment)
+    local oilwells = {}
+    local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
+
+    for x = segment.area_bounds.left_top.x, segment.area_bounds.right_bottom.x do
+        for y = segment.area_bounds.left_top.y, segment.area_bounds.right_bottom
+            .y do
+            if segment.area[x][y] == "oil-well" then
+                table.insert(oilwells, {position = {x = x, y = y}})
+            end
+        end
+    end
+
+    for i = 1, #oilwells do
+
+        local pumpjack_position = oilwells[i].position
+        oilwells[i].construction_analysis = {}
+
+        for direction, offset in pairs(get_pump_output_offsets()) do
+            local pipe_start_position = {
+                x = pumpjack_position.x + offset.x,
+                y = pumpjack_position.y + offset.y
+            }
+
+            local distance_to_top = 1000
+            if is_on_top_edge(segment, pipe_start_position) then
+                distance_to_top = 0
+            elseif (not is_on_edge(segment, pipe_start_position)) and
+                segment.connectable_edges.top then
+                local lt = to_top_edge(pipe_start_position, segment.area_bounds)
+                local rb = pipe_start_position
+
+                if not area_contains_obstruction(segment.area, lt, rb) then
+                    distance_to_top = rb.y - lt.y
+                end
+            end
+
+            local distance_to_left = 1000
+            if is_on_left_edge(segment, pipe_start_position) then
+                distance_to_left = 0
+            elseif (not is_on_edge(segment, pipe_start_position)) and
+                segment.connectable_edges.left then
+                local lt =
+                    to_left_edge(pipe_start_position, segment.area_bounds)
+                local rb = pipe_start_position
+
+                if not area_contains_obstruction(segment.area, lt, rb) then
+                    distance_to_left = rb.x - lt.x
+                end
+            end
+
+            local distance_to_bottom = 1000
+            if is_on_bottom_edge(segment, pipe_start_position) then
+                distance_to_bottom = 0
+            elseif (not is_on_edge(segment, pipe_start_position)) and
+                segment.connectable_edges.bottom then
+                local lt = pipe_start_position
+                local rb = to_bottom_edge(pipe_start_position,
+                                          segment.area_bounds)
+
+                if not area_contains_obstruction(segment.area, lt, rb) then
+                    distance_to_bottom = rb.y - lt.y
+                end
+            end
+
+            local distance_to_right = 1000
+            if is_on_right_edge(segment, pipe_start_position) then
+                distance_to_right = 0
+            elseif (not is_on_edge(segment, pipe_start_position)) and
+                segment.connectable_edges.right then
+                local lt = pipe_start_position
+                local rb = to_right_edge(pipe_start_position,
+                                         segment.area_bounds)
+
+                if not area_contains_obstruction(segment.area, lt, rb) then
+                    distance_to_right = rb.x - lt.x
+                end
+            end
+
+            local smallest_distance = distance_to_top
+            local smallest_distance_direction = defines.direction.north
+            if distance_to_left < smallest_distance then
+                smallest_distance = distance_to_left
+                smallest_distance_direction = defines.direction.west
+            end
+            if distance_to_bottom < smallest_distance then
+                smallest_distance = distance_to_bottom
+                smallest_distance_direction = defines.direction.south
+            end
+            if distance_to_right < smallest_distance then
+                smallest_distance = distance_to_right
+                smallest_distance_direction = defines.direction.east
+            end
+
+            if smallest_distance < 9 then
+                table.insert(oilwells[i].construction_analysis, {
+                    pump_direction = direction,
+                    edge_distance = smallest_distance,
+                    edge_direction = smallest_distance_direction,
+                    pipe_start_position = pipe_start_position
+                })
+            end
+        end
+
+        local can_connect_pump_to_edge =
+            #(oilwells[i].construction_analysis) > 0
+        if can_connect_pump_to_edge then
+            local best_option = nil
+            for i, analysis in pairs(oilwells[i].construction_analysis) do
+                if best_option == nil or analysis.edge_distance <
+                    best_option.edge_distance then
+                    best_option = analysis
+                end
+            end
+
+            table.insert(construct_entities.pumpjack, {
+                position = pumpjack_position,
+                direction = best_option.pump_direction
+            })
+
+            for i = 0, best_option.edge_distance do
+                local offset_x = 0
+                local offset_y = 0
+
+                if best_option.edge_direction == defines.direction.north then
+                    offset_y = -1 * i
+                end
+                if best_option.edge_direction == defines.direction.east then
+                    offset_x = 1 * i
+                end
+                if best_option.edge_direction == defines.direction.south then
+                    offset_y = 1 * i
+                end
+                if best_option.edge_direction == defines.direction.west then
+                    offset_x = -1 * i
+                end
+
+                table.insert(construct_entities.pipe, {
+                    position = {
+                        x = best_option.pipe_start_position.x + offset_x,
+                        y = best_option.pipe_start_position.y + offset_y
+                    },
+                    direction = defines.direction.east
+                })
+            end
+            segment.construct_entities = construct_entities
+        else
+            return false
+        end
+    end
+
+    return true
+end
+
+function is_on_edge(segment, position)
+    return is_on_top_edge(segment, position) or
+               is_on_bottom_edge(segment, position) or
+               is_on_left_edge(segment, position) or
+               is_on_right_edge(segment, position)
+end
+
+function is_on_top_edge(segment, position)
+    return on_top_edge(position, segment.area_bounds).y == position.y
+end
+function is_on_bottom_edge(segment, position)
+    return on_bottom_edge(position, segment.area_bounds).y == position.y
+end
+function is_on_left_edge(segment, position)
+    return on_left_edge(position, segment.area_bounds).x == position.x
+end
+function is_on_right_edge(segment, position)
+    return on_right_edge(position, segment.area_bounds).x == position.x
+end
+
+-- exluding the edge itself
+function to_top_edge(position, area_bounds)
+    return {x = position.x, y = area_bounds.left_top.y}
+end
+
+-- exluding the edge itself
+function to_bottom_edge(position, area_bounds)
+    return {x = position.x, y = area_bounds.right_bottom.y}
+end
+
+-- exluding the edge itself
+function to_left_edge(position, area_bounds)
+    return {x = area_bounds.left_top.x, y = position.y}
+end
+
+-- exluding the edge itself
+function to_right_edge(position, area_bounds)
+    return {x = area_bounds.right_bottom.x, y = position.y}
+end
+
+-- including the edge itself
+function on_top_edge(position, area_bounds)
+    return {x = position.x, y = area_bounds.left_top.y - 1}
+end
+
+-- including the edge itself
+function on_bottom_edge(position, area_bounds)
+    return {x = position.x, y = area_bounds.right_bottom.y + 1}
+end
+
+-- including the edge itself
+function on_left_edge(position, area_bounds)
+    return {x = area_bounds.left_top.x - 1, y = position.y}
+end
+
+-- including the edge itself
+function on_right_edge(position, area_bounds)
+    return {x = area_bounds.right_bottom.x + 1, y = position.y}
+end
+
+function get_pump_output_offsets()
+    return {
+        [defines.direction.north] = {x = 1, y = -2},
+        [defines.direction.east] = {x = 2, y = -1},
+        [defines.direction.south] = {x = -1, y = 2},
+        [defines.direction.west] = {x = -2, y = 1}
+    }
 end
 
 function table.deepcopy(orig)
