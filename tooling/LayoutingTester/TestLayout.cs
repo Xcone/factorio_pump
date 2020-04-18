@@ -33,6 +33,7 @@ namespace LayoutingTester
         {
             if (message is LuaTable t)
             {
+                textOutputBuilder.AppendLine("---");
                 PrintTable(t);
             }
             else
@@ -72,8 +73,8 @@ namespace LayoutingTester
             {
 
                 // Arrange
-                lua.NewTable("game");
-                lua.RegisterFunction("game.print", this, GetType().GetMethod(nameof(Print)));
+                lua.NewTable("pumpdebug");
+                lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
                 lua.DoFile("../../../../../mod/planner.lua");
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");

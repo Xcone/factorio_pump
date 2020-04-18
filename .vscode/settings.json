@@ -4,7 +4,8 @@
         "game",
         "defines",
         "script",
-        "serpent"
+        "serpent",
+        "pumpdebug"
     ],
     "Lua.diagnostics.disable": [
         "lowercase-global"
