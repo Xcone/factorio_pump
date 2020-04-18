@@ -25,6 +25,8 @@ namespace LayoutingTester
             Columns = PlannerInput.ToColumns();
 
             RunLua();
+
+            Print(DateTime.Now);
         }
 
         public void Print(object message)

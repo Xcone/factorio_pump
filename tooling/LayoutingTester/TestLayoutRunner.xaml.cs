@@ -43,6 +43,8 @@ namespace LayoutingTester
 
         private void Refresh()
         {
+            Dispatcher.Invoke(() => TestLayoutResultVisualizer.TestLayout = null);
+
             string json = null;
             Dispatcher.Invoke(() => json = TestLayoutInput.Json);
 
