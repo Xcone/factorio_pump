@@ -1,5 +1,7 @@
 function plan(planner_input)
 
+    pump_log(planner_input.area_bounds)
+
     -- add the required info to make planner_input a segment
     planner_input["split_direction"] = "none"
     planner_input["connectable_edges"] =
