@@ -111,6 +111,11 @@ namespace LayoutingTester
                     textOutputBuilder.AppendLine(lastStack);
                 }
             }
+            catch (Exception e)
+            {
+                Print("Shite output somewhere, because an exception occurred when adding the output to the visualization.");
+                Print(e);
+            }
             finally
             {
                 lua = null;
@@ -153,7 +158,7 @@ namespace LayoutingTester
 
         public void AddConstructionResult(string name, double y, long direction)
         {
-            Cells.First(c => c.Y == y).AddConstructionResult(name, direction);
+            Cells.First(c => c.Y == y).AddConstructionResult(name, direction, X);
         }
     }
 
@@ -171,8 +176,13 @@ namespace LayoutingTester
             Content = content;
         }
 
-        public void AddConstructionResult(string name, long direction)
+        public void AddConstructionResult(string name, long direction, float x)
         {
+            if (EntityToConstruct != null)
+            {
+                throw new ArgumentException($"Can't add {name} at position x={x},y={Y}. A {EntityToConstruct} is already assigned here.");
+            }
+
             if (name == "pipe")
             {
                 EntityToConstruct = "+";
