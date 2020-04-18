@@ -68,5 +68,41 @@ namespace LayoutingTester.Properties {
                 return ResourceManager.GetString("Oilfield1", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {&quot;area&quot;:{&quot;-5466.5&quot;:{&quot;-1094.5&quot;:&quot;can-build&quot;,&quot;-1093.5&quot;:&quot;can-build&quot;,&quot;-1092.5&quot;:&quot;can-build&quot;,&quot;-1091.5&quot;:&quot;can-build&quot;,&quot;-1090.5&quot;:&quot;can-build&quot;,&quot;-1089.5&quot;:&quot;can-build&quot;,&quot;-1088.5&quot;:&quot;can-build&quot;,&quot;-1087.5&quot;:&quot;can-build&quot;,&quot;-1086.5&quot;:&quot;can-build&quot;,&quot;-1085.5&quot;:&quot;can-build&quot;,&quot;-1084.5&quot;:&quot;can-build&quot;,&quot;-1083.5&quot;:&quot;can-build&quot;,&quot;-1082.5&quot;:&quot;can-build&quot;,&quot;-1081.5&quot;:&quot;can-build&quot;,&quot;-1080.5&quot;:&quot;can-build&quot;,&quot;-1079.5&quot;:&quot;can-build&quot;,&quot;-1078.5&quot;:&quot;can-build&quot;,&quot;-1077.5&quot;:&quot;can-build&quot;,&quot;-1076.5&quot;:&quot;can-build&quot;,&quot;-1075.5&quot;:&quot;can-build&quot;,&quot;-1074.5&quot;:&quot;can-build&quot;,&quot;-1073.5&quot;:&quot;can-build&quot;,&quot;-1072.5 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Oilfield2 {
+            get {
+                return ResourceManager.GetString("Oilfield2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {&quot;area&quot;:{&quot;-6010.5&quot;:{&quot;-138.5&quot;:&quot;can-build&quot;,&quot;-137.5&quot;:&quot;can-build&quot;,&quot;-136.5&quot;:&quot;can-build&quot;,&quot;-135.5&quot;:&quot;can-build&quot;,&quot;-134.5&quot;:&quot;can-build&quot;,&quot;-133.5&quot;:&quot;can-build&quot;,&quot;-132.5&quot;:&quot;can-build&quot;,&quot;-131.5&quot;:&quot;can-build&quot;,&quot;-130.5&quot;:&quot;can-build&quot;,&quot;-129.5&quot;:&quot;can-build&quot;,&quot;-128.5&quot;:&quot;can-build&quot;,&quot;-127.5&quot;:&quot;can-build&quot;,&quot;-126.5&quot;:&quot;can-build&quot;,&quot;-125.5&quot;:&quot;can-build&quot;,&quot;-124.5&quot;:&quot;can-build&quot;,&quot;-123.5&quot;:&quot;can-build&quot;,&quot;-122.5&quot;:&quot;can-build&quot;,&quot;-121.5&quot;:&quot;can-build&quot;,&quot;-120.5&quot;:&quot;can-build&quot;,&quot;-119.5&quot;:&quot;can-build&quot;,&quot;-118.5&quot;:&quot;can-build&quot;,&quot;-117.5&quot;:&quot;can-build&quot;,&quot;-116.5&quot;:&quot;can-build&quot;,&quot;-115.5&quot;: [rest of string wa....
+        /// </summary>
+        internal static string Oilfield3 {
+            get {
+                return ResourceManager.GetString("Oilfield3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {&quot;area&quot;:{&quot;-6499.5&quot;:{&quot;-914.5&quot;:&quot;can-build&quot;,&quot;-913.5&quot;:&quot;can-build&quot;,&quot;-912.5&quot;:&quot;can-build&quot;,&quot;-911.5&quot;:&quot;can-build&quot;,&quot;-910.5&quot;:&quot;reserved-for-pump&quot;,&quot;-909.5&quot;:&quot;reserved-for-pump&quot;,&quot;-908.5&quot;:&quot;reserved-for-pump&quot;,&quot;-907.5&quot;:&quot;can-build&quot;,&quot;-906.5&quot;:&quot;can-build&quot;,&quot;-905.5&quot;:&quot;can-build&quot;,&quot;-904.5&quot;:&quot;can-build&quot;,&quot;-903.5&quot;:&quot;can-build&quot;,&quot;-902.5&quot;:&quot;can-build&quot;,&quot;-901.5&quot;:&quot;can-build&quot;,&quot;-900.5&quot;:&quot;can-build&quot;},&quot;-6498.5&quot;:{&quot;-914.5&quot;:&quot;can-not-build&quot;,&quot;-913.5&quot;:&quot;reserved-for-pump&quot;,&quot;-912.5&quot;:&quot;reserved-for-pump&quot;,&quot;-911.5&quot;:&quot;reserved-for-pump&quot;,&quot;-910.5&quot;:&quot;reserved-for-pump&quot;, [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Oilfield4 {
+            get {
+                return ResourceManager.GetString("Oilfield4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {&quot;area&quot;:{&quot;-5463.5&quot;:{&quot;-1094.5&quot;:&quot;can-build&quot;,&quot;-1093.5&quot;:&quot;can-build&quot;,&quot;-1092.5&quot;:&quot;can-build&quot;,&quot;-1091.5&quot;:&quot;can-build&quot;,&quot;-1090.5&quot;:&quot;can-build&quot;,&quot;-1089.5&quot;:&quot;can-build&quot;,&quot;-1088.5&quot;:&quot;can-build&quot;,&quot;-1087.5&quot;:&quot;can-build&quot;,&quot;-1086.5&quot;:&quot;can-build&quot;,&quot;-1085.5&quot;:&quot;can-build&quot;,&quot;-1084.5&quot;:&quot;can-build&quot;,&quot;-1083.5&quot;:&quot;can-build&quot;,&quot;-1082.5&quot;:&quot;can-build&quot;,&quot;-1081.5&quot;:&quot;can-build&quot;,&quot;-1080.5&quot;:&quot;can-build&quot;,&quot;-1079.5&quot;:&quot;can-build&quot;,&quot;-1078.5&quot;:&quot;can-build&quot;},&quot;-5462.5&quot;:{&quot;-1094.5&quot;:&quot;can-build&quot;,&quot;-1093.5&quot;:&quot;can-build&quot;,&quot;-1092.5&quot;:&quot;can-build&quot;,&quot;-1091.5&quot;:&quot;can-build&quot;,&quot;-1090.5&quot;:&quot;can-bui [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Oilfield5 {
+            get {
+                return ResourceManager.GetString("Oilfield5", resourceCulture);
+            }
+        }
     }
 }
