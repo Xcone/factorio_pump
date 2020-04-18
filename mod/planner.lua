@@ -406,30 +406,32 @@ function try_connect_pumps(segment)
                 direction = best_option.pump_direction
             })
 
-            for i = 0, best_option.edge_distance do
-                local offset_x = 0
-                local offset_y = 0
+            if not is_on_edge(segment, best_option.pipe_start_position) then
+                for i = 0, best_option.edge_distance do
+                    local offset_x = 0
+                    local offset_y = 0
 
-                if best_option.edge_direction == defines.direction.north then
-                    offset_y = -1 * i
-                end
-                if best_option.edge_direction == defines.direction.east then
-                    offset_x = 1 * i
-                end
-                if best_option.edge_direction == defines.direction.south then
-                    offset_y = 1 * i
-                end
-                if best_option.edge_direction == defines.direction.west then
-                    offset_x = -1 * i
-                end
+                    if best_option.edge_direction == defines.direction.north then
+                        offset_y = -1 * i
+                    end
+                    if best_option.edge_direction == defines.direction.east then
+                        offset_x = 1 * i
+                    end
+                    if best_option.edge_direction == defines.direction.south then
+                        offset_y = 1 * i
+                    end
+                    if best_option.edge_direction == defines.direction.west then
+                        offset_x = -1 * i
+                    end
 
-                table.insert(construct_entities.pipe, {
-                    position = {
-                        x = best_option.pipe_start_position.x + offset_x,
-                        y = best_option.pipe_start_position.y + offset_y
-                    },
-                    direction = defines.direction.east
-                })
+                    table.insert(construct_entities.pipe, {
+                        position = {
+                            x = best_option.pipe_start_position.x + offset_x,
+                            y = best_option.pipe_start_position.y + offset_y
+                        },
+                        direction = defines.direction.east
+                    })
+                end
             end
             segment.construct_entities = construct_entities
         else
