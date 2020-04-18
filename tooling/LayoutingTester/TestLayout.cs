@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using KeraLua;
 using Newtonsoft.Json;
 using NLua;
+using NLua.Exceptions;
+using Lua = NLua.Lua;
+using LuaFunction = NLua.LuaFunction;
 
 namespace LayoutingTester
 {
@@ -31,7 +35,12 @@ namespace LayoutingTester
             }
             else
             {
+                var m = message.ToString();
                 textOutputBuilder.AppendLine(message.ToString());
+                if (m.Equals("Trace", StringComparison.OrdinalIgnoreCase))
+                {
+                    textOutputBuilder.AppendLine(lua.GetDebugTraceback());
+                }
             }
         }
 
@@ -54,10 +63,13 @@ namespace LayoutingTester
 
         public void RunLua()
         {
+            lua = new Lua();
+            //lua.SetDebugHook(LuaHookMask.Line, 1);
+            lua.DebugHook += Lua_DebugHook;
             try
             {
+
                 // Arrange
-                using var lua = new Lua();
                 lua.NewTable("game");
                 lua.RegisterFunction("game.print", this, GetType().GetMethod(nameof(Print)));
                 lua.DoFile("../../../../../mod/planner.lua");
@@ -87,9 +99,30 @@ namespace LayoutingTester
                     AddConstructEntity("pipe", pipe);
                 }
             }
-            catch (Exception e)
+            catch (LuaScriptException e)
             {
+                var traceBack = lua.GetDebugTraceback();
                 textOutputBuilder.AppendLine(e.ToString());
+                if (lastStack != null)
+                {
+                    textOutputBuilder.AppendLine(lastStack);
+                }
+            }
+            finally
+            {
+                lua = null;
+            }
+
+        }
+
+        private Lua lua;
+        private string lastStack = null;
+
+        private void Lua_DebugHook(object sender, NLua.Event.DebugHookEventArgs e)
+        {
+            if (e.LuaDebug.Event == LuaHookEvent.Line && e.LuaDebug.CurrentLine == 294)
+            {
+                lastStack = lua.GetDebugTraceback();
             }
         }
 
