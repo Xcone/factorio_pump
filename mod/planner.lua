@@ -407,7 +407,7 @@ function try_connect_pumps(segment)
             })
 
             if not is_on_edge(segment, best_option.pipe_start_position) then
-                for i = 0, best_option.edge_distance do
+                for i = 0, best_option.edge_distance - 1 do
                     local offset_x = 0
                     local offset_y = 0
 
@@ -481,7 +481,7 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local rb = pipe_start_position
 
         if not area_contains_obstruction(segment.area, lt, rb) then
-            distance_to_top = rb.y - lt.y
+            distance_to_top = rb.y - lt.y + 1
         end
     end
 
@@ -494,7 +494,7 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local rb = pipe_start_position
 
         if not area_contains_obstruction(segment.area, lt, rb) then
-            distance_to_left = rb.x - lt.x
+            distance_to_left = rb.x - lt.x + 1
         end
     end
 
@@ -507,7 +507,7 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local rb = to_bottom_edge(pipe_start_position, segment.area_bounds)
 
         if not area_contains_obstruction(segment.area, lt, rb) then
-            distance_to_bottom = rb.y - lt.y
+            distance_to_bottom = rb.y - lt.y + 1
         end
     end
 
@@ -520,7 +520,7 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local rb = to_right_edge(pipe_start_position, segment.area_bounds)
 
         if not area_contains_obstruction(segment.area, lt, rb) then
-            distance_to_right = rb.x - lt.x
+            distance_to_right = rb.x - lt.x + 1
         end
     end
 
