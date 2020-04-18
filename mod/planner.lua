@@ -179,7 +179,7 @@ function find_split_horizontal(segment)
         found_obstruction = false
     }
 
-    while result_a.value > top and result_b.value < bottom do
+    while result_a.query_value > top and result_b.query_value < bottom do
 
         if area_contains_obstruction(segment.area,
                                      {x = left, y = result_a.query_value},
@@ -239,7 +239,7 @@ function find_split_vertical(segment)
         found_obstruction = false
     }
 
-    while result_a.value > left and result_b.value < right do
+    while result_a.query_value > left and result_b.query_value < right do
 
         if area_contains_obstruction(segment.area,
                                      {x = result_a.query_value, y = top},
