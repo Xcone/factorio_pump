@@ -53,27 +53,32 @@ end
 
 function trim_event_area(event)
     local uninitialized = true
-    local padding = 2 -- 1 for the size of the pump, 1 more for outgoing pipe
 
     for i, entity in pairs(event.entities) do
         if entity.position.x < event.area.left_top.x or uninitialized then
-            event.area.left_top.x = entity.position.x - padding
+            event.area.left_top.x = entity.position.x
         end
 
         if entity.position.y < event.area.left_top.y or uninitialized then
-            event.area.left_top.y = entity.position.y - padding
+            event.area.left_top.y = entity.position.y
         end
 
         if entity.position.x > event.area.right_bottom.x or uninitialized then
-            event.area.right_bottom.x = entity.position.x + padding
+            event.area.right_bottom.x = entity.position.x
         end
 
         if entity.position.y > event.area.right_bottom.y or uninitialized then
-            event.area.right_bottom.y = entity.position.y + padding
+            event.area.right_bottom.y = entity.position.y
         end
 
         uninitialized = false
     end
+
+    local padding = 2 -- 1 for the size of the pump, 1 more for outgoing pipe
+    event.area.left_top.x = event.area.left_top.x - padding
+    event.area.left_top.y = event.area.left_top.y - padding
+    event.area.right_bottom.x = event.area.right_bottom.x + padding
+    event.area.right_bottom.y = event.area.right_bottom.y + padding
 end
 
 function pipes_present_in_area(surface, area)
