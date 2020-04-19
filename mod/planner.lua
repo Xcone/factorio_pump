@@ -44,10 +44,16 @@ function save_as_planner_result(construct_entities)
     result.pipe = {}
     result.pumpjack = {}
     result.pipe_joint = {}
+    result["pipe-to-ground"] = {}
 
     for x, column in pairs(construct_entities) do
         for y, construct_entity in pairs(column) do
-            table.insert(result[construct_entity.name], {
+            local target_name = construct_entity.name
+            if not pumpdebug and construct_entity.name == "pipe_joint" then
+                target_name = "pipe"
+            end
+
+            table.insert(result[target_name], {
                 position = {x = x, y = y},
                 direction = construct_entity.direction
             })
@@ -107,6 +113,9 @@ function optimize_construct_entities(construct_entities)
                                    construct_entities, {x = x, y = y}, offset)
                 if result.last_hit == nil then
                     remove_pipes(construct_entities, result.pipe_positions)
+                elseif result.last_hit.name == "pipe_joint" then
+                    try_replace_pipes_with_tunnels(construct_entities,
+                                                   result.pipe_positions)
                 end
             end
         end
@@ -116,6 +125,17 @@ end
 function remove_pipes(construct_entities, pipe_positions)
     for i, pipe_position in pairs(pipe_positions) do
         construct_entities[pipe_position.x][pipe_position.y] = nil
+    end
+end
+
+function try_replace_pipes_with_tunnels(construct_entities, pipe_positions)
+    local count = #(pipe_positions)
+    if (count > 3 and count <= 11) then
+        remove_pipes(construct_entities, pipe_positions)
+
+        local first_pipe = pipe_positions[1]
+        local last_pipe = pipe_positions[count]
+        add_pipe_to_ground(construct_entities, first_pipe, last_pipe)
     end
 end
 
@@ -162,6 +182,38 @@ function add_pipe(construct_entities, position, do_not_optimize)
     else
         if target.name ~= "pipe_joint" then target.name = "pipe" end
     end
+end
+
+function add_pipe_to_ground(construct_entities, start_position, end_position)
+    local start_direction
+    local end_direction
+
+    if start_position.x == end_position.x then
+        if start_position.y < end_position.y then
+            end_direction = defines.direction.south
+            start_direction = defines.direction.north
+        else
+            start_direction = defines.direction.south
+            end_direction = defines.direction.north
+        end
+    else
+        if start_position.x < end_position.x then
+            start_direction = defines.direction.west
+            end_direction = defines.direction.east
+        else
+            start_direction = defines.direction.east
+            end_direction = defines.direction.west
+        end
+    end
+
+    local start_pipe =
+        get_or_create_position(construct_entities, start_position)
+    start_pipe.name = "pipe-to-ground"
+    start_pipe.direction = start_direction
+
+    local end_pipe = get_or_create_position(construct_entities, end_position)
+    end_pipe.name = "pipe-to-ground"
+    end_pipe.direction = end_direction
 end
 
 function get_or_create_position(table, position)

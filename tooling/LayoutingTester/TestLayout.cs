@@ -92,6 +92,7 @@ namespace LayoutingTester
                 var pumpjacks = constructEntities["pumpjack"] as LuaTable;
                 var pipes = constructEntities["pipe"] as LuaTable;
                 var pipeJoints = constructEntities["pipe_joint"] as LuaTable;
+                var pipesToGround = constructEntities["pipe-to-ground"] as LuaTable;
 
                 foreach (LuaTable pumpjack in pumpjacks.Values)
                 {
@@ -101,6 +102,11 @@ namespace LayoutingTester
                 foreach (LuaTable pipe in pipes.Values)
                 {
                     AddConstructEntity("pipe", pipe);
+                }
+
+                foreach (LuaTable pipeToGround in pipesToGround.Values)
+                {
+                    AddConstructEntity("pipe-to-ground", pipeToGround);
                 }
 
                 foreach (LuaTable pipeJoint in pipeJoints.Values)
@@ -200,6 +206,10 @@ namespace LayoutingTester
             else if (name == "pipe_joint")
             {
                 EntityToConstruct = "o";
+            }
+            else if (name == "pipe-to-ground")
+            {
+                EntityToConstruct = "t";
             }
 
             EntityToConstructDirection = direction;
