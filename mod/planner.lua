@@ -86,9 +86,65 @@ function add_construct_entities_from_segments(segment, construct_entities)
 end
 
 function optimize_construct_entities(construct_entities)
+    local pipe_joint_positions = {}
+    for x, column in pairs(construct_entities) do
+        for y, construct_entity in pairs(column) do
+            if construct_entity.name == "pipe_joint" then
+                get_or_create_position(pipe_joint_positions, {x = x, y = y})
+                pipe_joint_positions[x][y] = "pipe_joint"
+            end
+        end
+    end
 
-    -- TODO: trim outer pipes and calculate underground pipes
+    local offsets = {
+        {x = 0, y = 1}, {x = 0, y = -1}, {x = 1, y = 0}, {x = -1, y = 0}
+    }
 
+    for x, column in pairs(pipe_joint_positions) do
+        for y, pipe_joint in pairs(column) do
+            for _, offset in ipairs(offsets) do
+                local result = get_pipes_until_nil_or_next_joint(
+                                   construct_entities, {x = x, y = y}, offset)
+                if result.last_hit == nil then
+                    remove_pipes(construct_entities, result.pipe_positions)
+                end
+            end
+        end
+    end
+end
+
+function remove_pipes(construct_entities, pipe_positions)
+    for i, pipe_position in pairs(pipe_positions) do
+        construct_entities[pipe_position.x][pipe_position.y] = nil
+    end
+end
+
+function get_pipes_until_nil_or_next_joint(construct_entities,
+                                           start_joint_position, offset)
+
+    local x = start_joint_position.x
+    local y = start_joint_position.y
+    local is_pipe = false
+    local pipe_positions = {}
+    local construct_entity_at_position = nil
+
+    repeat
+        x = x + offset.x
+        y = y + offset.y
+        is_pipe = false
+        construct_entity_at_position = nil
+        if construct_entities[x] ~= nil and construct_entities[x][y] ~= nil then
+            construct_entity_at_position = construct_entities[x][y]
+            is_pipe = construct_entity_at_position.name == "pipe"
+        end
+
+        if (is_pipe) then table.insert(pipe_positions, {x = x, y = y}) end
+    until not is_pipe
+
+    return {
+        last_hit = construct_entity_at_position,
+        pipe_positions = pipe_positions
+    }
 end
 
 function add_pumpjack(construct_entities, position, direction)
