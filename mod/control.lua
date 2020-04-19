@@ -25,7 +25,17 @@ function process_selected_area_with_this_mod(event)
 
     local planner_input = prepare_planner_input(event)
     dump_to_file(planner_input, "planner_input")
+    if planner_input.failure then
+        player.print(planner_input.failure)
+        return
+    end
+
     local construct_entities = plan(planner_input)
+    if planner_input.failure then
+        player.print(planner_input.failure)
+        return
+    end
+
     dump_to_file(construct_entities, "construct_entities")
 
     for entity_name, entities_to_place in pairs(construct_entities) do
@@ -94,6 +104,7 @@ function prepare_planner_input(event)
     local planner_input = {area = {}}
 
     planner_input.area_bounds = event.area
+    planner_input.failure = nil
 
     -- fill the map with default data 
     for x = event.area.left_top.x, event.area.right_bottom.x, 1 do
@@ -106,8 +117,9 @@ function prepare_planner_input(event)
     -- mark where the pumps will be
     for i, entity in pairs(event.entities) do
         local direction = defines.direction.east
-        planner_input.area[entity.position.x][entity.position.y] = "oil-well"
         if can_place_pumpjack(event.surface, entity.position, direction) then
+            planner_input.area[entity.position.x][entity.position.y] =
+                "oil-well"
             planner_input.area[entity.position.x - 1][entity.position.y - 1] =
                 "reserved-for-pump"
             planner_input.area[entity.position.x - 1][entity.position.y] =
@@ -124,6 +136,11 @@ function prepare_planner_input(event)
                 "reserved-for-pump"
             planner_input.area[entity.position.x + 1][entity.position.y + 1] =
                 "reserved-for-pump"
+        else
+            planner_input.failure =
+                "P.U.M.P. encountered one or more obstructed oil wells. Clear the area first."
+
+            return planner_input
         end
     end
 
@@ -143,8 +160,6 @@ function prepare_planner_input(event)
 end
 
 function dump_to_file(table_to_write, description)
-    local planner_input_as_block = serpent.block(table_to_write)
-    game.write_file("pump_" .. description .. ".block", planner_input_as_block)
     local planner_input_as_json = game.table_to_json(table_to_write)
     game.write_file("pump_" .. description .. ".json", planner_input_as_json)
 end

@@ -25,11 +25,31 @@ function plan(planner_input)
     pump_log(planner_input.area_bounds)
     convert_planner_input_to_segment(planner_input)
     segmentate(planner_input, "none")
+
+    if not verify_all_pumps_connected(planner_input) then
+        planner_input.failure =
+            "P.U.M.P. was unable to connect all oil wells in the selected area. There might be obstructions (like trees or water) preventing the layout to complete, or the routine of P.U.M.P. can not handle the way these oil wells are layed out."
+        return
+    end
+
     construct_pipes_on_splits(planner_input, construct_entities)
     add_construct_entities_from_segments(planner_input, construct_entities)
     optimize_construct_entities(construct_entities)
 
     return save_as_planner_result(construct_entities)
+end
+
+function verify_all_pumps_connected(segment)
+    if segment.split_direction == "none" then
+        if segment.construct_entities ~= nil then
+            return true
+        else
+            return #find_oilwells(segment) == 0
+        end
+    else
+        return verify_all_pumps_connected(segment.sub_segment_1) and
+                   verify_all_pumps_connected(segment.sub_segment_2)
+    end
 end
 
 function convert_planner_input_to_segment(planner_input)
