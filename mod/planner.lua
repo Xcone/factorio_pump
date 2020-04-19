@@ -82,6 +82,19 @@ function optimize_construct_entities(construct_entities)
     end
 end
 
+function add_pumpjack(construct_entities, position, direction)
+    table.insert(construct_entities.pumpjack,
+                 {position = position, direction = direction})
+end
+
+function add_pipe(construct_entities, position, do_not_optimize)
+    local table_to_add_to = construct_entities.pipe
+    if do_not_optimize then table_to_add_to = construct_entities.pipe_joint end
+
+    table.insert(table_to_add_to,
+                 {position = position, direction = defines.direction.east})
+end
+
 function segmentate(segment, previous_split)
     local left = segment.area_bounds.left_top.x
     local right = segment.area_bounds.right_bottom.x
@@ -360,12 +373,10 @@ function construct_pipes_on_splits(segment, construct_entities)
     if segment.split_direction == "split_horizontal" then
         for x = segment.sub_segment_1.area_bounds.left_top.x, segment.sub_segment_1
             .area_bounds.right_bottom.x do
-            table.insert(construct_entities["pipe"], {
-                position = {
-                    x = x,
-                    y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
-                },
-                direction = defines.direction.east
+
+            add_pipe(construct_entities, {
+                x = x,
+                y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
             })
         end
     end
@@ -373,12 +384,10 @@ function construct_pipes_on_splits(segment, construct_entities)
     if segment.split_direction == "split_vertical" then
         for y = segment.sub_segment_1.area_bounds.left_top.y, segment.sub_segment_1
             .area_bounds.right_bottom.y do
-            table.insert(construct_entities["pipe"], {
-                position = {
-                    x = segment.sub_segment_1.area_bounds.right_bottom.x + 1,
-                    y = y
-                },
-                direction = defines.direction.east
+
+            add_pipe(construct_entities, {
+                x = segment.sub_segment_1.area_bounds.right_bottom.x + 1,
+                y = y
             })
         end
     end
@@ -414,10 +423,9 @@ function try_connect_pumps(segment)
         local best_option = get_best_pumpjack_placement(
                                 oilwells[i].construction_analysis)
         if best_option ~= nil then
-            table.insert(construct_entities.pumpjack, {
-                position = pumpjack_position,
-                direction = best_option.pump_direction
-            })
+
+            add_pumpjack(construct_entities, pumpjack_position,
+                         best_option.pump_direction)
 
             for pipe_index = 0, best_option.edge_distance do
                 local offset_x = 0
@@ -436,18 +444,15 @@ function try_connect_pumps(segment)
                     offset_x = -1 * pipe_index
                 end
 
-                local pipe_table = construct_entities.pipe
-                if pipe_index == 0 or pipe_index == best_option.edge_distance then
-                    pipe_table = construct_entities.pipe_joint
-                end
+                local is_pump_output = pipe_index == 0
+                local is_edge_connection =
+                    pipe_index == best_option.edge_distance
 
-                table.insert(pipe_table, {
-                    position = {
-                        x = best_option.pipe_start_position.x + offset_x,
-                        y = best_option.pipe_start_position.y + offset_y
-                    },
-                    direction = defines.direction.east
-                })
+                add_pipe(construct_entities, {
+                    x = best_option.pipe_start_position.x + offset_x,
+                    y = best_option.pipe_start_position.y + offset_y
+                }, is_pump_output or is_edge_connection)
+
             end
 
             segment.construct_entities = construct_entities
