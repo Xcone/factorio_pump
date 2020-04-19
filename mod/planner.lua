@@ -1,3 +1,23 @@
+--[[
+    Glossary:
+    - area: A table using the X-position as key, of tables using the Y-position as key. Each entry containing a string-value describing what the tile is.      
+      Can be accessed like: area[x][y]
+      "can-build": the planner can use this tile to connect the pumpjacks
+      "can-not-build": obstructed. It doesn't matter what by, but the planner will avoid the tile.
+      "oilwell": tile contains an oilwell, and the planner will attempt to put a pumpjack here.
+      "reserved-for-pump": the input determined the oilwell is unobstructed and reserves the 8 tiles around it to avoid pipes being planned here.
+    - area_bounds: The left_top and right_bottom of the area
+    - planner_input: Contains area and area_bounds, and is the input of the planner
+    - construct_entities: a table with the key of the entity-name that will be built. Each value is a sub-table with a position and a direction to build the entity in. The planner's goal is to populate this table using planner_input
+    - segment: A table describing how the planner_input is split into smaller chunks. Each containing:
+      area: see above
+      area_bounds: see above
+      construct_entities: see above, only present if the planner was able to connect all pumpjacks in this segment, without subdeviding the segment further.
+      split_direction: none if the segment is not split, or split_vertical/split_horizontal if the segment is split in smaller segments
+      sub_segment_1: a segment, only present if the segment was split
+      sub_segment_2: a segment, only present if the segment was split
+      number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment    
+]] --
 function plan(planner_input)
 
     pump_log(planner_input.area_bounds)
@@ -32,42 +52,6 @@ function merge_construct_entities(segment, construct_entities)
         merge_construct_entities(segment.sub_segment_2, construct_entities)
     end
 end
-
---[[
-local segment = {
-    area_bounds = {left_top = {x, y}, right_bottom = {x, y}},
-    split_direction = "split_horizontal",
-    connectable_edges = {
-        [top] = false,
-        [left] = false,
-        [bottom] = false,
-        [right] = false
-    },
-    
-    sub_segment_1 = {
-        area_bounds = {left_top = {x, y}, right_bottom = {x, y}},
-        split_direction = "none",
-        area = {....},
-        connectable_edges = {
-            [top] = false,
-            [left] = false,
-            [bottom] = true,
-            [right] = false
-        }
-    },
-    sub_segment_2 = {
-        area_bounds = {left_top = {x, y}, right_bottom = {x, y}},
-        split_direction = "none",
-        area = {......},
-        connectable_edges = {
-            [top] = true,
-            [left] = false,
-            [bottom] = false,
-            [right] = false
-        }
-    }
-}
-]]
 
 function segmentate(segment, previous_split)
     local left = segment.area_bounds.left_top.x
