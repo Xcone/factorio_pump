@@ -504,13 +504,12 @@ function try_connect_pumps(segment)
                 }, is_pump_output or is_edge_connection)
 
             end
-
-            segment.construct_entities = construct_entities
         else
             return false
         end
     end
 
+    segment.construct_entities = construct_entities
     return true
 end
 
