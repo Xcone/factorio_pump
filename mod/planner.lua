@@ -27,7 +27,7 @@ function plan(planner_input)
     segmentate(planner_input, "none")
     construct_pipes_on_splits(planner_input, construct_entities)
     add_construct_entities_from_segments(planner_input, construct_entities)
-
+    optimize_construct_entities(construct_entities)
     return construct_entities
 end
 
@@ -57,12 +57,28 @@ function add_construct_entities_from_segments(segment, construct_entities)
             for k, v in pairs(segment.construct_entities.pumpjack) do
                 table.insert(construct_entities.pumpjack, v)
             end
+            for k, v in pairs(segment.construct_entities.pipe_joint) do
+                table.insert(construct_entities.pipe_joint, v)
+            end
         end
     else
         add_construct_entities_from_segments(segment.sub_segment_1,
                                              construct_entities)
         add_construct_entities_from_segments(segment.sub_segment_2,
                                              construct_entities)
+    end
+end
+
+function optimize_construct_entities(construct_entities)
+    -- filter pipes that have later been converted to joints
+    for joint_key, joint in pairs(construct_entities.pipe_joint) do
+        for pipe_key, pipe in pairs(construct_entities.pipe) do
+            local same_x = joint.position.x == pipe.position.x
+            local same_y = joint.position.y == pipe.position.y
+            if same_x and same_y then
+                construct_entities.pipe[pipe_key] = nil
+            end
+        end
     end
 end
 
@@ -403,33 +419,37 @@ function try_connect_pumps(segment)
                 direction = best_option.pump_direction
             })
 
-            if not is_on_edge(segment, best_option.pipe_start_position) then
-                for i = 0, best_option.edge_distance - 1 do
-                    local offset_x = 0
-                    local offset_y = 0
+            for pipe_index = 0, best_option.edge_distance do
+                local offset_x = 0
+                local offset_y = 0
 
-                    if best_option.edge_direction == defines.direction.north then
-                        offset_y = -1 * i
-                    end
-                    if best_option.edge_direction == defines.direction.east then
-                        offset_x = 1 * i
-                    end
-                    if best_option.edge_direction == defines.direction.south then
-                        offset_y = 1 * i
-                    end
-                    if best_option.edge_direction == defines.direction.west then
-                        offset_x = -1 * i
-                    end
-
-                    table.insert(construct_entities.pipe, {
-                        position = {
-                            x = best_option.pipe_start_position.x + offset_x,
-                            y = best_option.pipe_start_position.y + offset_y
-                        },
-                        direction = defines.direction.east
-                    })
+                if best_option.edge_direction == defines.direction.north then
+                    offset_y = -1 * pipe_index
                 end
+                if best_option.edge_direction == defines.direction.east then
+                    offset_x = 1 * pipe_index
+                end
+                if best_option.edge_direction == defines.direction.south then
+                    offset_y = 1 * pipe_index
+                end
+                if best_option.edge_direction == defines.direction.west then
+                    offset_x = -1 * pipe_index
+                end
+
+                local pipe_table = construct_entities.pipe
+                if pipe_index == 0 or pipe_index == best_option.edge_distance then
+                    pipe_table = construct_entities.pipe_joint
+                end
+
+                table.insert(pipe_table, {
+                    position = {
+                        x = best_option.pipe_start_position.x + offset_x,
+                        y = best_option.pipe_start_position.y + offset_y
+                    },
+                    direction = defines.direction.east
+                })
             end
+
             segment.construct_entities = construct_entities
         else
             return false
