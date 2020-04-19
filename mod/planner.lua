@@ -129,12 +129,23 @@ function remove_pipes(construct_entities, pipe_positions)
 end
 
 function try_replace_pipes_with_tunnels(construct_entities, pipe_positions)
-    local count = #(pipe_positions)
-    if (count > 3 and count <= 11) then
-        remove_pipes(construct_entities, pipe_positions)
 
-        local first_pipe = pipe_positions[1]
-        local last_pipe = pipe_positions[count]
+    while #pipe_positions >= 2 do
+        local pipe_positions_this_batch = {}
+        for i, pipe_position in pairs(pipe_positions) do
+            if #pipe_positions_this_batch < 11 then
+                table.insert(pipe_positions_this_batch, pipe_position)
+                pipe_positions[i] = nil
+            else
+                break
+            end
+        end
+
+        remove_pipes(construct_entities, pipe_positions_this_batch)
+
+        local first_pipe = pipe_positions_this_batch[1]
+        local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
+
         add_pipe_to_ground(construct_entities, first_pipe, last_pipe)
     end
 end
