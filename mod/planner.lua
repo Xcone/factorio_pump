@@ -20,7 +20,7 @@
       connectable_edges: Pipes are placed between segments. Therefor pumpjacks may connect to these edges of segments that connect to another segment
 ]] --
 function plan(planner_input)
-    local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
+    local construct_entities = make_default_construction_entities_table()
 
     pump_log(planner_input.area_bounds)
     convert_planner_input_to_segment(planner_input)
@@ -36,6 +36,16 @@ function convert_planner_input_to_segment(planner_input)
     planner_input["connectable_edges"] =
         {top = false, left = false, bottom = false, right = false}
     planner_input.number_of_splits = 0
+end
+
+function make_default_construction_entities_table()
+    local construct_entities = {}
+    construct_entities.pumpjack = {}
+    construct_entities.pipe = {}
+    -- a pipe that cannot be optimized (i.e. but turned into a tunnel, or trimmed away as a dead-end)
+    construct_entities.pipe_joint = {}
+
+    return construct_entities
 end
 
 function add_construct_entities_from_segments(segment, construct_entities)
@@ -363,7 +373,7 @@ end
 
 function try_connect_pumps(segment)
     local oilwells = find_oilwells(segment)
-    local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
+    local construct_entities = make_default_construction_entities_table()
 
     for i = 1, #oilwells do
 
