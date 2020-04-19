@@ -16,7 +16,8 @@
       split_direction: none if the segment is not split, or split_vertical/split_horizontal if the segment is split in smaller segments
       sub_segment_1: a segment, only present if the segment was split
       sub_segment_2: a segment, only present if the segment was split
-      number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment    
+      number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment
+      connectable_edges: Pipes are placed between segments. Therefor pumpjacks may connect to these edges of segments that connect to another segment
 ]] --
 function plan(planner_input)
     local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
