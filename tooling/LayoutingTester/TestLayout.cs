@@ -91,6 +91,7 @@ namespace LayoutingTester
                 var constructEntities = planResult.First() as LuaTable;
                 var pumpjacks = constructEntities["pumpjack"] as LuaTable;
                 var pipes = constructEntities["pipe"] as LuaTable;
+                var pipeJoints = constructEntities["pipe_joint"] as LuaTable;
 
                 foreach (LuaTable pumpjack in pumpjacks.Values)
                 {
@@ -100,6 +101,11 @@ namespace LayoutingTester
                 foreach (LuaTable pipe in pipes.Values)
                 {
                     AddConstructEntity("pipe", pipe);
+                }
+
+                foreach (LuaTable pipeJoint in pipeJoints.Values)
+                {
+                    AddConstructEntity("pipe_joint", pipeJoint);
                 }
             }
             catch (LuaScriptException e)
@@ -190,6 +196,10 @@ namespace LayoutingTester
             else if (name == "pumpjack")
             {
                 EntityToConstruct = "p";
+            }
+            else if (name == "pipe_joint")
+            {
+                EntityToConstruct = "o";
             }
 
             EntityToConstructDirection = direction;
