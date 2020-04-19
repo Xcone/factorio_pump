@@ -394,24 +394,51 @@ function construct_pipes_on_splits(segment, construct_entities)
     if segment.split_direction == "none" then return end
 
     if segment.split_direction == "split_horizontal" then
+        local y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
+        if segment.connectable_edges.left then
+            local position = {
+                x = segment.sub_segment_1.area_bounds.left_top.x - 1,
+                y = y
+            }
+            add_pipe(construct_entities, position, true)
+        end
+
+        if segment.connectable_edges.right then
+            local position = {
+                x = segment.sub_segment_1.area_bounds.right_bottom.x + 1,
+                y = y
+            }
+            add_pipe(construct_entities, position, true)
+        end
+
         for x = segment.sub_segment_1.area_bounds.left_top.x, segment.sub_segment_1
             .area_bounds.right_bottom.x do
 
-            add_pipe(construct_entities, {
-                x = x,
-                y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
-            })
+            add_pipe(construct_entities, {x = x, y = y})
         end
     end
 
     if segment.split_direction == "split_vertical" then
+        local x = segment.sub_segment_1.area_bounds.right_bottom.x + 1
+        if segment.connectable_edges.top then
+            local position = {
+                x = x,
+                y = segment.sub_segment_1.area_bounds.left_top.y - 1
+            }
+            add_pipe(construct_entities, position, true)
+        end
+
+        if segment.connectable_edges.bottom then
+            local position = {
+                x = x,
+                y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
+            }
+            add_pipe(construct_entities, position, true)
+        end
         for y = segment.sub_segment_1.area_bounds.left_top.y, segment.sub_segment_1
             .area_bounds.right_bottom.y do
 
-            add_pipe(construct_entities, {
-                x = segment.sub_segment_1.area_bounds.right_bottom.x + 1,
-                y = y
-            })
+            add_pipe(construct_entities, {x = x, y = y})
         end
     end
 
