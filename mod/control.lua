@@ -29,7 +29,7 @@ function process_selected_area_with_this_mod(event)
     dump_to_file(construct_entities, "construct_entities")
 
     for entity_name, entities_to_place in pairs(construct_entities) do
-        for i, parameters in ipairs(entities_to_place) do
+        for i, parameters in pairs(entities_to_place) do
             event.surface.create_entity {
                 name = "entity-ghost",
                 inner_name = entity_name,
@@ -45,7 +45,7 @@ function trim_event_area(event)
     local uninitialized = true
     local padding = 2 -- 1 for the size of the pump, 1 more for outgoing pipe
 
-    for i, entity in ipairs(event.entities) do
+    for i, entity in pairs(event.entities) do
         if entity.position.x < event.area.left_top.x or uninitialized then
             event.area.left_top.x = entity.position.x - padding
         end
@@ -104,7 +104,7 @@ function prepare_planner_input(event)
     end
 
     -- mark where the pumps will be
-    for i, entity in ipairs(event.entities) do
+    for i, entity in pairs(event.entities) do
         local direction = defines.direction.east
         planner_input.area[entity.position.x][entity.position.y] = "oil-well"
         if can_place_pumpjack(event.surface, entity.position, direction) then
