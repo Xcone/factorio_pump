@@ -19,25 +19,25 @@
       number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment    
 ]] --
 function plan(planner_input)
+    local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
 
     pump_log(planner_input.area_bounds)
-
-    -- add the required info to make planner_input a segment
-    planner_input["split_direction"] = "none"
-    planner_input["connectable_edges"] =
-        {top = false, left = false, bottom = false, right = false}
-    planner_input.number_of_splits = 0
-
+    convert_planner_input_to_segment(planner_input)
     segmentate(planner_input, "none")
-
-    local construct_entities = {["pumpjack"] = {}, ["pipe"] = {}}
     construct_pipes_on_splits(planner_input, construct_entities)
-    merge_construct_entities(planner_input, construct_entities)
+    add_construct_entities_from_segments(planner_input, construct_entities)
 
     return construct_entities
 end
 
-function merge_construct_entities(segment, construct_entities)
+function convert_planner_input_to_segment(planner_input)
+    planner_input["split_direction"] = "none"
+    planner_input["connectable_edges"] =
+        {top = false, left = false, bottom = false, right = false}
+    planner_input.number_of_splits = 0
+end
+
+function add_construct_entities_from_segments(segment, construct_entities)
     if segment.split_direction == "none" then
         if segment.construct_entities ~= nil then
             for k, v in pairs(segment.construct_entities.pipe) do
@@ -48,8 +48,10 @@ function merge_construct_entities(segment, construct_entities)
             end
         end
     else
-        merge_construct_entities(segment.sub_segment_1, construct_entities)
-        merge_construct_entities(segment.sub_segment_2, construct_entities)
+        add_construct_entities_from_segments(segment.sub_segment_1,
+                                             construct_entities)
+        add_construct_entities_from_segments(segment.sub_segment_2,
+                                             construct_entities)
     end
 end
 
