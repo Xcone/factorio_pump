@@ -28,7 +28,8 @@ function plan(planner_input)
     construct_pipes_on_splits(planner_input, construct_entities)
     add_construct_entities_from_segments(planner_input, construct_entities)
     optimize_construct_entities(construct_entities)
-    return construct_entities
+
+    return save_as_planner_result(construct_entities)
 end
 
 function convert_planner_input_to_segment(planner_input)
@@ -38,27 +39,42 @@ function convert_planner_input_to_segment(planner_input)
     planner_input.number_of_splits = 0
 end
 
-function make_default_construction_entities_table()
-    local construct_entities = {}
-    construct_entities.pumpjack = {}
-    construct_entities.pipe = {}
-    -- a pipe that cannot be optimized (i.e. but turned into a tunnel, or trimmed away as a dead-end)
-    construct_entities.pipe_joint = {}
+function save_as_planner_result(construct_entities)
+    local result = {}
+    result.pipe = {}
+    result.pumpjack = {}
+    result.pipe_joint = {}
 
-    return construct_entities
+    for x, column in pairs(construct_entities) do
+        for y, construct_entity in pairs(column) do
+            table.insert(result[construct_entity.name], {
+                position = {x = x, y = y},
+                direction = construct_entity.direction
+            })
+        end
+    end
+
+    return result
 end
+
+function make_default_construction_entities_table() return {} end
 
 function add_construct_entities_from_segments(segment, construct_entities)
     if segment.split_direction == "none" then
         if segment.construct_entities ~= nil then
-            for k, v in pairs(segment.construct_entities.pipe) do
-                table.insert(construct_entities.pipe, v)
-            end
-            for k, v in pairs(segment.construct_entities.pumpjack) do
-                table.insert(construct_entities.pumpjack, v)
-            end
-            for k, v in pairs(segment.construct_entities.pipe_joint) do
-                table.insert(construct_entities.pipe_joint, v)
+            for x, column in pairs(segment.construct_entities) do
+                for y, construct_entity in pairs(column) do
+                    if construct_entity.name == "pipe" then
+                        add_pipe(construct_entities, {x = x, y = y})
+                    end
+                    if construct_entity.name == "pipe_joint" then
+                        add_pipe(construct_entities, {x = x, y = y}, true)
+                    end
+                    if construct_entity.name == "pumpjack" then
+                        add_pumpjack(construct_entities, {x = x, y = y},
+                                     construct_entity.direction)
+                    end
+                end
             end
         end
     else
@@ -70,29 +86,36 @@ function add_construct_entities_from_segments(segment, construct_entities)
 end
 
 function optimize_construct_entities(construct_entities)
-    -- filter pipes that have later been converted to joints
-    for joint_key, joint in pairs(construct_entities.pipe_joint) do
-        for pipe_key, pipe in pairs(construct_entities.pipe) do
-            local same_x = joint.position.x == pipe.position.x
-            local same_y = joint.position.y == pipe.position.y
-            if same_x and same_y then
-                construct_entities.pipe[pipe_key] = nil
-            end
-        end
-    end
+
+    -- TODO: trim outer pipes and calculate underground pipes
+
 end
 
 function add_pumpjack(construct_entities, position, direction)
-    table.insert(construct_entities.pumpjack,
-                 {position = position, direction = direction})
+    local target = get_or_create_position(construct_entities, position)
+    target.name = "pumpjack"
+    target.direction = direction
 end
 
 function add_pipe(construct_entities, position, do_not_optimize)
-    local table_to_add_to = construct_entities.pipe
-    if do_not_optimize then table_to_add_to = construct_entities.pipe_joint end
+    local target = get_or_create_position(construct_entities, position)
 
-    table.insert(table_to_add_to,
-                 {position = position, direction = defines.direction.east})
+    target.direction = defines.direction.east
+    if do_not_optimize then
+        target.name = "pipe_joint"
+    else
+        if target.name ~= "pipe_joint" then target.name = "pipe" end
+    end
+end
+
+function get_or_create_position(table, position)
+    if not table[position.x] then table[position.x] = {} end
+
+    if not table[position.x][position.y] then
+        table[position.x][position.y] = {}
+    end
+
+    return table[position.x][position.y]
 end
 
 function segmentate(segment, previous_split)
