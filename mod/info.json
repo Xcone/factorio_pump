@@ -9,5 +9,5 @@
     "dependencies": [
         "base >= 0.18"
     ],
-    "description": "Adds a selection-tool to select oil wells and automatically connect them with pipes."
+    "description": "P.U.M.P. (Prevent Unwanted Manual Pump-placement) adds a selection-tool with which you can select oil wells, and then plans the layout of pumpjacks and pipes for you."
 }
