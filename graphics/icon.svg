@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="Capa_1"
+   x="0px"
+   y="0px"
+   width="460.369px"
+   height="460.369px"
+   viewBox="0 0 460.369 460.369"
+   style="enable-background:new 0 0 460.369 460.369;"
+   xml:space="preserve"
+   sodipodi:docname="icon.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   inkscape:export-filename="C:\Git\factorio_pump\mod\thumbnail.png"
+   inkscape:export-xdpi="30.030001"
+   inkscape:export-ydpi="30.030001"><metadata
+   id="metadata49"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+   id="defs47" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1199"
+   inkscape:window-height="1034"
+   id="namedview45"
+   showgrid="false"
+   inkscape:zoom="1.0905292"
+   inkscape:cx="257.5884"
+   inkscape:cy="199.07"
+   inkscape:window-x="1447"
+   inkscape:window-y="312"
+   inkscape:window-maximized="0"
+   inkscape:current-layer="Capa_1" />
+<g
+   id="g12"
+   transform="matrix(1.1445584,0,0,1.1445584,-32.44693,-84.89)">
+	<path
+   d="M 145.94531,5.3457031 C 133.55081,5.2335332 112.5718,7.1100936 111.06055,10.652344 91.251544,57.039346 79.391154,115.61745 77.726562,176.5625 c -0.492,4.166 1.84761,8.15086 5.72461,9.75586 L 113.72656,191 c 3.871,1.604 5.05799,-3.32297 7.42774,-8.2207 11.35362,-26.05471 13.62619,-30.93558 23.15234,-50.95508 l 57.22852,25.22851 -1.99219,13.79493 -6.03516,41.7832 -15.96679,99.33594 h -76.3711 -47.634764 c -5.174,0 -9.36914,4.19314 -9.36914,9.36914 v 42.55078 c 0,5.174 4.19514,9.36914 9.36914,9.36914 H 414.16797 c 5.174,0 9.36914,-4.19514 9.36914,-9.36914 v -42.55078 c 0,-5.176 -4.19514,-9.36914 -9.36914,-9.36914 h -19.32422 v -6.12696 c 0,-2.587 -2.10259,-4.76244 -4.68945,-4.68554 h -21.81055 v -75.03321 l 2.28125,0.94336 c 1.174,0.485 2.38703,0.71485 3.58203,0.71485 3.676,0 7.16616,-2.17911 8.66016,-5.78711 l 13.33593,-32.20703 c 0.94901,-2.297 0.94905,-4.87588 -0.002,-7.17188 -0.951,-2.296 -2.77331,-4.11736 -5.07031,-5.06836 L 167.85547,84.611328 c 7.402,-14.116 14.05253,-28.496234 19.76953,-42.740234 1.912,-4.766 -0.36536,-10.183485 -5.10938,-12.146485 L 154.43945,6.1328125 c -1.185,-0.49125 -4.36264,-0.7497194 -8.49414,-0.7871094 z m -6.10547,16.7031249 a 11.462325,11.462325 0 0 1 11.46289,11.462891 11.462325,11.462325 0 0 1 -11.46289,11.46289 11.462325,11.462325 0 0 1 -11.46093,-11.46289 11.462325,11.462325 0 0 1 11.46093,-11.462891 z M 109.12109,132.08789 A 11.003832,11.003832 0 0 1 120.125,143.0918 11.003832,11.003832 0 0 1 109.12109,154.0957 11.003832,11.003832 0 0 1 98.117188,143.0918 11.003832,11.003832 0 0 1 109.12109,132.08789 Z m 112.00196,33.07617 18.74218,7.75977 -22.62304,19.11719 z m 49.1582,20.35352 79.32031,32.84375 v 82.79297 h -21.80859 c -2.59,0 -4.6875,2.09854 -4.6875,4.68554 v 6.12696 h -33.58985 l -15.32226,-99.33594 z m -19.96875,5.48047 6.74219,46.69531 -32.92969,-24.5625 z m -38.49023,38.58789 34.24023,25.54297 -41.76172,26.55273 z m 49.83398,39.97851 4.22461,28.17578 -48.36914,-0.10742 z"
+   transform="translate(-3.667944,87.113671)"
+   id="path10"
+   inkscape:connector-curvature="0" />
+</g>
+<g
+   id="g14">
+</g>
+<g
+   id="g16">
+</g>
+<g
+   id="g18">
+</g>
+<g
+   id="g20">
+</g>
+<g
+   id="g22">
+</g>
+<g
+   id="g24">
+</g>
+<g
+   id="g26">
+</g>
+<g
+   id="g28">
+</g>
+<g
+   id="g30">
+</g>
+<g
+   id="g32">
+</g>
+<g
+   id="g34">
+</g>
+<g
+   id="g36">
+</g>
+<g
+   id="g38">
+</g>
+<g
+   id="g40">
+</g>
+<g
+   id="g42">
+</g>
+
+</svg>
