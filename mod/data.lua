@@ -25,6 +25,7 @@ pumpSelectionTool.alt_tile_filters = pumpSelectionTool.tile_filters
 local pumpShortcut = table.deepcopy(data.raw["shortcut"]["give-blueprint"])
 pumpShortcut.name = "pump-shortcut"
 pumpShortcut.localised_name = nil
+pumpShortcut.associated_control_input = nil
 pumpShortcut.style = "default"
 pumpShortcut.icon = {
     filename = "__pump__/graphics/icons/pump_icon_32.png",
