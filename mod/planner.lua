@@ -80,6 +80,8 @@ function save_as_planner_result(construct_entities)
         end
     end
 
+    if not pumpdebug then result.pipe_joint = nil end
+
     return result
 end
 
