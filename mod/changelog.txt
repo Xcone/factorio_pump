@@ -1,0 +1,8 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2020-04-20
+
+  Features:
+    - P.U.M.P. selection tool available for the shurtcut bar.
+    - For all oil wells within a selection, ghosts for pumpjacks and the pipes connecting the pumpjacks will be placed.
+    - Underground pipes will be used as much as possible.
