@@ -9,7 +9,7 @@ Date: 2020-04-20
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.1
-Date: unreleased
+Date: 2020-04-24
 
   Fixes:
-    - Longer stretchesof pipes would not be replaced with multiple tunnels
+    - Bug when detection to place multiple underground pipes for a longer distance failed, and would instead place the remaining distance above ground.
