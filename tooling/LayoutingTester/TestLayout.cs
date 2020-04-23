@@ -177,13 +177,15 @@ namespace LayoutingTester
     public class TestLayoutCell
     {
         public string Content { get; }
+        public float X { get; }
         public float Y { get; }
 
         public string EntityToConstruct { get; private set; }
         public long EntityToConstructDirection { get; private set; } = -1;
 
-        public TestLayoutCell(string y, string content)
+        public TestLayoutCell(string x, string y, string content)
         {
+            X = float.Parse(x);
             Y = float.Parse(y);
             Content = content;
         }
@@ -229,7 +231,7 @@ namespace LayoutingTester
             return AreaFromJson
                 .Select(
                     x_reservations => new TestLayoutColumn(x_reservations.Key, x_reservations.Value
-                        .Select(y_reservation => new TestLayoutCell(y_reservation.Key, y_reservation.Value))
+                        .Select(y_reservation => new TestLayoutCell(x_reservations.Key, y_reservation.Key, y_reservation.Value))
                         .ToArray()))
                 .ToArray();
         }

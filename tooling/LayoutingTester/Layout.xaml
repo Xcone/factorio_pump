@@ -26,6 +26,13 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border BorderThickness="1" Width="15" Height="15">
+                                            <Border.ToolTip>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding X}"/>
+                                                    <TextBlock Text=","/>
+                                                    <TextBlock Text="{Binding Y}"/>
+                                                </StackPanel>
+                                            </Border.ToolTip>
                                             <Border.Style>
                                                 <Style>
                                                     <Setter Property="Border.Background" Value="Blue"></Setter>
