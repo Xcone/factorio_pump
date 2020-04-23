@@ -154,13 +154,12 @@ function try_replace_pipes_with_tunnels(construct_entities, pipe_positions)
 
     while #pipe_positions >= 2 do
         local pipe_positions_this_batch = {}
-        for i, pipe_position in pairs(pipe_positions) do
-            if #pipe_positions_this_batch < 11 then
-                table.insert(pipe_positions_this_batch, pipe_position)
-                pipe_positions[i] = nil
-            else
-                break
-            end
+        local take_until = #pipe_positions - 11
+        if take_until < 1 then take_until = 1 end
+
+        for i = #pipe_positions, take_until, -1 do
+            table.insert(pipe_positions_this_batch, pipe_positions[i])
+            pipe_positions[i] = nil
         end
 
         remove_pipes(construct_entities, pipe_positions_this_batch)
