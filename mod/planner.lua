@@ -7,34 +7,34 @@
       "oilwell": tile contains an oilwell, and the planner will attempt to put a pumpjack here.
       "reserved-for-pump": the input determined the oilwell is unobstructed and reserves the 8 tiles around it to avoid pipes being planned here.
     - area_bounds: The left_top and right_bottom of the area
-    - planner_input: Contains area and area_bounds, and is the input of the planner
-    - construct_entities: a table with the key of the entity-name that will be built. Each value is a sub-table with a position and a direction to build the entity in. The planner's goal is to populate this table using planner_input
-    - segment: A table describing how the planner_input is split into smaller chunks. Each containing:
+    - mod_context: Contains area, area_bounds and the toolbox, and is the input of the planner
+    - construct_entities: a table with the key of the entity-name that will be built. Each value is a sub-table with a position and a direction to build the entity in.
+    - segment: A table describing how the area provided by the mod_context is split into smaller chunks. Each containing:
       area: see above
       area_bounds: see above
       construct_entities: see above, only present if the planner was able to connect all pumpjacks in this segment, without subdeviding the segment further.
-      split_direction: none if the segment is not split, or split_vertical/split_horizontal if the segment is split in smaller segments
+      split_direction: 'none' if the segment is not split, or 'split_vertical'/'split_horizontal' if the segment is split in smaller segments
       sub_segment_1: a segment, only present if the segment was split
       sub_segment_2: a segment, only present if the segment was split
-      number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment
+      number_of_splits: how many times the base segment has been split into smaller segments to reach the current segment
       connectable_edges: Pipes are placed between segments. Therefor pumpjacks may connect to these edges of segments that connect to another segment
+      toolbox: initially provided via mod_context. Contains some abstract info about entities the planner needs to plan, without exposing the details of those entities
 ]] --
-function add_construction_plan(planner_input)
-    local construct_entities = make_default_construction_entities_table()
+function add_construction_plan(mod_context)
+    pump_log(mod_context.area_bounds)
+    local base_segment = create_base_segment(mod_context)
+    segmentate(base_segment, "none")
 
-    pump_log(planner_input.area_bounds)
-    convert_planner_input_to_segment(planner_input)
-    segmentate(planner_input, "none")
-
-    if not verify_all_pumps_connected(planner_input) then
+    if not verify_all_pumps_connected(base_segment) then
         return {"failure.obstructed-pipe"}
     end
 
-    construct_pipes_on_splits(planner_input, construct_entities)
-    add_construct_entities_from_segments(planner_input, construct_entities)
-    optimize_construct_entities(construct_entities, planner_input.toolbox)
+    local construct_entities = {}
+    construct_pipes_on_splits(base_segment, construct_entities)
+    add_construct_entities_from_segments(base_segment, construct_entities)
+    optimize_construct_entities(construct_entities, base_segment.toolbox)
 
-    planner_input.construction_plan = save_as_planner_result(construct_entities)
+    mod_context.construction_plan = save_as_planner_result(construct_entities)
 end
 
 function verify_all_pumps_connected(segment)
@@ -50,11 +50,20 @@ function verify_all_pumps_connected(segment)
     end
 end
 
-function convert_planner_input_to_segment(planner_input)
-    planner_input["split_direction"] = "none"
-    planner_input["connectable_edges"] =
-        {top = false, left = false, bottom = false, right = false}
-    planner_input.number_of_splits = 0
+function create_base_segment(mod_context)
+    local segment = {}
+    segment.area_bounds = mod_context.area_bounds
+    segment.area = mod_context.area
+    segment.toolbox = mod_context.toolbox
+    segment["split_direction"] = "none"
+    segment["connectable_edges"] = {
+        top = false,
+        left = false,
+        bottom = false,
+        right = false
+    }
+    segment.number_of_splits = 0
+    return segment
 end
 
 function save_as_planner_result(construct_entities)
@@ -92,8 +101,6 @@ function save_as_planner_result(construct_entities)
 
     return result
 end
-
-function make_default_construction_entities_table() return {} end
 
 function add_construct_entities_from_segments(segment, construct_entities)
     if segment.split_direction == "none" then
@@ -603,7 +610,7 @@ end
 
 function try_connect_pumps(segment)
     local oilwells = find_oilwells(segment)
-    local construct_entities = make_default_construction_entities_table()
+    local construct_entities = {}
 
     for i = 1, #oilwells do
 
