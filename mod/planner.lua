@@ -32,7 +32,7 @@ function add_construction_plan(planner_input)
 
     construct_pipes_on_splits(planner_input, construct_entities)
     add_construct_entities_from_segments(planner_input, construct_entities)
-    optimize_construct_entities(construct_entities)
+    optimize_construct_entities(construct_entities, planner_input.toolbox)
 
     planner_input.construction_plan = save_as_planner_result(construct_entities)
 end
@@ -59,26 +59,36 @@ end
 
 function save_as_planner_result(construct_entities)
     local result = {}
-    result.pipe = {}
-    result.pumpjack = {}
-    result.pipe_joint = {}
-    result["pipe-to-ground"] = {}
+    result.extractors = {}
+    result.connectors = {}
+    result.connector_joints = {}
+    result.connectors_underground = {}
 
     for x, column in pairs(construct_entities) do
         for y, construct_entity in pairs(column) do
             local target_name = construct_entity.name
-            if not pumpdebug and construct_entity.name == "pipe_joint" then
-                target_name = "pipe"
-            end
-
-            table.insert(result[target_name], {
+            local placement = {
                 position = {x = x, y = y},
                 direction = construct_entity.direction
-            })
+            }
+
+            if target_name == "pumpjack" then
+                table.insert(result.extractors, placement)
+            end
+
+            if target_name == "pipe" then
+                table.insert(result.connectors, placement)
+            end
+
+            if target_name == "pipe_joint" then
+                table.insert(result.connector_joints, placement)
+            end
+
+            if target_name == "pipe-to-ground" then
+                table.insert(result.connectors_underground, placement)
+            end
         end
     end
-
-    if not pumpdebug then result.pipe_joint = nil end
 
     return result
 end
@@ -111,7 +121,7 @@ function add_construct_entities_from_segments(segment, construct_entities)
     end
 end
 
-function optimize_construct_entities(construct_entities)
+function optimize_construct_entities(construct_entities, toolbox)
     local pipe_joint_positions = {}
     for x, column in pairs(construct_entities) do
         for y, construct_entity in pairs(column) do
@@ -135,7 +145,8 @@ function optimize_construct_entities(construct_entities)
                     remove_pipes(construct_entities, result.pipe_positions)
                 elseif result.last_hit.name == "pipe_joint" then
                     try_replace_pipes_with_tunnels(construct_entities,
-                                                   result.pipe_positions)
+                                                   result.pipe_positions,
+                                                   toolbox)
                 end
             end
         end
@@ -148,11 +159,15 @@ function remove_pipes(construct_entities, pipe_positions)
     end
 end
 
-function try_replace_pipes_with_tunnels(construct_entities, pipe_positions)
+function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
+                                        toolbox)
 
-    while #pipe_positions >= 2 do
+    local tunnel_length_min = toolbox.connector.underground_distance_min + 2
+    local tunnel_length_max = toolbox.connector.underground_distance_max + 2
+
+    while #pipe_positions >= tunnel_length_min do
         local pipe_positions_this_batch = {}
-        local take_until = #pipe_positions - 11
+        local take_until = #pipe_positions - tunnel_length_max
         if take_until < 1 then take_until = 1 end
 
         for i = #pipe_positions, take_until, -1 do
@@ -322,7 +337,8 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
         area_bounds = bounds_1,
         split_direction = "none",
         connectable_edges = table.deepcopy(segment.connectable_edges),
-        number_of_splits = segment.number_of_splits + 1
+        number_of_splits = segment.number_of_splits + 1,
+        toolbox = segment.toolbox
     }
 
     segment.sub_segment_2 = {
@@ -330,7 +346,8 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
         area_bounds = bounds_2,
         split_direction = "none",
         connectable_edges = table.deepcopy(segment.connectable_edges),
-        number_of_splits = segment.number_of_splits + 1
+        number_of_splits = segment.number_of_splits + 1,
+        toolbox = segment.toolbox
     }
 
     if split_direction == "split_horizontal" then
@@ -593,7 +610,7 @@ function try_connect_pumps(segment)
         local pumpjack_position = oilwells[i].position
         oilwells[i].construction_analysis = {}
 
-        for direction, offset in pairs(get_pump_output_offsets()) do
+        for direction, offset in pairs(segment.toolbox.extractor.output_offsets) do
             local pipe_start_position = {
                 x = pumpjack_position.x + offset.x,
                 y = pumpjack_position.y + offset.y
@@ -748,7 +765,9 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         smallest_distance_direction = defines.direction.east
     end
 
-    if smallest_distance < 9 then
+    local acceptable_distance = segment.toolbox.connector
+                                    .underground_distance_max + 2
+    if smallest_distance <= acceptable_distance then
         return {
             edge_distance = smallest_distance,
             edge_direction = smallest_distance_direction,
@@ -817,15 +836,6 @@ end
 -- including the edge itself
 function on_right_edge(position, area_bounds)
     return {x = area_bounds.right_bottom.x + 1, y = position.y}
-end
-
-function get_pump_output_offsets()
-    return {
-        [defines.direction.north] = {x = 1, y = -2},
-        [defines.direction.east] = {x = 2, y = -1},
-        [defines.direction.south] = {x = -1, y = 2},
-        [defines.direction.west] = {x = -2, y = 1}
-    }
 end
 
 function table.deepcopy(orig)

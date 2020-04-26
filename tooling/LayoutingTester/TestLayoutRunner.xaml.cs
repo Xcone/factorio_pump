@@ -30,7 +30,7 @@ namespace LayoutingTester
             InitializeComponent();
 
             watcher = new FileSystemWatcher("../../../../../mod/");
-            watcher.Filter = "planner.lua";
+            watcher.Filter = "*.lua";
             watcher.IncludeSubdirectories = false;
             watcher.Changed += Watcher_Changed;
             watcher.EnableRaisingEvents = true;

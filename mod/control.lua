@@ -1,3 +1,4 @@
+require "toolbox"
 require "prospector"
 require "planner"
 
@@ -23,12 +24,17 @@ function process_selected_area_with_this_mod(event)
     end
 
     if not mod_context.failure then
+        mod_context.failure = add_toolbox(mod_context)
+    end
+
+    if not mod_context.failure then
         mod_context.failure = add_construction_plan(mod_context)
     end
 
     if not mod_context.failure then
         mod_context.failure = construct_entities(mod_context.construction_plan,
-                                                 event.surface)
+                                                 event.surface,
+                                                 mod_context.toolbox)
     end
 
     if mod_context.failure then
@@ -71,8 +77,27 @@ function trim_event_area(event)
     event.area.right_bottom.y = event.area.right_bottom.y + padding
 end
 
-function construct_entities(construction_plan, surface)
-    for entity_name, entities_to_place in pairs(construction_plan) do
+function construct_entities(construction_plan, surface, toolbox)
+    for construction_plan_catagory_name, entities_to_place in
+        pairs(construction_plan) do
+        local entity_name = "unknown"
+
+        if construction_plan_catagory_name == "extractors" then
+            entity_name = toolbox.extractor.entity_name
+        end
+
+        if construction_plan_catagory_name == "connectors" then
+            entity_name = toolbox.connector.entity_name
+        end
+
+        if construction_plan_catagory_name == "connector_joints" then
+            entity_name = toolbox.connector.entity_name
+        end
+
+        if construction_plan_catagory_name == "connectors_underground" then
+            entity_name = toolbox.connector.underground_entity_name
+        end
+
         for i, parameters in pairs(entities_to_place) do
             surface.create_entity {
                 name = "entity-ghost",

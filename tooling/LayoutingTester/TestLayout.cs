@@ -76,23 +76,26 @@ namespace LayoutingTester
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
                 lua.DoFile("../../../../../mod/planner.lua");
+                lua.DoFile("../../../../../mod/toolbox.lua");
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
                 lua.NewTable("planner_input_stage");
-                var plannerInputTable = lua["planner_input_stage"] as LuaTable;
-                PlannerInput.AddToTable(lua, plannerInputTable);
+                var plannerInput = lua["planner_input_stage"] as LuaTable;
+                PlannerInput.AddToTable(lua, plannerInput);
+
+                var toolboxFunction = lua["add_toolbox"] as LuaFunction;
+                toolboxFunction.Call(plannerInput);
 
                 // Act
-                var plannerInput = lua["planner_input_stage"];
-                var planFunction = lua["plan"] as LuaFunction;
-                var planResult = planFunction.Call(plannerInput);
+                var planFunction = lua["add_construction_plan"] as LuaFunction;
+                planFunction.Call(plannerInput);
 
                 // Extract result
-                var constructEntities = planResult.First() as LuaTable;
-                var pumpjacks = constructEntities["pumpjack"] as LuaTable;
-                var pipes = constructEntities["pipe"] as LuaTable;
-                var pipeJoints = constructEntities["pipe_joint"] as LuaTable;
-                var pipesToGround = constructEntities["pipe-to-ground"] as LuaTable;
+                var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
+                var pumpjacks = constructEntities["extractors"] as LuaTable;
+                var pipes = constructEntities["connectors"] as LuaTable;
+                var pipeJoints = constructEntities["connector_joints"] as LuaTable;
+                var pipesToGround = constructEntities["connectors_underground"] as LuaTable;
 
                 foreach (LuaTable pumpjack in pumpjacks.Values)
                 {
