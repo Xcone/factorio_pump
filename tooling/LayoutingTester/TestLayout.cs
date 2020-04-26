@@ -88,11 +88,17 @@ namespace LayoutingTester
 
                 // Act
                 var planFunction = lua["add_construction_plan"] as LuaFunction;
-                planFunction.Call(plannerInput);
+                var failure = planFunction.Call(plannerInput)?.First();
 
                 // Extract result
+                if (failure != null)
+                {
+                    Print(failure);
+                }
+
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 var pumpjacks = constructEntities["extractors"] as LuaTable;
+                var outputs = constructEntities["outputs"] as LuaTable;
                 var pipes = constructEntities["connectors"] as LuaTable;
                 var pipeJoints = constructEntities["connector_joints"] as LuaTable;
                 var pipesToGround = constructEntities["connectors_underground"] as LuaTable;
@@ -100,6 +106,11 @@ namespace LayoutingTester
                 foreach (LuaTable pumpjack in pumpjacks.Values)
                 {
                     AddConstructEntity("pumpjack", pumpjack);
+                }
+
+                foreach (LuaTable output in outputs.Values)
+                {
+                    AddConstructEntity("output", output);
                 }
 
                 foreach (LuaTable pipe in pipes.Values)
@@ -204,13 +215,17 @@ namespace LayoutingTester
             {
                 EntityToConstruct = "+";
             }
+            else if (name == "output")
+            {
+                EntityToConstruct = "o";
+            }
             else if (name == "pumpjack")
             {
                 EntityToConstruct = "p";
             }
             else if (name == "pipe_joint")
             {
-                EntityToConstruct = "o";
+                EntityToConstruct = "x";
             }
             else if (name == "pipe-to-ground")
             {

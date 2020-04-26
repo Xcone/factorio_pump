@@ -86,6 +86,10 @@ function construct_entities(construction_plan, surface, toolbox)
             entity_name = toolbox.extractor.entity_name
         end
 
+        if construction_plan_catagory_name == "outputs" then
+            entity_name = toolbox.connector.entity_name
+        end
+
         if construction_plan_catagory_name == "connectors" then
             entity_name = toolbox.connector.entity_name
         end

@@ -20,5 +20,35 @@ function add_toolbox(target)
         underground_distance_max = 9
     }
 
+    toolbox.directions = {
+        [defines.direction.north] = {
+            position = {x = 0, y = -1},
+            next = defines.direction.east,
+            previous = defines.direction.west,
+            opposite = defines.direction.south
+        },
+
+        [defines.direction.east] = {
+            position = {x = 1, y = 0},
+            next = defines.direction.south,
+            previous = defines.direction.north,
+            opposite = defines.direction.west
+        },
+
+        [defines.direction.south] = {
+            position = {x = 0, y = 1},
+            next = defines.direction.west,
+            previous = defines.direction.east,
+            opposite = defines.direction.north
+        },
+
+        [defines.direction.west] = {
+            position = {x = -1, y = 0},
+            next = defines.direction.north,
+            previous = defines.direction.south,
+            opposite = defines.direction.east
+        }
+    }
+
     target.toolbox = toolbox
 end
