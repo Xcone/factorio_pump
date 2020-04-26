@@ -19,7 +19,7 @@
       number_of_splits: how many times the planner_input has been split into smaller segments to reach the current segment
       connectable_edges: Pipes are placed between segments. Therefor pumpjacks may connect to these edges of segments that connect to another segment
 ]] --
-function plan(planner_input)
+function add_construction_plan(planner_input)
     local construct_entities = make_default_construction_entities_table()
 
     pump_log(planner_input.area_bounds)
@@ -27,15 +27,14 @@ function plan(planner_input)
     segmentate(planner_input, "none")
 
     if not verify_all_pumps_connected(planner_input) then
-        planner_input.failure = {"failure.obstructed-pipe"}
-        return
+        return {"failure.obstructed-pipe"}
     end
 
     construct_pipes_on_splits(planner_input, construct_entities)
     add_construct_entities_from_segments(planner_input, construct_entities)
     optimize_construct_entities(construct_entities)
 
-    return save_as_planner_result(construct_entities)
+    planner_input.construction_plan = save_as_planner_result(construct_entities)
 end
 
 function verify_all_pumps_connected(segment)

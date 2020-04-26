@@ -8,49 +8,40 @@ script.on_event({defines.events.on_player_selected_area}, function(event)
 end)
 
 function process_selected_area_with_this_mod(event)
-    local player = game.get_player(event.player_index)
+    local mod_context = {failure = nil}
 
-    if #event.entities == 0 then
-        player.print({"failure.missing-resource"})
-        return
+    if not mod_context.failure then
+        mod_context.failure = trim_event_area(event)
     end
 
-    trim_event_area(event)
-
-    if pipes_present_in_area(event.surface, event.area) then
-        player.print({"failure.other-pipes-nearby"})
-        return
+    if not mod_context.failure then
+        mod_context.failure = pipes_present_in_area(event.surface, event.area)
     end
 
-    local planner_input = prepare_planner_input(event)
-    dump_to_file(planner_input, "planner_input")
-    if planner_input.failure then
-        player.print(planner_input.failure)
-        return
+    if not mod_context.failure then
+        mod_context.failure = add_area_information(event, mod_context)
     end
 
-    local construct_entities = plan(planner_input)
-    if planner_input.failure then
-        player.print(planner_input.failure)
-        return
+    if not mod_context.failure then
+        mod_context.failure = add_construction_plan(mod_context)
     end
 
-    dump_to_file(construct_entities, "construct_entities")
-
-    for entity_name, entities_to_place in pairs(construct_entities) do
-        for i, parameters in pairs(entities_to_place) do
-            event.surface.create_entity {
-                name = "entity-ghost",
-                inner_name = entity_name,
-                position = parameters.position,
-                direction = parameters.direction,
-                force = "player"
-            }
-        end
+    if not mod_context.failure then
+        mod_context.failure = construct_entities(mod_context.construction_plan,
+                                                 event.surface)
     end
+
+    if mod_context.failure then
+        local player = game.get_player(event.player_index)
+        player.print(mod_context.failure)
+    end
+
+    dump_to_file(mod_context, "planner_input")
 end
 
 function trim_event_area(event)
+    if #event.entities == 0 then return {"failure.missing-resource"} end
+
     local uninitialized = true
 
     for i, entity in pairs(event.entities) do
@@ -78,6 +69,20 @@ function trim_event_area(event)
     event.area.left_top.y = event.area.left_top.y - padding
     event.area.right_bottom.x = event.area.right_bottom.x + padding
     event.area.right_bottom.y = event.area.right_bottom.y + padding
+end
+
+function construct_entities(construction_plan, surface)
+    for entity_name, entities_to_place in pairs(construction_plan) do
+        for i, parameters in pairs(entities_to_place) do
+            surface.create_entity {
+                name = "entity-ghost",
+                inner_name = entity_name,
+                position = parameters.position,
+                direction = parameters.direction,
+                force = "player"
+            }
+        end
+    end
 end
 
 function dump_to_file(table_to_write, description)

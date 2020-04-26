@@ -1,8 +1,6 @@
-function prepare_planner_input(event)
-    local planner_input = {area = {}}
-
+function add_area_information(event, planner_input)
+    planner_input.area = {}
     planner_input.area_bounds = event.area
-    planner_input.failure = nil
 
     -- fill the map with default data 
     for x = event.area.left_top.x, event.area.right_bottom.x, 1 do
@@ -35,9 +33,7 @@ function prepare_planner_input(event)
             planner_input.area[entity.position.x + 1][entity.position.y + 1] =
                 "reserved-for-pump"
         else
-            planner_input.failure = {"failure.obstructed-oil-well"}
-
-            return planner_input
+            return {"failure.obstructed-oil-well"}
         end
     end
 
@@ -52,8 +48,6 @@ function prepare_planner_input(event)
             end
         end
     end
-
-    return planner_input
 end
 
 function pipes_present_in_area(surface, area)
@@ -77,7 +71,9 @@ function pipes_present_in_area(surface, area)
         ghost_name = {"pipe", "pipe-to-ground"}
     }
 
-    return #found_pipes > 0 or #found_ghosts_of_pipes > 0
+    if #found_pipes > 0 or #found_ghosts_of_pipes > 0 then
+        return {"failure.other-pipes-nearby"}
+    end
 end
 
 function can_place_pumpjack(surface, position, direction)
