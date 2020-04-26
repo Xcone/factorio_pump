@@ -27,8 +27,7 @@ function plan(planner_input)
     segmentate(planner_input, "none")
 
     if not verify_all_pumps_connected(planner_input) then
-        planner_input.failure =
-            "P.U.M.P. was unable to connect all oil wells in the selected area. There might be obstructions (like trees or water) preventing the layout to complete, or the routine of P.U.M.P. can not handle the way these oil wells are layed out."
+        planner_input.failure = {"failure.obstructed-pipe"}
         return
     end
 

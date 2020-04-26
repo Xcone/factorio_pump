@@ -35,8 +35,7 @@ function prepare_planner_input(event)
             planner_input.area[entity.position.x + 1][entity.position.y + 1] =
                 "reserved-for-pump"
         else
-            planner_input.failure =
-                "P.U.M.P. encountered one or more obstructed oil wells. Clear the area first."
+            planner_input.failure = {"failure.obstructed-oil-well"}
 
             return planner_input
         end

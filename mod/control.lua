@@ -11,16 +11,14 @@ function process_selected_area_with_this_mod(event)
     local player = game.get_player(event.player_index)
 
     if #event.entities == 0 then
-        player.print(
-            "P.U.M.P. cannot place pumpjacks, because there are no oil wells found in selected area.")
+        player.print({"failure.missing-resource"})
         return
     end
 
     trim_event_area(event)
 
     if pipes_present_in_area(event.surface, event.area) then
-        player.print(
-            "P.U.M.P. cannot safely place pumpjacks and pipes, because there are other pipes present within the selected area.")
+        player.print({"failure.other-pipes-nearby"})
         return
     end
 
