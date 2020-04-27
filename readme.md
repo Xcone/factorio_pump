@@ -7,6 +7,8 @@ Fluids and pipes are fun and all. But the more complex layout can be blueprinted
 
 P.U.M.P. (Prevent Unwanted Manual Pump-placement) adds a selection-tool with which you can select oil wells, and then plans the layout of pumpjacks and pipes for you.
 
+![](graphics/demo.gif)
+
 ## Alternative
 I started this mod, because I thought this piece of tooling didn't exist. After release I learned I was beaten to it by [WellPlanner](https://mods.factorio.com/mod/WellPlanner), which released 2 months or so before mine. The WellPlanner mod is actually more feature complete. The primary difference between WellPlanner and P.U.M.P. is how to start the planner. P.U.M.P. uses a button on the shortcut bar, and WellPlanner uses a craftable planner, similar to a blueprint.
 
@@ -28,4 +30,4 @@ A list of things I may want to add to the mod:
   - Underground pipe distance  
 - Support for Krastorio 2 [per request](https://mods.factorio.com/mod/pump/discussion/5ea215c45e07f1000cea5281).
 - Fallback-routine to connect pumpjacks in another (more curvey) way, if P.U.M.P. was unable to do so with the straight segment splits.
-- Eliminate the mandatory pipe segment on the pumpjack's output if an underground pipe is put straight await from it.
+- Support undo
