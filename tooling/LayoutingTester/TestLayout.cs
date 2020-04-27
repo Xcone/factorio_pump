@@ -75,10 +75,12 @@ namespace LayoutingTester
                 // Arrange
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
-                lua.DoFile("../../../../../mod/planner.lua");
-                lua.DoFile("../../../../../mod/toolbox.lua");
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
+                lua.DoFile("../../../../../mod/planner.lua");
+                lua.DoFile("../../../../../mod/helpers.lua");
+                lua.DoFile("../../../../../mod/toolbox.lua");
+
                 lua.NewTable("planner_input_stage");
                 var plannerInput = lua["planner_input_stage"] as LuaTable;
                 PlannerInput.AddToTable(lua, plannerInput);

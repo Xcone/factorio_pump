@@ -129,7 +129,7 @@ function optimize_construct_entities(construct_entities, toolbox)
 
     for x, column in pairs(pipe_joint_positions) do
         for y, pipe_joint in pairs(column) do
-            for direction, toolbox_direction in pairs(toolbox.directions) do
+            for direction, toolbox_direction in pairs(helpers.directions) do
                 local result = take_series_of_pipes(construct_entities,
                                                     {x = x, y = y},
                                                     toolbox_direction.position)
@@ -156,10 +156,10 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
 
     for x, column in pairs(output_positions) do
         for y, output in pairs(column) do
-            local flank_direction = toolbox.directions[output.direction].next
-            local flank_position = translate_position({x = x, y = y},
-                                                      toolbox.directions[flank_direction]
-                                                          .position)
+            local flank_direction = helpers.directions[output.direction].next
+            local flank_position = helpers.position.offset({x = x, y = y},
+                                                           helpers.directions[flank_direction]
+                                                               .position)
 
             local entity_on_flank = nil
             if construct_entities[flank_position.x] ~= nil then
@@ -167,11 +167,11 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
                     construct_entities[flank_position.x][flank_position.y]
 
                 if entity_on_flank == nil then
-                    flank_direction = toolbox.directions[output.direction]
+                    flank_direction = helpers.directions[output.direction]
                                           .previous
-                    flank_position = translate_position({x = x, y = y},
-                                                        toolbox.directions[flank_direction]
-                                                            .position)
+                    flank_position = helpers.position.offset({x = x, y = y},
+                                                             helpers.directions[flank_direction]
+                                                                 .position)
 
                     if construct_entities[flank_position.x] ~= nil then
                         entity_on_flank =
@@ -185,10 +185,6 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
             end
         end
     end
-end
-
-function translate_position(position, by)
-    return {x = position.x + by.x, y = position.y + by.y}
 end
 
 function find_in_construct_entities(construct_entities, search_for_name)
@@ -377,32 +373,21 @@ function segmentate(segment, previous_split)
     end
 
     if next_split == "split_horizontal" then
-        local split_result = find_split_horizontal(segment)
-        if split_result.found_split then
-            local top_bounds = {
-                left_top = {x = left, y = top},
-                right_bottom = {x = right, y = split_result.value - 1}
-            }
-            local bottom_bounds = {
-                left_top = {x = left, y = split_result.value + 1},
-                right_bottom = {x = right, y = bottom}
-            }
-
-            split_segment(segment, top_bounds, bottom_bounds, next_split)
+        local split_result = find_split(segment, defines.direction.east)
+        if split_result.unobstructed_slice then
+            local split = helpers.bounding_box.split(segment.area_bounds,
+                                                     split_result.unobstructed_slice)
+            split_segment(segment, split.sub_bounds_1, split.sub_bounds_2,
+                          next_split)
         end
     elseif next_split == "split_vertical" then
-        local split_result = find_split_vertical(segment)
-        if split_result.found_split then
-            local left_bounds = {
-                left_top = {x = left, y = top},
-                right_bottom = {x = split_result.value - 1, y = bottom}
-            }
-            local right_bounds = {
-                left_top = {x = split_result.value + 1, y = top},
-                right_bottom = {x = right, y = bottom}
-            }
+        local split_result = find_split(segment, defines.direction.south)
+        if split_result.unobstructed_slice then
+            local split = helpers.bounding_box.split(segment.area_bounds,
+                                                     split_result.unobstructed_slice)
 
-            split_segment(segment, left_bounds, right_bounds, next_split)
+            split_segment(segment, split.sub_bounds_1, split.sub_bounds_2,
+                          next_split)
         end
     end
 end
@@ -463,162 +448,82 @@ function make_sub_area(area, bounds)
     return result
 end
 
--- Look top to bottom, to find an all-clear from left to right
-function find_split_horizontal(segment)
-    local top = segment.area_bounds.left_top.y;
-    local bottom = segment.area_bounds.right_bottom.y;
-    local left = segment.area_bounds.left_top.x;
-    local right = segment.area_bounds.right_bottom.x;
-
-    local middle = get_middle(top, bottom)
-
-    offset = 0
-
-    local result_a = {
-        found_split = false,
-        value = middle,
-        query_value = middle,
-        found_obstruction = false
-    }
-    local result_b = {
-        found_split = false,
-        value = middle,
-        query_value = middle,
-        found_obstruction = false
-    }
-
-    while result_a.query_value > top and result_b.query_value < bottom do
-
-        if area_contains_obstruction(segment.area,
-                                     {x = left, y = result_a.query_value},
-                                     {x = right, y = result_a.query_value}) then
-            result_a.found_obstruction = true
-        else
-            result_a.value = result_a.query_value
-            result_a.found_split = true
-        end
-
-        if result_a.found_split and result_a.found_obstruction then
-            return result_a
-        else
-            result_a.query_value = result_a.query_value - 1
-        end
-
-        if area_contains_obstruction(segment.area,
-                                     {x = left, y = result_b.query_value},
-                                     {x = right, y = result_b.query_value}) then
-            result_b.found_obstruction = true
-        else
-            result_b.value = result_b.query_value
-            result_b.found_split = true
-        end
-
-        if result_b.found_split and result_b.found_obstruction then
-            return result_b
-        else
-            result_b.query_value = result_b.query_value + 1
-        end
-    end
-
-    pump_log({
-        could_not_split_hotizontal = {
-            level = segment.number_of_splits,
-            bounds = segment.area_bounds,
-            result_a = result_a,
-            result_b = result_b
-        }
-    })
-
-    return {found_split = false, value = middle}
-end
-
 -- Look left to right, to find an all-clear from top to bottom
-function find_split_vertical(segment)
-    local top = segment.area_bounds.left_top.y;
-    local bottom = segment.area_bounds.right_bottom.y;
-    local left = segment.area_bounds.left_top.x;
-    local right = segment.area_bounds.right_bottom.x;
+function find_split(segment, direction)
+    local sideways = helpers.directions[direction].next
 
-    local middle = get_middle(left, right)
+    -- Get a 1-wide slice of the area on the side of the area
+    local slice = helpers.bounding_box.copy(segment.area_bounds)
+    helpers.bounding_box.squash(slice, sideways)
 
-    offset = 0
+    -- Prepare 2 slices to scan for obstructions. Start in the middle, and work outwards. 1 slice in each direction
+    local number_of_slices = helpers.bounding_box.get_size(segment.area_bounds,
+                                                           sideways)
 
-    local result_a = {
-        found_split = false,
-        value = middle,
-        query_value = middle,
+    local middle = math.ceil(number_of_slices / 2)
+    helpers.bounding_box.translate(slice, sideways, -middle)
+    local opposite_slice = helpers.bounding_box.copy(slice)
+
+    local is_even_number_of_slices = number_of_slices % 2 == 0
+    if is_even_number_of_slices then
+        -- if number_of_slices is 8, both slices are now at 5. Translate opposite_slice 1 more to be at 4
+        helpers.bounding_box.translate(opposite_slice, sideways, -1)
+    end
+
+    -- Both slices are in the correct position now. Move slices outwards and look for obstructions.    
+    -- Keep looking until there's actually an obstruction, that way the split will happen tightly next to an extractor
+    local slice_result = {unobstructed_slice = nil, found_obstruction = false}
+    local opposite_slice_result = {
+        unobstructed_slice = nil,
         found_obstruction = false
     }
-    local result_b = {
-        found_split = false,
-        value = middle,
-        query_value = middle,
-        found_obstruction = false
-    }
 
-    while result_a.query_value > left and result_b.query_value < right do
-
-        if area_contains_obstruction(segment.area,
-                                     {x = result_a.query_value, y = top},
-                                     {x = result_a.query_value, y = bottom}) then
-            result_a.found_obstruction = true
+    local count = 0
+    while count <= middle do
+        if area_contains_obstruction(segment.area, slice) then
+            slice_result.found_obstruction = true
         else
-            result_a.value = result_a.query_value
-            result_a.found_split = true
+            slice_result.unobstructed_slice = helpers.bounding_box.copy(slice)
         end
 
-        if result_a.found_split and result_a.found_obstruction then
-            return result_a
-        else
-            result_a.query_value = result_a.query_value - 1
+        if slice_result.unobstructed_slice and slice_result.found_obstruction then
+            return slice_result
         end
 
-        if area_contains_obstruction(segment.area,
-                                     {x = result_b.query_value, y = top},
-                                     {x = result_b.query_value, y = bottom}) then
-            result_b.found_obstruction = true
+        if area_contains_obstruction(segment.area, opposite_slice) then
+            opposite_slice_result.found_obstruction = true
         else
-            result_b.value = result_b.query_value
-            result_b.found_split = true
+            opposite_slice_result.unobstructed_slice =
+                helpers.bounding_box.copy(opposite_slice)
         end
 
-        if result_b.found_split and result_b.found_obstruction then
-            return result_b
-        else
-            result_b.query_value = result_b.query_value + 1
+        if opposite_slice_result.unobstructed_slice and
+            opposite_slice_result.found_obstruction then
+            return opposite_slice_result
         end
+
+        helpers.bounding_box.translate(slice, sideways, 1)
+        helpers.bounding_box.translate(opposite_slice, sideways, -1)
+        count = count + 1
     end
 
     pump_log({
-        could_not_split_vertical = {
+        could_not_split = {
             level = segment.number_of_splits,
             bounds = segment.area_bounds,
-            result_a = result_a,
-            result_b = result_b
+            slice_result = slice_result,
+            opposite_slice_result = opposite_slice_result,
+            slice = slice,
+            opposite_slice = opposite_slice
         }
     })
 
     return {found_split = false, value = middle}
 end
 
-function get_middle(min, max)
-    local middle_unrounded = min + ((max - min) / 2)
-    local middle_rounded = min
-
-    for i = min, max do
-        if i < middle_unrounded then
-            middle_rounded = i
-        else
-            break
-        end
-    end
-
-    return middle_rounded
-end
-
-function area_contains_obstruction(area, left_top, right_bottom)
-    for x = left_top.x, right_bottom.x, 1 do
-        for y = left_top.y, right_bottom.y, 1 do
+function area_contains_obstruction(area, bounds)
+    for x = bounds.left_top.x, bounds.right_bottom.x, 1 do
+        for y = bounds.left_top.y, bounds.right_bottom.y, 1 do
             if area[x][y] ~= "can-build" then return true end
         end
     end
@@ -791,7 +696,8 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local lt = to_top_edge(pipe_start_position, segment.area_bounds)
         local rb = pipe_start_position
 
-        if not area_contains_obstruction(segment.area, lt, rb) then
+        if not area_contains_obstruction(segment.area,
+                                         helpers.bounding_box.create(lt, rb)) then
             distance_to_top = rb.y - lt.y + 1
         end
     end
@@ -804,7 +710,8 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local lt = to_left_edge(pipe_start_position, segment.area_bounds)
         local rb = pipe_start_position
 
-        if not area_contains_obstruction(segment.area, lt, rb) then
+        if not area_contains_obstruction(segment.area,
+                                         helpers.bounding_box.create(lt, rb)) then
             distance_to_left = rb.x - lt.x + 1
         end
     end
@@ -817,7 +724,8 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local lt = pipe_start_position
         local rb = to_bottom_edge(pipe_start_position, segment.area_bounds)
 
-        if not area_contains_obstruction(segment.area, lt, rb) then
+        if not area_contains_obstruction(segment.area,
+                                         helpers.bounding_box.create(lt, rb)) then
             distance_to_bottom = rb.y - lt.y + 1
         end
     end
@@ -830,7 +738,8 @@ function get_best_pipe_placement_to_edge(segment, pipe_start_position)
         local lt = pipe_start_position
         local rb = to_right_edge(pipe_start_position, segment.area_bounds)
 
-        if not area_contains_obstruction(segment.area, lt, rb) then
+        if not area_contains_obstruction(segment.area,
+                                         helpers.bounding_box.create(lt, rb)) then
             distance_to_right = rb.x - lt.x + 1
         end
     end

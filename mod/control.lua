@@ -1,6 +1,7 @@
 require "toolbox"
 require "prospector"
 require "planner"
+require 'helpers'
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
