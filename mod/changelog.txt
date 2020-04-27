@@ -12,6 +12,6 @@ Date: 2020-04-24
     - Bug when detection to place multiple underground pipes for a longer distance failed, and would instead place the remaining distance above ground.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.2
-Date: unreleased
+Date: 2020-04-27
   Changes:
     - Start underground pipe directly from pump output when possible
