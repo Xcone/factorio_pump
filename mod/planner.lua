@@ -233,7 +233,7 @@ function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
                                         toolbox)
 
     local tunnel_length_min = toolbox.connector.underground_distance_min + 2
-    local tunnel_length_max = toolbox.connector.underground_distance_max + 2
+    local tunnel_length_max = toolbox.connector.underground_distance_max + 1
 
     while #pipe_positions >= tunnel_length_min do
         local pipe_positions_this_batch = {}
@@ -250,7 +250,7 @@ function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
         local first_pipe = pipe_positions_this_batch[1]
         local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
 
-        add_pipe_to_ground(construct_entities, first_pipe, last_pipe)
+        add_pipe_to_ground(construct_entities, first_pipe, last_pipe, toolbox)
     end
 end
 
@@ -306,11 +306,16 @@ function add_output(construct_entities, position, direction)
     target.direction = direction
 end
 
-function add_pipe_to_ground(construct_entities, start_position, end_position)
+function add_pipe_to_ground(construct_entities, start_position, end_position,
+                            toolbox)
     local start_direction
     local end_direction
+    local diff = 100
 
     if start_position.x == end_position.x then
+
+        diff = start_position.y - end_position.y
+
         if start_position.y < end_position.y then
             end_direction = defines.direction.south
             start_direction = defines.direction.north
@@ -319,6 +324,8 @@ function add_pipe_to_ground(construct_entities, start_position, end_position)
             end_direction = defines.direction.north
         end
     else
+        diff = start_position.x - end_position.x
+
         if start_position.x < end_position.x then
             start_direction = defines.direction.west
             end_direction = defines.direction.east
@@ -326,6 +333,25 @@ function add_pipe_to_ground(construct_entities, start_position, end_position)
             start_direction = defines.direction.east
             end_direction = defines.direction.west
         end
+    end
+
+    diff = math.abs(diff)
+    -- rationale: distance measurement is zero-based. So if the underground distance=3, the difference should be
+    -- max 4 (and not 5! as with reported bug), to account underground entrances. Schematically:
+    -- 
+    --   \ _ _ _ /
+    -- x=0 1 2 3 4
+    --
+    -- Therefor: 4-0 = 4, and not 5 as was assumed when the bug occurred
+    if diff > toolbox.connector.underground_distance_max + 1 then
+        error("Underground distance too far")
+
+        -- it also has to be far enough apart to be able to place the entrance and the exit
+        --
+        --   \ /
+        -- x=0 1
+    elseif diff == 0 then
+        error("Underground exit and entrance on same position ")
     end
 
     local start_pipe =
