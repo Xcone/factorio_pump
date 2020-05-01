@@ -28,6 +28,5 @@ A list of things I may want to add to the mod:
   - Pumpjack size
   - Pumpjack pipe output locations
   - Underground pipe distance  
-- Support for Krastorio 2 [per request](https://mods.factorio.com/mod/pump/discussion/5ea215c45e07f1000cea5281).
 - Fallback-routine to connect pumpjacks in another (more curvey) way, if P.U.M.P. was unable to do so with the straight segment splits.
 - Support undo

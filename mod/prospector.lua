@@ -1,49 +1,49 @@
-function add_area_information(event, planner_input)
-    planner_input.area = {}
-    planner_input.area_bounds = event.area
+function add_area_information(event, mod_context)
+    mod_context.area = {}
+    mod_context.area_bounds = event.area
 
     -- fill the map with default data 
     for x = event.area.left_top.x, event.area.right_bottom.x, 1 do
-        planner_input.area[x] = {}
+        mod_context.area[x] = {}
         for y = event.area.left_top.y, event.area.right_bottom.y, 1 do
-            planner_input.area[x][y] = "undefined"
+            mod_context.area[x][y] = "undefined"
         end
     end
 
     -- mark where the pumps will be
     for i, entity in pairs(event.entities) do
         local direction = defines.direction.east
-        if can_place_pumpjack(event.surface, entity.position, direction) then
-            planner_input.area[entity.position.x][entity.position.y] =
-                "oil-well"
-            planner_input.area[entity.position.x - 1][entity.position.y - 1] =
+        if can_place_extractor(event.surface, entity.position, direction,
+                               mod_context.toolbox) then
+            mod_context.area[entity.position.x][entity.position.y] = "oil-well"
+            mod_context.area[entity.position.x - 1][entity.position.y - 1] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x - 1][entity.position.y] =
+            mod_context.area[entity.position.x - 1][entity.position.y] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x - 1][entity.position.y + 1] =
+            mod_context.area[entity.position.x - 1][entity.position.y + 1] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x][entity.position.y - 1] =
+            mod_context.area[entity.position.x][entity.position.y - 1] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x][entity.position.y + 1] =
+            mod_context.area[entity.position.x][entity.position.y + 1] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x + 1][entity.position.y - 1] =
+            mod_context.area[entity.position.x + 1][entity.position.y - 1] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x + 1][entity.position.y] =
+            mod_context.area[entity.position.x + 1][entity.position.y] =
                 "reserved-for-pump"
-            planner_input.area[entity.position.x + 1][entity.position.y + 1] =
+            mod_context.area[entity.position.x + 1][entity.position.y + 1] =
                 "reserved-for-pump"
         else
-            return {"failure.obstructed-oil-well"}
+            return {"failure.obstructed-resource"}
         end
     end
 
-    for x, reservations in pairs(planner_input.area) do
+    for x, reservations in pairs(mod_context.area) do
         for y, reservation in pairs(reservations) do
             if reservation == "undefined" then
                 if can_place_pipe(event.surface, {x = x, y = y}) then
-                    planner_input.area[x][y] = "can-build"
+                    mod_context.area[x][y] = "can-build"
                 else
-                    planner_input.area[x][y] = "can-not-build"
+                    mod_context.area[x][y] = "can-not-build"
                 end
             end
         end
@@ -76,9 +76,9 @@ function pipes_present_in_area(surface, area)
     end
 end
 
-function can_place_pumpjack(surface, position, direction)
+function can_place_extractor(surface, position, direction, toolbox)
     return surface.can_place_entity({
-        name = "pumpjack",
+        name = toolbox.extractor.entity_name,
         position = position,
         direction = direction,
         force = "player",

@@ -85,7 +85,7 @@ namespace LayoutingTester
                 var plannerInput = lua["planner_input_stage"] as LuaTable;
                 PlannerInput.AddToTable(lua, plannerInput);
 
-                var toolboxFunction = lua["add_toolbox"] as LuaFunction;
+                var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
                 toolboxFunction.Call(plannerInput);
 
                 // Act

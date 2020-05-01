@@ -13,6 +13,10 @@ function process_selected_area_with_this_mod(event)
     local mod_context = {failure = nil}
 
     if not mod_context.failure then
+        mod_context.failure = select_tools_for_resource(event, mod_context)
+    end
+
+    if not mod_context.failure then
         mod_context.failure = trim_event_area(event)
     end
 
@@ -22,10 +26,6 @@ function process_selected_area_with_this_mod(event)
 
     if not mod_context.failure then
         mod_context.failure = add_area_information(event, mod_context)
-    end
-
-    if not mod_context.failure then
-        mod_context.failure = add_toolbox(mod_context)
     end
 
     if not mod_context.failure then
@@ -46,9 +46,25 @@ function process_selected_area_with_this_mod(event)
     dump_to_file(mod_context, "planner_input")
 end
 
-function trim_event_area(event)
+function select_tools_for_resource(event, mod_context)
     if #event.entities == 0 then return {"failure.missing-resource"} end
 
+    local first_entity = nil
+
+    for i, entity in pairs(event.entities) do
+        if first_entity == nil then
+            first_entity = entity
+        else
+            if entity.name ~= first_entity.name then
+                return {"failure.mixed-resources"}
+            end
+        end
+    end
+
+    add_toolbox(mod_context, first_entity.prototype.resource_category)
+end
+
+function trim_event_area(event)
     local uninitialized = true
 
     for i, entity in pairs(event.entities) do
