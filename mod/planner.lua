@@ -393,9 +393,9 @@ function segmentate(segment, previous_split)
     end
 
     if previous_split == "split_vertical" then
-        if size_vertical > 10 then next_split = "split_horizontal" end
+        next_split = "split_horizontal"
     elseif previous_split == "split_horizontal" then
-        if size_horizontal > 10 then next_split = "split_vertical" end
+        next_split = "split_vertical"
     end
 
     if next_split == "split_horizontal" then
