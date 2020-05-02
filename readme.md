@@ -25,8 +25,7 @@ A list of things I may want to add to the mod:
 - Add a setting to set a minimum distance to use underground pipe. Currently it is set to 2, but that just waste of materials in some cases. This should include the possibility to not use underground pipes at all.
 - Add a (configurable) shortcut key
 - Less hardcoded values
-  - Pumpjack size
-  - Pumpjack pipe output locations
+  - Pumpjack size  
   - Underground pipe distance  
 - Fallback-routine to connect pumpjacks in another (more curvey) way, if P.U.M.P. was unable to do so with the straight segment splits.
 - Support undo
