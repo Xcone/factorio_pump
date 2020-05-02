@@ -8,6 +8,10 @@ function add_development_toolbox(target)
             [defines.direction.east] = {x = 2, y = -1},
             [defines.direction.south] = {x = -1, y = 2},
             [defines.direction.west] = {x = -2, y = 1}
+        },
+        relative_bounds = {
+            left_top = {x = -1, y = -1},
+            right_bottom = {x = 1, y = 1}
         }
     }
 
@@ -33,21 +37,50 @@ function add_toolbox(target, resource_category)
         end
     end
 
+    if #suitable_extractors == 0 then
+        return {"failure.no-suitable-extractor", resource_category}
+    end
+
     for _, extractor in pairs(suitable_extractors) do
         local cardinal_output_positions =
             extractor.fluidbox_prototypes[1].pipe_connections[1].positions
 
-        toolbox.extractor = {
-            entity_name = extractor.name,
-            output_offsets = {
-                [defines.direction.north] = cardinal_output_positions[1],
-                [defines.direction.east] = cardinal_output_positions[2],
-                [defines.direction.south] = cardinal_output_positions[3],
-                [defines.direction.west] = cardinal_output_positions[4]
+        local output_offsets = {
+            [defines.direction.north] = cardinal_output_positions[1],
+            [defines.direction.east] = cardinal_output_positions[2],
+            [defines.direction.south] = cardinal_output_positions[3],
+            [defines.direction.west] = cardinal_output_positions[4]
+        }
+
+        local relative_bounds = {
+            left_top = {
+                x = output_offsets[defines.direction.west].x + 1,
+                y = output_offsets[defines.direction.north].y + 1
+            },
+            right_bottom = {
+                x = output_offsets[defines.direction.east].x - 1,
+                y = output_offsets[defines.direction.south].y - 1
             }
         }
 
-        break
+        local width = relative_bounds.right_bottom.x -
+                          relative_bounds.left_top.x
+        local height = relative_bounds.right_bottom.y -
+                           relative_bounds.left_top.y
+        if width == height then
+
+            toolbox.extractor = {
+                entity_name = extractor.name,
+                output_offsets = output_offsets,
+                relative_bounds = relative_bounds
+            }
+
+            break
+        end
+    end
+
+    if toolbox.extractor == nil then
+        return {"failure.extractor-must-be-square", resource_category}
     end
 
     toolbox.connector = {

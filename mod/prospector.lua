@@ -15,23 +15,19 @@ function add_area_information(event, mod_context)
         local direction = defines.direction.east
         if can_place_extractor(event.surface, entity.position, direction,
                                mod_context.toolbox) then
+
+            local relative_bounds = mod_context.toolbox.extractor
+                                        .relative_bounds
+
+            for x = relative_bounds.left_top.x, relative_bounds.right_bottom.x do
+                for y = relative_bounds.left_top.y, relative_bounds.right_bottom
+                    .y do
+
+                    mod_context.area[entity.position.x + x][entity.position.y +
+                        y] = "reserved-for-pump"
+                end
+            end
             mod_context.area[entity.position.x][entity.position.y] = "oil-well"
-            mod_context.area[entity.position.x - 1][entity.position.y - 1] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x - 1][entity.position.y] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x - 1][entity.position.y + 1] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x][entity.position.y - 1] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x][entity.position.y + 1] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x + 1][entity.position.y - 1] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x + 1][entity.position.y] =
-                "reserved-for-pump"
-            mod_context.area[entity.position.x + 1][entity.position.y + 1] =
-                "reserved-for-pump"
         else
             return {"failure.obstructed-resource"}
         end

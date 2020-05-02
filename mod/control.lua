@@ -61,7 +61,7 @@ function select_tools_for_resource(event, mod_context)
         end
     end
 
-    add_toolbox(mod_context, first_entity.prototype.resource_category)
+    return add_toolbox(mod_context, first_entity.prototype.resource_category)
 end
 
 function trim_event_area(event)
