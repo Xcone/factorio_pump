@@ -74,35 +74,34 @@ function save_as_planner_result(construct_entities)
     result.connector_joints = {}
     result.connectors_underground = {}
 
-    for x, column in pairs(construct_entities) do
-        for y, construct_entity in pairs(column) do
-            local target_name = construct_entity.name
-            local placement = {
-                position = {x = x, y = y},
-                direction = construct_entity.direction
-            }
+    xy.each(construct_entities, function(construct_entity, position)
 
-            if target_name == "pumpjack" then
-                table.insert(result.extractors, placement)
-            end
+        local target_name = construct_entity.name
+        local placement = {
+            position = position,
+            direction = construct_entity.direction
+        }
 
-            if target_name == "output" then
-                table.insert(result.outputs, placement)
-            end
-
-            if target_name == "pipe" then
-                table.insert(result.connectors, placement)
-            end
-
-            if target_name == "pipe_joint" then
-                table.insert(result.connector_joints, placement)
-            end
-
-            if target_name == "pipe-to-ground" then
-                table.insert(result.connectors_underground, placement)
-            end
+        if target_name == "pumpjack" then
+            table.insert(result.extractors, placement)
         end
-    end
+
+        if target_name == "output" then
+            table.insert(result.outputs, placement)
+        end
+
+        if target_name == "pipe" then
+            table.insert(result.connectors, placement)
+        end
+
+        if target_name == "pipe_joint" then
+            table.insert(result.connector_joints, placement)
+        end
+
+        if target_name == "pipe-to-ground" then
+            table.insert(result.connectors_underground, placement)
+        end
+    end)
 
     return result
 end
@@ -127,100 +126,84 @@ function optimize_construct_entities(construct_entities, toolbox)
     local pipe_joint_positions = find_in_construct_entities(construct_entities,
                                                             "pipe_joint")
 
-    for x, column in pairs(pipe_joint_positions) do
-        for y, pipe_joint in pairs(column) do
-            for direction, toolbox_direction in pairs(helpers.directions) do
-                local result = take_series_of_pipes(construct_entities,
-                                                    {x = x, y = y},
-                                                    toolbox_direction.position)
-                if result.last_hit == nil then
-                    remove_pipes(construct_entities, result.pipe_positions)
-                elseif result.last_hit.name == "output" then
-                    table.insert(result.pipe_positions, result.last_hit_position)
-                    try_replace_pipes_with_tunnels(construct_entities,
-                                                   result.pipe_positions,
-                                                   toolbox)
-                elseif result.last_hit.name == "pipe_joint" then
-                    try_replace_pipes_with_tunnels(construct_entities,
-                                                   result.pipe_positions,
-                                                   toolbox)
-                end
+    xy.each(pipe_joint_positions, function(pipe_joint, position)
+        for direction, toolbox_direction in pairs(helpers.directions) do
+            local result = take_series_of_pipes(construct_entities, position,
+                                                direction)
+            if result.last_hit == nil then
+                remove_pipes(construct_entities, result.pipe_positions)
+            elseif result.last_hit.name == "output" then
+                table.insert(result.pipe_positions, result.last_hit_position)
+                try_replace_pipes_with_tunnels(construct_entities,
+                                               result.pipe_positions, toolbox)
+            elseif result.last_hit.name == "pipe_joint" then
+                try_replace_pipes_with_tunnels(construct_entities,
+                                               result.pipe_positions, toolbox)
             end
         end
-    end
+    end)
+
 end
 
 function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
     local output_positions = find_in_construct_entities(construct_entities,
                                                         "output")
 
-    for x, column in pairs(output_positions) do
-        for y, output in pairs(column) do
-            local flank_direction = helpers.directions[output.direction].next
-            local flank_position = helpers.position.offset({x = x, y = y},
-                                                           helpers.directions[flank_direction]
-                                                               .position)
+    xy.each(output_positions, function(output, position)
+        local flank_direction = helpers.directions[output.direction].next
+        local flank_position = helpers.position.offset(position,
+                                                       helpers.directions[flank_direction]
+                                                           .position)
 
-            local entity_on_flank = nil
-            if construct_entities[flank_position.x] ~= nil then
-                entity_on_flank =
-                    construct_entities[flank_position.x][flank_position.y]
+        local entity_on_flank = nil
+        if construct_entities[flank_position.x] ~= nil then
+            entity_on_flank =
+                construct_entities[flank_position.x][flank_position.y]
 
-                if entity_on_flank == nil then
-                    flank_direction = helpers.directions[output.direction]
-                                          .previous
-                    flank_position = helpers.position.offset({x = x, y = y},
-                                                             helpers.directions[flank_direction]
-                                                                 .position)
+            if entity_on_flank == nil then
+                flank_direction = helpers.directions[output.direction].previous
+                flank_position = helpers.position.offset(position,
+                                                         helpers.directions[flank_direction]
+                                                             .position)
 
-                    if construct_entities[flank_position.x] ~= nil then
-                        entity_on_flank =
-                            construct_entities[flank_position.x][flank_position.y]
-                    end
+                if construct_entities[flank_position.x] ~= nil then
+                    entity_on_flank =
+                        construct_entities[flank_position.x][flank_position.y]
                 end
             end
-
-            if entity_on_flank ~= nil then
-                construct_entities[x][y].name = "pipe_joint"
-            end
         end
-    end
+
+        if entity_on_flank ~= nil then
+            xy.get(construct_entities, position).name = "pipe_joint"
+        end
+    end)
+
 end
 
 function find_in_construct_entities(construct_entities, search_for_name)
-    local search_result = {}
-    for x, column in pairs(construct_entities) do
-        for y, candidate in pairs(column) do
-            if candidate.name == search_for_name then
-                get_or_create_position(search_result, {x = x, y = y})
-                search_result[x][y] = candidate
-            end
-        end
-    end
-
-    return search_result
+    return xy.where(construct_entities, function(candidate)
+        return candidate.name == search_for_name
+    end)
 end
 
 function copy_construct_entities_into(construct_entities_from,
                                       construct_entities_to)
-    for x, column in pairs(construct_entities_from) do
-        for y, construct_entity in pairs(column) do
-            if construct_entity.name == "pipe" then
-                add_connector(construct_entities_to, {x = x, y = y})
-            end
-            if construct_entity.name == "pipe_joint" then
-                add_connector_joint(construct_entities_to, {x = x, y = y})
-            end
-            if construct_entity.name == "pumpjack" then
-                add_pumpjack(construct_entities_to, {x = x, y = y},
-                             construct_entity.direction)
-            end
-            if construct_entity.name == "output" then
-                add_output(construct_entities_to, {x = x, y = y},
-                           construct_entity.direction)
-            end
+    xy.each(construct_entities_from, function(construct_entity, position)
+        if construct_entity.name == "pipe" then
+            add_connector(construct_entities_to, position)
         end
-    end
+        if construct_entity.name == "pipe_joint" then
+            add_connector_joint(construct_entities_to, position)
+        end
+        if construct_entity.name == "pumpjack" then
+            add_pumpjack(construct_entities_to, position,
+                         construct_entity.direction)
+        end
+        if construct_entity.name == "output" then
+            add_output(construct_entities_to, position,
+                       construct_entity.direction)
+        end
+    end)
 end
 
 function remove_pipes(construct_entities, pipe_positions)
@@ -254,56 +237,52 @@ function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
     end
 end
 
-function take_series_of_pipes(construct_entities, start_joint_position, offset)
+function take_series_of_pipes(construct_entities, start_joint_position,
+                              direction)
 
-    local x = start_joint_position.x
-    local y = start_joint_position.y
+    local probe_location = helpers.position.copy(start_joint_position)
     local is_pipe = false
     local pipe_positions = {}
     local construct_entity_at_position = nil
 
     repeat
-        x = x + offset.x
-        y = y + offset.y
+        probe_location = helpers.position
+                             .translate(probe_location, direction, 1)
         is_pipe = false
-        construct_entity_at_position = nil
-        if construct_entities[x] ~= nil and construct_entities[x][y] ~= nil then
-            construct_entity_at_position = construct_entities[x][y]
+        construct_entity_at_position =
+            xy.get(construct_entities, probe_location)
+        if construct_entity_at_position then
             is_pipe = construct_entity_at_position.name == "pipe"
         end
 
-        if (is_pipe) then table.insert(pipe_positions, {x = x, y = y}) end
+        if (is_pipe) then table.insert(pipe_positions, probe_location) end
     until not is_pipe
 
     return {
         last_hit = construct_entity_at_position,
-        last_hit_position = {x = x, y = y},
+        last_hit_position = probe_location,
         pipe_positions = pipe_positions
     }
 end
 
 function add_pumpjack(construct_entities, position, direction)
-    local target = get_or_create_position(construct_entities, position)
-    target.name = "pumpjack"
-    target.direction = direction
+    xy.set(construct_entities, position,
+           {name = "pumpjack", direction = direction})
 end
 
 function add_connector(construct_entities, position)
-    local target = get_or_create_position(construct_entities, position)
-    target.name = "pipe"
-    target.direction = defines.direction.east
+    xy.set(construct_entities, position,
+           {name = "pipe", direction = defines.direction.east})
 end
 
 function add_connector_joint(construct_entities, position)
-    local target = get_or_create_position(construct_entities, position)
-    target.name = "pipe_joint"
-    target.direction = defines.direction.east
+    xy.set(construct_entities, position,
+           {name = "pipe_joint", direction = defines.direction.east})
 end
 
 function add_output(construct_entities, position, direction)
-    local target = get_or_create_position(construct_entities, position)
-    target.name = "output"
-    target.direction = direction
+    xy.set(construct_entities, position,
+           {name = "output", direction = direction})
 end
 
 function add_pipe_to_ground(construct_entities, start_position, end_position,
@@ -354,24 +333,11 @@ function add_pipe_to_ground(construct_entities, start_position, end_position,
         error("Underground exit and entrance on same position ")
     end
 
-    local start_pipe =
-        get_or_create_position(construct_entities, start_position)
-    start_pipe.name = "pipe-to-ground"
-    start_pipe.direction = start_direction
+    xy.set(construct_entities, start_position,
+           {name = "pipe-to-ground", direction = start_direction})
 
-    local end_pipe = get_or_create_position(construct_entities, end_position)
-    end_pipe.name = "pipe-to-ground"
-    end_pipe.direction = end_direction
-end
-
-function get_or_create_position(table, position)
-    if not table[position.x] then table[position.x] = {} end
-
-    if not table[position.x][position.y] then
-        table[position.x][position.y] = {}
-    end
-
-    return table[position.x][position.y]
+    xy.set(construct_entities, end_position,
+           {name = "pipe-to-ground", direction = end_direction})
 end
 
 function segmentate(segment, previous_split)

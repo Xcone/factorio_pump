@@ -39,6 +39,7 @@ helpers = {
                 bounds.right_bottom.x = bounds.left_top.x
             end
         }
+
     },
 
     bounding_box = {
@@ -121,7 +122,7 @@ helpers = {
         translate = function(position, direction, amount)
             local offset = helpers.directions[direction].position
             offset = helpers.position.multiply(offset, amount)
-            return helpers.offset(position, offset)
+            return helpers.position.offset(position, offset)
         end,
 
         offset = function(position, offset)
@@ -132,5 +133,41 @@ helpers = {
             return {x = position.x * amount, y = position.y * amount}
         end
     }
+}
+
+xy = {
+    each = function(xy_table, action)
+        for x, subtable in pairs(xy_table) do
+            for y, subject in pairs(subtable) do
+                local position = {x = x, y = y}
+                action(subject, position)
+            end
+        end
+    end,
+
+    where = function(xy_table, comparer)
+        local result = {}
+        xy.each(xy_table, function(subject, position)
+            if comparer(subject, position) then
+                xy.set(result, position, subject)
+            end
+        end)
+        return result
+    end,
+
+    set = function(xy_table, position, value)
+        local subtable = xy_table[position.x]
+        if subtable == nil then
+            subtable = {}
+            xy_table[position.x] = subtable
+        end
+        subtable[position.y] = value
+    end,
+
+    get = function(xy_table, position)
+        local subtable = xy_table[position.x]
+        if subtable == nil then return nil end
+        return subtable[position.y]
+    end
 }
 

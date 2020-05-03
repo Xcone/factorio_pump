@@ -28,3 +28,8 @@ Date: 2020-05-02
   Features:
     - Add support for any liquid resource for which a suitable miner is available. If there's multiple miner types available for the same resource, the one Factorio returns first is picked. Rectangular shaped miners are excluded due to limitations in the planner routine.
     - Retrieve miner's pipe output position and size from its prototype. If there are mutliple output resources, or multiple outputs for the same resource, the ones Factorio returns first are picked. 
+---------------------------------------------------------------------------------------------------
+Version: 0.1.5
+Date: ?
+  Changes:
+    - ?
