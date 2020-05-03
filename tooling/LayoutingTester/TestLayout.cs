@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using KeraLua;
+using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using NLua;
 using NLua.Exceptions;
@@ -71,15 +73,30 @@ namespace LayoutingTester
             lua.DebugHook += Lua_DebugHook;
             try
             {
-
                 // Arrange
+                
+                string solutionRoot = Environment.CurrentDirectory + "\\..\\..\\..\\..\\..\\";
+                string factorioDir = $"{solutionRoot}..\\factorio-data\\";
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
+
+                var existingPath = lua["package.path"];
+                existingPath += $";{solutionRoot}mod\\?.lua";
+                existingPath += $";{factorioDir}base\\?.lua";
+                existingPath += $";{factorioDir}core\\?.lua";
+                existingPath += $";{factorioDir}core\\lualib\\?.lua";
+                lua["package.path"] = existingPath;
+
+                lua.DoString("require 'util'");
+                lua.DoString("require 'math2d'");
+
                 lua.NewTable("defines");
                 lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
-                lua.DoFile("../../../../../mod/planner.lua");
-                lua.DoFile("../../../../../mod/helpers.lua");
-                lua.DoFile("../../../../../mod/toolbox.lua");
+
+                lua.DoString("require 'helpers'");
+                lua.DoString("require 'toolbox'");
+                lua.DoString("require 'planner'");
+
 
                 lua.NewTable("planner_input_stage");
                 var plannerInput = lua["planner_input_stage"] as LuaTable;

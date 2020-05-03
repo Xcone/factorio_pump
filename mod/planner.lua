@@ -1,3 +1,4 @@
+require 'util'
 --[[
     Glossary:
     - area: A table using the X-position as key, of tables using the Y-position as key. Each entry containing a string-value describing what the tile is.      
@@ -822,20 +823,6 @@ end
 -- including the edge itself
 function on_right_edge(position, area_bounds)
     return {x = area_bounds.right_bottom.x + 1, y = position.y}
-end
-
-function table.deepcopy(orig)
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[table.deepcopy(orig_key)] = table.deepcopy(orig_value)
-        end
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
 end
 
 -- custom log method used for the 
