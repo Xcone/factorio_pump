@@ -1,3 +1,5 @@
+local math2d = require 'math2d'
+
 local helpers = {}
 helpers.directions = {
     [defines.direction.north] = {
@@ -66,20 +68,19 @@ helpers.bounding_box = {
 
     translate = function(bounds, direction, amount)
         local offset = helpers.directions[direction].position
-        offset = helpers.position.multiply(offset, amount)
+        offset = math2d.position.multiply_scalar(offset, amount)
         helpers.bounding_box.offset(bounds, offset)
     end,
 
     offset = function(bounds, offset)
-        bounds.left_top = helpers.position.offset(bounds.left_top, offset)
-        bounds.right_bottom = helpers.position.offset(bounds.right_bottom,
-                                                      offset)
+        bounds.left_top = math2d.position.add(bounds.left_top, offset)
+        bounds.right_bottom = math2d.position.add(bounds.right_bottom, offset)
     end,
 
     copy = function(bounds)
         local result = {
-            left_top = helpers.position.copy(bounds.left_top),
-            right_bottom = helpers.position.copy(bounds.right_bottom)
+            left_top = math2d.position.ensure_xy(bounds.left_top),
+            right_bottom = math2d.position.ensure_xy(bounds.right_bottom)
         }
         return result
     end,
@@ -112,24 +113,6 @@ helpers.bounding_box = {
 
     create = function(left_top, right_bottom)
         return {left_top = left_top, right_bottom = right_bottom}
-    end
-}
-
-helpers.position = {
-    copy = function(position) return {x = position.x, y = position.y} end,
-
-    translate = function(position, direction, amount)
-        local offset = helpers.directions[direction].position
-        offset = helpers.position.multiply(offset, amount)
-        return helpers.position.offset(position, offset)
-    end,
-
-    offset = function(position, offset)
-        return {x = position.x + offset.x, y = position.y + offset.y}
-    end,
-
-    multiply = function(position, amount)
-        return {x = position.x * amount, y = position.y * amount}
     end
 }
 

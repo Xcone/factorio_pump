@@ -1,4 +1,5 @@
 require 'util'
+local math2d = require 'math2d'
 local helpers = require 'helpers'
 local xy = helpers.xy
 
@@ -155,9 +156,9 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
 
     xy.each(output_positions, function(output, position)
         local flank_direction = helpers.directions[output.direction].next
-        local flank_position = helpers.position.offset(position,
-                                                       helpers.directions[flank_direction]
-                                                           .position)
+        local flank_position = math2d.position.add(position,
+                                                   helpers.directions[flank_direction]
+                                                       .position)
 
         local entity_on_flank = nil
         if construct_entities[flank_position.x] ~= nil then
@@ -166,9 +167,9 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
 
             if entity_on_flank == nil then
                 flank_direction = helpers.directions[output.direction].previous
-                flank_position = helpers.position.offset(position,
-                                                         helpers.directions[flank_direction]
-                                                             .position)
+                flank_position = math2d.position.add(position,
+                                                     helpers.directions[flank_direction]
+                                                         .position)
 
                 if construct_entities[flank_position.x] ~= nil then
                     entity_on_flank =
@@ -244,14 +245,15 @@ end
 function take_series_of_pipes(construct_entities, start_joint_position,
                               direction)
 
-    local probe_location = helpers.position.copy(start_joint_position)
+    local probe_location = math2d.position.ensure_xy(start_joint_position)
     local is_pipe = false
     local pipe_positions = {}
     local construct_entity_at_position = nil
 
     repeat
-        probe_location = helpers.position
-                             .translate(probe_location, direction, 1)
+        probe_location = math2d.position.add(probe_location,
+                                             helpers.directions[direction]
+                                                 .position)
         is_pipe = false
         construct_entity_at_position =
             xy.get(construct_entities, probe_location)
