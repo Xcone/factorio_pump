@@ -1,4 +1,7 @@
 require 'util'
+local helpers = require 'helpers'
+local xy = helpers.xy
+
 --[[
     Glossary:
     - area: A table using the X-position as key, of tables using the Y-position as key. Each entry containing a string-value describing what the tile is.      
