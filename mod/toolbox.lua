@@ -27,8 +27,10 @@ end
 
 local function add_module_config(toolbox, player_index)
 
-    if game.players[player_index].mod_settings["pump-interface-with-module-inserter-mod"]
-        .value and remote.interfaces["mi"] then
+    local setting =
+        game.players[player_index].mod_settings["pump-interface-with-module-inserter-mod"]
+
+    if setting and setting.value and remote.interfaces["mi"] then
         toolbox.module_config = remote.call("mi", "get_module_config",
                                             player_index)
     end
