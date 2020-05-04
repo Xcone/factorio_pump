@@ -33,4 +33,9 @@ Version: 0.1.5
 Date: 2020-05-04
   Features:
     - If 'Module Inserter' is installed, retrieve and apply module configuration for the entities placed by P.U.M.P.. If 'Module Inserter' is not installed, no modules are added.
-    - Add setting to enable/disable the usage of 'Module Inserter'. If 'Module Inserter' is not installed, the setting is hidden. It's enabled by default.    
+    - Add setting to enable/disable the usage of 'Module Inserter'. If 'Module Inserter' is not installed, the setting is hidden. It's enabled by default.  
+---------------------------------------------------------------------------------------------------
+Version: 0.1.6
+Date: 2020-05-04
+  Fixes:
+    - Check if setting to interface with Module Inserter exists.
