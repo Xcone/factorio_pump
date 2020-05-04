@@ -30,7 +30,7 @@ Date: 2020-05-02
     - Retrieve miner's pipe output position and size from its prototype. If there are mutliple output resources, or multiple outputs for the same resource, the ones Factorio returns first are picked. 
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.5
-Date: ?
+Date: 2020-05-04
   Features:
     - If 'Module Inserter' is installed, retrieve and apply module configuration for the entities placed by P.U.M.P.. If 'Module Inserter' is not installed, no modules are added.
     - Add setting to enable/disable the usage of 'Module Inserter'. If 'Module Inserter' is not installed, the setting is hidden. It's enabled by default.    
