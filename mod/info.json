@@ -7,7 +7,8 @@
   "homepage": "",
   "factorio_version": "0.18",
   "dependencies": [
-    "base >= 0.18"
+    "base >= 0.18",
+    "? ModuleInserter >= 5.0.4"
   ],
   "description": "P.U.M.P. (Prevent Unwanted Manual Pump-placement) adds a selection-tool with which you can select oil wells, and then plans the layout of pumpjacks and pipes for you."
 }

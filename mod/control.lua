@@ -13,7 +13,8 @@ function process_selected_area_with_this_mod(event)
     local mod_context = {failure = nil}
 
     if not mod_context.failure then
-        mod_context.failure = select_tools_for_resource(event, mod_context)
+        mod_context.failure = select_tools_for_resource(event, mod_context,
+                                                        event.player_index)
     end
 
     if not mod_context.failure then
@@ -46,7 +47,7 @@ function process_selected_area_with_this_mod(event)
     dump_to_file(mod_context, "planner_input")
 end
 
-function select_tools_for_resource(event, mod_context)
+function select_tools_for_resource(event, mod_context, player_index)
     if #event.entities == 0 then return {"failure.missing-resource"} end
 
     local first_entity = nil
@@ -61,7 +62,8 @@ function select_tools_for_resource(event, mod_context)
         end
     end
 
-    return add_toolbox(mod_context, first_entity.prototype.resource_category)
+    return add_toolbox(mod_context, first_entity.prototype.resource_category,
+                       player_index)
 end
 
 function trim_event_area(event)
@@ -95,9 +97,11 @@ function trim_event_area(event)
 end
 
 function construct_entities(construction_plan, surface, toolbox)
+
     for construction_plan_catagory_name, entities_to_place in
         pairs(construction_plan) do
-        local entity_name = "unknown"
+        local entity_name = nil
+        local modules = nil
 
         if construction_plan_catagory_name == "extractors" then
             entity_name = toolbox.extractor.entity_name
@@ -119,14 +123,19 @@ function construct_entities(construction_plan, surface, toolbox)
             entity_name = toolbox.connector.underground_entity_name
         end
 
-        for i, parameters in pairs(entities_to_place) do
-            surface.create_entity {
-                name = "entity-ghost",
-                inner_name = entity_name,
-                position = parameters.position,
-                direction = parameters.direction,
-                force = "player"
-            }
+        if entity_name then
+            modules = toolbox.module_config[entity_name]
+            for i, parameters in pairs(entities_to_place) do
+                local ghost = surface.create_entity {
+                    name = "entity-ghost",
+                    inner_name = entity_name,
+                    position = parameters.position,
+                    direction = parameters.direction,
+                    force = "player"
+                }
+
+                if modules then ghost.item_requests = modules end
+            end
         end
     end
 end

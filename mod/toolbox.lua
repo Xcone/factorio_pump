@@ -25,8 +25,20 @@ function add_development_toolbox(target)
     target.toolbox = toolbox
 end
 
-function add_toolbox(target, resource_category)
+local function add_module_config(toolbox, player_index)
+
+    if game.players[player_index].mod_settings["pump-interface-with-module-inserter-mod"]
+        .value and remote.interfaces["mi"] then
+        toolbox.module_config = remote.call("mi", "get_module_config",
+                                            player_index)
+    end
+
+    if not toolbox.module_config then toolbox.module_config = {} end
+end
+
+function add_toolbox(target, resource_category, player_index)
     local toolbox = {}
+    add_module_config(toolbox, player_index)
 
     local all_extractors = game.get_filtered_entity_prototypes(
                                {{filter = "type", type = "mining-drill"}})
@@ -73,6 +85,7 @@ function add_toolbox(target, resource_category)
                 entity_name = extractor.name,
                 output_offsets = output_offsets,
                 relative_bounds = relative_bounds
+
             }
 
             break
