@@ -30,7 +30,7 @@ function add_construction_plan(mod_context)
     local base_segment = create_base_segment(mod_context)
     segmentate(base_segment, "none")
 
-    if not verify_all_pumps_connected(base_segment) then
+    if not verify_all_extractors_connected(base_segment) then
         return {"failure.obstructed-pipe"}
     end
 
@@ -42,7 +42,7 @@ function add_construction_plan(mod_context)
     mod_context.construction_plan = construct_entities
 end
 
-function verify_all_pumps_connected(segment)
+function verify_all_extractors_connected(segment)
     if segment.split_direction == "none" then
         if segment.construct_entities ~= nil then
             return true
@@ -50,8 +50,8 @@ function verify_all_pumps_connected(segment)
             return #find_oilwells(segment) == 0
         end
     else
-        return verify_all_pumps_connected(segment.sub_segment_1) and
-                   verify_all_pumps_connected(segment.sub_segment_2)
+        return verify_all_extractors_connected(segment.sub_segment_1) and
+                   verify_all_extractors_connected(segment.sub_segment_2)
     end
 end
 
@@ -160,9 +160,9 @@ function copy_construct_entities_into(construct_entities_from,
         if construct_entity.name == "pipe_joint" then
             add_connector_joint(construct_entities_to, position)
         end
-        if construct_entity.name == "pumpjack" then
-            add_pumpjack(construct_entities_to, position,
-                         construct_entity.direction)
+        if construct_entity.name == "extractor" then
+            add_extractor(construct_entities_to, position,
+                          construct_entity.direction)
         end
         if construct_entity.name == "output" then
             add_output(construct_entities_to, position,
@@ -198,7 +198,7 @@ function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
         local first_pipe = pipe_positions_this_batch[1]
         local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
 
-        add_pipe_to_ground(construct_entities, first_pipe, last_pipe, toolbox)
+        add_pipe_tunnel(construct_entities, first_pipe, last_pipe, toolbox)
     end
 end
 
@@ -231,9 +231,9 @@ function take_series_of_pipes(construct_entities, start_joint_position,
     }
 end
 
-function add_pumpjack(construct_entities, position, direction)
+function add_extractor(construct_entities, position, direction)
     xy.set(construct_entities, position,
-           {name = "pumpjack", direction = direction})
+           {name = "extractor", direction = direction})
 end
 
 function add_connector(construct_entities, position)
@@ -251,8 +251,8 @@ function add_output(construct_entities, position, direction)
            {name = "output", direction = direction})
 end
 
-function add_pipe_to_ground(construct_entities, start_position, end_position,
-                            toolbox)
+function add_pipe_tunnel(construct_entities, start_position, end_position,
+                         toolbox)
     local start_direction
     local end_direction
     local diff = 100
@@ -300,10 +300,10 @@ function add_pipe_to_ground(construct_entities, start_position, end_position,
     end
 
     xy.set(construct_entities, start_position,
-           {name = "pipe-to-ground", direction = start_direction})
+           {name = "pipe_tunnel", direction = start_direction})
 
     xy.set(construct_entities, end_position,
-           {name = "pipe-to-ground", direction = end_direction})
+           {name = "pipe_tunnel", direction = end_direction})
 end
 
 function segmentate(segment, previous_split)
@@ -382,10 +382,10 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
         segment.sub_segment_2.connectable_edges[defines.direction.west] = true
     end
 
-    if not try_connect_pumps(segment.sub_segment_1) then
+    if not try_connect_extractors(segment.sub_segment_1) then
         segmentate(segment.sub_segment_1, split_direction)
     end
-    if not try_connect_pumps(segment.sub_segment_2) then
+    if not try_connect_extractors(segment.sub_segment_2) then
         segmentate(segment.sub_segment_2, split_direction)
     end
 end
@@ -545,19 +545,19 @@ function construct_pipes_on_splits(segment, construct_entities)
     construct_pipes_on_splits(segment.sub_segment_2, construct_entities)
 end
 
-function try_connect_pumps(segment)
+function try_connect_extractors(segment)
     local oilwells = find_oilwells(segment)
     local construct_entities = {}
 
     for i = 1, #oilwells do
 
-        local pumpjack_position = oilwells[i].position
+        local extractor_position = oilwells[i].position
         oilwells[i].construction_analysis = {}
 
         for direction, offset in pairs(segment.toolbox.extractor.output_offsets) do
             local pipe_start_position = {
-                x = pumpjack_position.x + offset.x,
-                y = pumpjack_position.y + offset.y
+                x = extractor_position.x + offset.x,
+                y = extractor_position.y + offset.y
             }
 
             local pipe_placement_result =
@@ -569,12 +569,12 @@ function try_connect_pumps(segment)
             end
         end
 
-        local best_option = get_best_pumpjack_placement(
+        local best_option = get_best_extractor_placement(
                                 oilwells[i].construction_analysis)
         if best_option ~= nil then
 
-            add_pumpjack(construct_entities, pumpjack_position,
-                         best_option.pump_direction)
+            add_extractor(construct_entities, extractor_position,
+                          best_option.pump_direction)
 
             for pipe_index = 0, best_option.edge_distance do
                 local vector = helpers.directions[best_option.edge_direction]
@@ -618,7 +618,7 @@ function find_oilwells(segment)
     return oilwells
 end
 
-function get_best_pumpjack_placement(oilwell_construction_analysis)
+function get_best_extractor_placement(oilwell_construction_analysis)
     local best_option = nil
     local can_connect_pump_to_edge = #oilwell_construction_analysis > 0
 

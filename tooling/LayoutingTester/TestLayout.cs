@@ -221,7 +221,7 @@ namespace LayoutingTester
             {
                 EntityToConstruct = "o";
             }
-            else if (name == "pumpjack")
+            else if (name == "extractor")
             {
                 EntityToConstruct = "p";
             }
@@ -229,7 +229,7 @@ namespace LayoutingTester
             {
                 EntityToConstruct = "x";
             }
-            else if (name == "pipe-to-ground")
+            else if (name == "pipe_tunnel")
             {
                 EntityToConstruct = "t";
             }

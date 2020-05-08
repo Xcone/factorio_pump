@@ -1,85 +1,62 @@
 local helpers = require 'helpers'
 
-function construct_entities(construction_plan, surface, toolbox)
-    local entities = get_entities_to_construct(construction_plan)
+local function get_planned_entities(construction_plan, toolbox)
+    local extractors = {}
+    local pipes = {}
+    local pipe_tunnels = {}
 
-    for construction_plan_catagory_name, entities_to_place in pairs(entities) do
-        local entity_name = nil
-        local modules = nil
+    helpers.xy.each(construction_plan, function(planned_entity, position)
 
-        if construction_plan_catagory_name == "extractors" then
-            entity_name = toolbox.extractor.entity_name
-        end
-
-        if construction_plan_catagory_name == "outputs" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connectors" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connector_joints" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connectors_underground" then
-            entity_name = toolbox.connector.underground_entity_name
-        end
-
-        if entity_name then
-            modules = toolbox.module_config[entity_name]
-            for i, parameters in pairs(entities_to_place) do
-                local ghost = surface.create_entity {
-                    name = "entity-ghost",
-                    inner_name = entity_name,
-                    position = parameters.position,
-                    direction = parameters.direction,
-                    force = "player"
-                }
-
-                if modules then ghost.item_requests = modules end
-            end
-        end
-    end
-end
-
-function get_entities_to_construct(construct_entities)
-    local result = {}
-    result.extractors = {}
-    result.outputs = {}
-    result.connectors = {}
-    result.connector_joints = {}
-    result.connectors_underground = {}
-
-    helpers.xy.each(construct_entities, function(construct_entity, position)
-
-        local target_name = construct_entity.name
+        local planned_entity_name = planned_entity.name
         local placement = {
             position = position,
-            direction = construct_entity.direction
+            direction = planned_entity.direction
         }
 
-        if target_name == "pumpjack" then
-            table.insert(result.extractors, placement)
+        if planned_entity_name == "extractor" then
+            table.insert(extractors, placement)
         end
 
-        if target_name == "output" then
-            table.insert(result.outputs, placement)
+        if planned_entity_name == "output" then
+            table.insert(pipes, placement)
         end
 
-        if target_name == "pipe" then
-            table.insert(result.connectors, placement)
+        if planned_entity_name == "pipe" then
+            table.insert(pipes, placement)
         end
 
-        if target_name == "pipe_joint" then
-            table.insert(result.connector_joints, placement)
+        if planned_entity_name == "pipe_joint" then
+            table.insert(pipes, placement)
         end
 
-        if target_name == "pipe-to-ground" then
-            table.insert(result.connectors_underground, placement)
+        if planned_entity_name == "pipe_tunnel" then
+            table.insert(pipe_tunnels, placement)
         end
     end)
 
-    return result
+    return {
+        [toolbox.extractor.entity_name] = extractors,
+        [toolbox.connector.entity_name] = pipes,
+        [toolbox.connector.underground_entity_name] = pipe_tunnels
+    }
+end
+
+function construct_entities(construction_plan, surface, toolbox)
+    local planned_entities = get_planned_entities(construction_plan, toolbox)
+
+    for entity_name, entities_to_place in pairs(planned_entities) do
+
+        local modules = toolbox.module_config[entity_name]
+        for i, parameters in pairs(entities_to_place) do
+            local ghost = surface.create_entity {
+                name = "entity-ghost",
+                inner_name = entity_name,
+                position = parameters.position,
+                direction = parameters.direction,
+                force = "player"
+            }
+
+            if modules then ghost.item_requests = modules end
+        end
+    end
 end
