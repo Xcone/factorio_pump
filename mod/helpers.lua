@@ -3,42 +3,54 @@ local math2d = require 'math2d'
 local helpers = {}
 helpers.directions = {
     [defines.direction.north] = {
-        position = {x = 0, y = -1},
+        vector = {x = 0, y = -1},
         next = defines.direction.east,
         previous = defines.direction.west,
         opposite = defines.direction.south,
         squash_bounding_box = function(bounds)
             bounds.right_bottom.y = bounds.left_top.y
+        end,
+        to_edge = function(bounds, position)
+            return {x = position.x, y = bounds.left_top.y}
         end
     },
 
     [defines.direction.east] = {
-        position = {x = 1, y = 0},
+        vector = {x = 1, y = 0},
         next = defines.direction.south,
         previous = defines.direction.north,
         opposite = defines.direction.west,
         squash_bounding_box = function(bounds)
             bounds.left_top.x = bounds.right_bottom.x
+        end,
+        to_edge = function(bounds, position)
+            return {x = bounds.right_bottom.x, y = position.y}
         end
     },
 
     [defines.direction.south] = {
-        position = {x = 0, y = 1},
+        vector = {x = 0, y = 1},
         next = defines.direction.west,
         previous = defines.direction.east,
         opposite = defines.direction.north,
         squash_bounding_box = function(bounds)
             bounds.left_top.y = bounds.right_bottom.y
+        end,
+        to_edge = function(bounds, position)
+            return {x = position.x, y = bounds.right_bottom.y}
         end
     },
 
     [defines.direction.west] = {
-        position = {x = -1, y = 0},
+        vector = {x = -1, y = 0},
         next = defines.direction.north,
         previous = defines.direction.south,
         opposite = defines.direction.east,
         squash_bounding_box = function(bounds)
             bounds.right_bottom.x = bounds.left_top.x
+        end,
+        to_edge = function(bounds, position)
+            return {x = bounds.left_top.x, y = position.y}
         end
     }
 }
@@ -54,20 +66,24 @@ helpers.bounding_box = {
         helpers.directions[direction].squash_bounding_box(bounds)
     end,
 
-    get_size = function(bounds, direction)
+    get_cross_section_size = function(bounds, direction)
         local squashed_box = helpers.bounding_box.copy(bounds)
         local sideways = helpers.directions[direction].next
         helpers.bounding_box.squash(squashed_box, sideways)
 
-        local x_diff = squashed_box.right_bottom.x - squashed_box.left_top.x
-        local y_diff = squashed_box.right_bottom.y - squashed_box.left_top.y
+        return helpers.bounding_box.get_size(squashed_box)
+    end,
 
-        -- Add 1, because it's zero inclusive ( x=0 to x=3 is a size of 4)
-        return (x_diff + y_diff) + 1
+    get_size = function(bounds)
+        -- Add 1, because it's zero inclusive ( x=0 to x=3 is a size of 4)        
+        local x_diff = (bounds.right_bottom.x - bounds.left_top.x) + 1
+        local y_diff = (bounds.right_bottom.y - bounds.left_top.y) + 1
+
+        return x_diff * y_diff
     end,
 
     translate = function(bounds, direction, amount)
-        local offset = helpers.directions[direction].position
+        local offset = helpers.directions[direction].vector
         offset = math2d.position.multiply_scalar(offset, amount)
         helpers.bounding_box.offset(bounds, offset)
     end,
@@ -111,8 +127,21 @@ helpers.bounding_box = {
         return {sub_bounds_1 = sub_bounds_1, sub_bounds_2 = sub_bounds_2}
     end,
 
-    create = function(left_top, right_bottom)
-        return {left_top = left_top, right_bottom = right_bottom}
+    create = function(pos_a, pos_b)
+        return {
+            left_top = {
+                x = math.min(pos_a.x, pos_b.x),
+                y = math.min(pos_a.y, pos_b.y)
+            },
+            right_bottom = {
+                x = math.max(pos_a.x, pos_b.x),
+                y = math.max(pos_a.y, pos_b.y)
+            }
+        }
+    end,
+
+    position_to_edge = function(bounds, position, direction)
+        return helpers.directions[direction].to_edge(bounds, position)
     end
 }
 

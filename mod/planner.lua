@@ -62,10 +62,10 @@ function create_base_segment(mod_context)
     segment.toolbox = mod_context.toolbox
     segment["split_direction"] = "none"
     segment["connectable_edges"] = {
-        top = false,
-        left = false,
-        bottom = false,
-        right = false
+        [defines.direction.north] = false,
+        [defines.direction.east] = false,
+        [defines.direction.south] = false,
+        [defines.direction.west] = false
     }
     segment.number_of_splits = 0
     return segment
@@ -158,7 +158,7 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
         local flank_direction = helpers.directions[output.direction].next
         local flank_position = math2d.position.add(position,
                                                    helpers.directions[flank_direction]
-                                                       .position)
+                                                       .vector)
 
         local entity_on_flank = nil
         if construct_entities[flank_position.x] ~= nil then
@@ -169,7 +169,7 @@ function convert_outputs_to_joints_when_flanked(construct_entities, toolbox)
                 flank_direction = helpers.directions[output.direction].previous
                 flank_position = math2d.position.add(position,
                                                      helpers.directions[flank_direction]
-                                                         .position)
+                                                         .vector)
 
                 if construct_entities[flank_position.x] ~= nil then
                     entity_on_flank =
@@ -253,7 +253,7 @@ function take_series_of_pipes(construct_entities, start_joint_position,
     repeat
         probe_location = math2d.position.add(probe_location,
                                              helpers.directions[direction]
-                                                 .position)
+                                                 .vector)
         is_pipe = false
         construct_entity_at_position =
             xy.get(construct_entities, probe_location)
@@ -415,11 +415,11 @@ function split_segment(segment, bounds_1, bounds_2, split_direction)
     }
 
     if split_direction == "split_horizontal" then
-        segment.sub_segment_1.connectable_edges.bottom = true
-        segment.sub_segment_2.connectable_edges.top = true
+        segment.sub_segment_1.connectable_edges[defines.direction.south] = true
+        segment.sub_segment_2.connectable_edges[defines.direction.north] = true
     elseif split_direction == "split_vertical" then
-        segment.sub_segment_1.connectable_edges.right = true
-        segment.sub_segment_2.connectable_edges.left = true
+        segment.sub_segment_1.connectable_edges[defines.direction.east] = true
+        segment.sub_segment_2.connectable_edges[defines.direction.west] = true
     end
 
     if not try_connect_pumps(segment.sub_segment_1) then
@@ -455,8 +455,8 @@ function find_split(segment, direction)
     helpers.bounding_box.squash(slice, sideways)
 
     -- Prepare 2 slices to scan for obstructions. Start in the middle, and work outwards. 1 slice in each direction
-    local number_of_slices = helpers.bounding_box.get_size(segment.area_bounds,
-                                                           sideways)
+    local number_of_slices = helpers.bounding_box.get_cross_section_size(
+                                 segment.area_bounds, sideways)
 
     local middle = math.ceil(number_of_slices / 2)
     helpers.bounding_box.translate(slice, sideways, -middle)
@@ -534,7 +534,7 @@ function construct_pipes_on_splits(segment, construct_entities)
 
     if segment.split_direction == "split_horizontal" then
         local y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
-        if segment.connectable_edges.left then
+        if segment.connectable_edges[defines.direction.west] then
             local position = {
                 x = segment.sub_segment_1.area_bounds.left_top.x - 1,
                 y = y
@@ -542,7 +542,7 @@ function construct_pipes_on_splits(segment, construct_entities)
             add_connector_joint(construct_entities, position)
         end
 
-        if segment.connectable_edges.right then
+        if segment.connectable_edges[defines.direction.east] then
             local position = {
                 x = segment.sub_segment_1.area_bounds.right_bottom.x + 1,
                 y = y
@@ -559,7 +559,7 @@ function construct_pipes_on_splits(segment, construct_entities)
 
     if segment.split_direction == "split_vertical" then
         local x = segment.sub_segment_1.area_bounds.right_bottom.x + 1
-        if segment.connectable_edges.top then
+        if segment.connectable_edges[defines.direction.north] then
             local position = {
                 x = x,
                 y = segment.sub_segment_1.area_bounds.left_top.y - 1
@@ -567,7 +567,7 @@ function construct_pipes_on_splits(segment, construct_entities)
             add_connector_joint(construct_entities, position)
         end
 
-        if segment.connectable_edges.bottom then
+        if segment.connectable_edges[defines.direction.south] then
             local position = {
                 x = x,
                 y = segment.sub_segment_1.area_bounds.right_bottom.y + 1
@@ -617,26 +617,13 @@ function try_connect_pumps(segment)
                          best_option.pump_direction)
 
             for pipe_index = 0, best_option.edge_distance do
-                local offset_x = 0
-                local offset_y = 0
+                local vector = helpers.directions[best_option.edge_direction]
+                                   .vector
 
-                if best_option.edge_direction == defines.direction.north then
-                    offset_y = -1 * pipe_index
-                end
-                if best_option.edge_direction == defines.direction.east then
-                    offset_x = 1 * pipe_index
-                end
-                if best_option.edge_direction == defines.direction.south then
-                    offset_y = 1 * pipe_index
-                end
-                if best_option.edge_direction == defines.direction.west then
-                    offset_x = -1 * pipe_index
-                end
-
-                local pipe_position = {
-                    x = best_option.pipe_start_position.x + offset_x,
-                    y = best_option.pipe_start_position.y + offset_y
-                }
+                vector = math2d.position.multiply_scalar(vector, pipe_index)
+                local pipe_position = math2d.position.add(
+                                          best_option.pipe_start_position,
+                                          vector)
 
                 if pipe_index == 0 then
                     add_output(construct_entities, pipe_position,
@@ -686,148 +673,63 @@ function get_best_pumpjack_placement(oilwell_construction_analysis)
 end
 
 function get_best_pipe_placement_to_edge(segment, pipe_start_position)
-    local distance_to_top = 1000
-    if is_on_top_edge(segment, pipe_start_position) then
-        distance_to_top = 0
-    elseif (not is_on_edge(segment, pipe_start_position)) and
-        segment.connectable_edges.top then
-        local lt = to_top_edge(pipe_start_position, segment.area_bounds)
-        local rb = pipe_start_position
 
-        if not area_contains_obstruction(segment.area,
-                                         helpers.bounding_box.create(lt, rb)) then
-            distance_to_top = rb.y - lt.y + 1
-        end
-    end
-
-    local distance_to_left = 1000
-    if is_on_left_edge(segment, pipe_start_position) then
-        distance_to_left = 0
-    elseif (not is_on_edge(segment, pipe_start_position)) and
-        segment.connectable_edges.left then
-        local lt = to_left_edge(pipe_start_position, segment.area_bounds)
-        local rb = pipe_start_position
-
-        if not area_contains_obstruction(segment.area,
-                                         helpers.bounding_box.create(lt, rb)) then
-            distance_to_left = rb.x - lt.x + 1
-        end
-    end
-
-    local distance_to_bottom = 1000
-    if is_on_bottom_edge(segment, pipe_start_position) then
-        distance_to_bottom = 0
-    elseif (not is_on_edge(segment, pipe_start_position)) and
-        segment.connectable_edges.bottom then
-        local lt = pipe_start_position
-        local rb = to_bottom_edge(pipe_start_position, segment.area_bounds)
-
-        if not area_contains_obstruction(segment.area,
-                                         helpers.bounding_box.create(lt, rb)) then
-            distance_to_bottom = rb.y - lt.y + 1
-        end
-    end
-
-    local distance_to_right = 1000
-    if is_on_right_edge(segment, pipe_start_position) then
-        distance_to_right = 0
-    elseif (not is_on_edge(segment, pipe_start_position)) and
-        segment.connectable_edges.right then
-        local lt = pipe_start_position
-        local rb = to_right_edge(pipe_start_position, segment.area_bounds)
-
-        if not area_contains_obstruction(segment.area,
-                                         helpers.bounding_box.create(lt, rb)) then
-            distance_to_right = rb.x - lt.x + 1
-        end
-    end
-
-    local smallest_distance = distance_to_top
-    local smallest_distance_direction = defines.direction.north
-    if distance_to_left < smallest_distance then
-        smallest_distance = distance_to_left
-        smallest_distance_direction = defines.direction.west
-    end
-    if distance_to_bottom < smallest_distance then
-        smallest_distance = distance_to_bottom
-        smallest_distance_direction = defines.direction.south
-    end
-    if distance_to_right < smallest_distance then
-        smallest_distance = distance_to_right
-        smallest_distance_direction = defines.direction.east
-    end
-
+    local distances = {}
     local acceptable_distance = segment.toolbox.connector
                                     .underground_distance_max + 2
-    if smallest_distance <= acceptable_distance then
-        return {
-            edge_distance = smallest_distance,
-            edge_direction = smallest_distance_direction,
-            pipe_start_position = pipe_start_position
-        }
+
+    for direction, _ in pairs(helpers.directions) do
+        distances[direction] = get_distance_to_edge(segment,
+                                                    pipe_start_position,
+                                                    direction)
     end
 
-    return nil
+    local smallest_distance = 1000
+    local result = nil
+
+    for direction, distance in pairs(distances) do
+        if distance <= acceptable_distance and distance < smallest_distance then
+            result = {
+                edge_distance = distance,
+                edge_direction = direction,
+                pipe_start_position = pipe_start_position
+            }
+        end
+    end
+
+    return result
 end
 
-function is_on_edge(segment, position)
-    return is_on_top_edge(segment, position) or
-               is_on_bottom_edge(segment, position) or
-               is_on_left_edge(segment, position) or
-               is_on_right_edge(segment, position)
-end
+function get_distance_to_edge(segment, position, direction)
 
-function is_on_top_edge(segment, position)
-    return on_top_edge(position, segment.area_bounds).y == position.y
-end
-function is_on_bottom_edge(segment, position)
-    return on_bottom_edge(position, segment.area_bounds).y == position.y
-end
-function is_on_left_edge(segment, position)
-    return on_left_edge(position, segment.area_bounds).x == position.x
-end
-function is_on_right_edge(segment, position)
-    return on_right_edge(position, segment.area_bounds).x == position.x
-end
+    local toolbox_direction = helpers.directions[direction]
+    local vector_inwards = helpers.directions[toolbox_direction.opposite].vector
 
--- exluding the edge itself
-function to_top_edge(position, area_bounds)
-    return {x = position.x, y = area_bounds.left_top.y}
-end
+    local is_in_segment = math2d.bounding_box.contains_point(
+                              segment.area_bounds, position)
 
--- exluding the edge itself
-function to_bottom_edge(position, area_bounds)
-    return {x = position.x, y = area_bounds.right_bottom.y}
-end
+    if is_in_segment and segment.connectable_edges[direction] then
+        local edge_position = toolbox_direction.to_edge(segment.area_bounds,
+                                                        position)
+        local line_to_edge = helpers.bounding_box
+                                 .create(position, edge_position)
 
--- exluding the edge itself
-function to_left_edge(position, area_bounds)
-    return {x = area_bounds.left_top.x, y = position.y}
-end
+        if not area_contains_obstruction(segment.area, line_to_edge) then
+            return helpers.bounding_box.get_size(line_to_edge)
+        end
+    else
+        local position_offset_inwards = math2d.position.add(position,
+                                                            vector_inwards)
 
--- exluding the edge itself
-function to_right_edge(position, area_bounds)
-    return {x = area_bounds.right_bottom.x, y = position.y}
-end
+        local is_on_outer_edge = not is_in_segment and
+                                     math2d.bounding_box.contains_point(
+                                         segment.area_bounds,
+                                         position_offset_inwards)
 
--- including the edge itself
-function on_top_edge(position, area_bounds)
-    return {x = position.x, y = area_bounds.left_top.y - 1}
-end
+        if is_on_outer_edge then return 0 end
+    end
 
--- including the edge itself
-function on_bottom_edge(position, area_bounds)
-    return {x = position.x, y = area_bounds.right_bottom.y + 1}
-end
-
--- including the edge itself
-function on_left_edge(position, area_bounds)
-    return {x = area_bounds.left_top.x - 1, y = position.y}
-end
-
--- including the edge itself
-function on_right_edge(position, area_bounds)
-    return {x = area_bounds.right_bottom.x + 1, y = position.y}
+    return 1000
 end
 
 -- custom log method used for the 
