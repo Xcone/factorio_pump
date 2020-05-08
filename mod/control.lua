@@ -1,7 +1,7 @@
 require "toolbox"
 require "prospector"
 require "planner"
-require 'helpers'
+require 'constructor'
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
@@ -94,50 +94,6 @@ function trim_event_area(event)
     event.area.left_top.y = event.area.left_top.y - padding
     event.area.right_bottom.x = event.area.right_bottom.x + padding
     event.area.right_bottom.y = event.area.right_bottom.y + padding
-end
-
-function construct_entities(construction_plan, surface, toolbox)
-
-    for construction_plan_catagory_name, entities_to_place in
-        pairs(construction_plan) do
-        local entity_name = nil
-        local modules = nil
-
-        if construction_plan_catagory_name == "extractors" then
-            entity_name = toolbox.extractor.entity_name
-        end
-
-        if construction_plan_catagory_name == "outputs" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connectors" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connector_joints" then
-            entity_name = toolbox.connector.entity_name
-        end
-
-        if construction_plan_catagory_name == "connectors_underground" then
-            entity_name = toolbox.connector.underground_entity_name
-        end
-
-        if entity_name then
-            modules = toolbox.module_config[entity_name]
-            for i, parameters in pairs(entities_to_place) do
-                local ghost = surface.create_entity {
-                    name = "entity-ghost",
-                    inner_name = entity_name,
-                    position = parameters.position,
-                    direction = parameters.direction,
-                    force = "player"
-                }
-
-                if modules then ghost.item_requests = modules end
-            end
-        end
-    end
 end
 
 function dump_to_file(table_to_write, description)

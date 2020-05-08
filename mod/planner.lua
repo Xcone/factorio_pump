@@ -39,7 +39,7 @@ function add_construction_plan(mod_context)
     add_construct_entities_from_segments(base_segment, construct_entities)
     optimize_construct_entities(construct_entities, base_segment.toolbox)
 
-    mod_context.construction_plan = save_as_planner_result(construct_entities)
+    mod_context.construction_plan = construct_entities
 end
 
 function verify_all_pumps_connected(segment)
@@ -69,46 +69,6 @@ function create_base_segment(mod_context)
     }
     segment.number_of_splits = 0
     return segment
-end
-
-function save_as_planner_result(construct_entities)
-    local result = {}
-    result.extractors = {}
-    result.outputs = {}
-    result.connectors = {}
-    result.connector_joints = {}
-    result.connectors_underground = {}
-
-    xy.each(construct_entities, function(construct_entity, position)
-
-        local target_name = construct_entity.name
-        local placement = {
-            position = position,
-            direction = construct_entity.direction
-        }
-
-        if target_name == "pumpjack" then
-            table.insert(result.extractors, placement)
-        end
-
-        if target_name == "output" then
-            table.insert(result.outputs, placement)
-        end
-
-        if target_name == "pipe" then
-            table.insert(result.connectors, placement)
-        end
-
-        if target_name == "pipe_joint" then
-            table.insert(result.connector_joints, placement)
-        end
-
-        if target_name == "pipe-to-ground" then
-            table.insert(result.connectors_underground, placement)
-        end
-    end)
-
-    return result
 end
 
 function add_construct_entities_from_segments(segment, construct_entities)

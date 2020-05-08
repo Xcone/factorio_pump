@@ -116,36 +116,9 @@ namespace LayoutingTester
                 }
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
-                var pumpjacks = constructEntities["extractors"] as LuaTable;
-                var outputs = constructEntities["outputs"] as LuaTable;
-                var pipes = constructEntities["connectors"] as LuaTable;
-                var pipeJoints = constructEntities["connector_joints"] as LuaTable;
-                var pipesToGround = constructEntities["connectors_underground"] as LuaTable;
+                AddConstructEntities(constructEntities);
 
-                foreach (LuaTable pumpjack in pumpjacks.Values)
-                {
-                    AddConstructEntity("pumpjack", pumpjack);
-                }
 
-                foreach (LuaTable output in outputs.Values)
-                {
-                    AddConstructEntity("output", output);
-                }
-
-                foreach (LuaTable pipe in pipes.Values)
-                {
-                    AddConstructEntity("pipe", pipe);
-                }
-
-                foreach (LuaTable pipeToGround in pipesToGround.Values)
-                {
-                    AddConstructEntity("pipe-to-ground", pipeToGround);
-                }
-
-                foreach (LuaTable pipeJoint in pipeJoints.Values)
-                {
-                    AddConstructEntity("pipe_joint", pipeJoint);
-                }
             }
             catch (LuaScriptException e)
             {
@@ -179,14 +152,24 @@ namespace LayoutingTester
             }
         }
 
-        private void AddConstructEntity(string entityName, LuaTable constructionParameters)
+        private void AddConstructEntities(LuaTable constructionParameters)
         {
-            LuaTable position = constructionParameters["position"] as LuaTable;
-            var x = (double)position["x"];
-            var y = (double)position["y"];
-            var direction = (long)constructionParameters["direction"];
+            foreach (var xKey in constructionParameters.Keys)
+            {
+                var tableY = (LuaTable)constructionParameters[xKey];
 
-            Columns.First(c => c.X == x).AddConstructionResult(entityName, y, direction);
+                foreach (var yKey in tableY.Keys)
+                {
+                    var plannedEntity = (LuaTable)tableY[yKey];
+                    var x = (double) xKey;
+                    var y = (double) yKey;
+                    var name = (string)plannedEntity["name"];
+                    var direction = (long) plannedEntity["direction"];
+
+
+                    Columns.First(c => c.X == x).AddConstructionResult(name, y, direction);
+                }
+            }
         }
     }
 
