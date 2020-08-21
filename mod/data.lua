@@ -34,12 +34,26 @@ pumpShortcut.icon = {
     scale = 1,
     flags = {"icon"}
 }
+pumpShortcut.disabled_icon = {
+  filename = "__pump__/graphics/icons/pump_icon_32_white.png",
+  priority = "extra-high-no-scale",
+  size = 32,
+  scale = 1,
+  flags = {"icon"}
+}
 pumpShortcut.small_icon = {
     filename = "__pump__/graphics/icons/pump_icon_24.png",
     priority = "extra-high-no-scale",
     size = 24,
     scale = 1,
     flags = {"icon"}
+}
+pumpShortcut.disabled_small_icon = {
+  filename = "__pump__/graphics/icons/pump_icon_24_white.png",
+  priority = "extra-high-no-scale",
+  size = 24,
+  scale = 1,
+  flags = {"icon"}
 }
 pumpShortcut.item_to_create = "pump-selection-tool"
 
