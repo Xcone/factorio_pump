@@ -39,3 +39,9 @@ Version: 0.1.6
 Date: 2020-05-04
   Fixes:
     - Check if setting to interface with Module Inserter exists.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.7
+Date: 2020-08-29
+  Fixes:
+    - Disabled shortcut now has a P.U.M.P. icon instead of a blueprint icon.
+    - Added values for item name and sorting.
