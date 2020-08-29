@@ -8,6 +8,8 @@ pumpSelectionTool.icon_size = 32
 pumpSelectionTool.selection_mode = {"any-entity"}
 pumpSelectionTool.selection_cursor_box_type = "entity"
 pumpSelectionTool.flags = {"only-in-cursor"}
+pumpSelectionTool.subgroup = "tool"
+pumpSelectionTool.order = "c[automated-construction]-d[pump-selection-tool]"
 pumpSelectionTool.entity_filters = {"crude-oil"}
 
 -- no different ALT-behavior. Just copy it from the regular behavior
@@ -34,12 +36,26 @@ pumpShortcut.icon = {
     scale = 1,
     flags = {"icon"}
 }
+pumpShortcut.disabled_icon = {
+  filename = "__pump__/graphics/icons/pump_icon_32_white.png",
+  priority = "extra-high-no-scale",
+  size = 32,
+  scale = 1,
+  flags = {"icon"}
+}
 pumpShortcut.small_icon = {
     filename = "__pump__/graphics/icons/pump_icon_24.png",
     priority = "extra-high-no-scale",
     size = 24,
     scale = 1,
     flags = {"icon"}
+}
+pumpShortcut.disabled_small_icon = {
+  filename = "__pump__/graphics/icons/pump_icon_24_white.png",
+  priority = "extra-high-no-scale",
+  size = 24,
+  scale = 1,
+  flags = {"icon"}
 }
 pumpShortcut.item_to_create = "pump-selection-tool"
 
