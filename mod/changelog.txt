@@ -45,3 +45,8 @@ Date: 2020-08-29
   Fixes:
     - Disabled shortcut now has a P.U.M.P. icon instead of a blueprint icon.
     - Added values for item name and sorting.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.8
+Date: ??
+  Fixes:
+    - Fix issue where a tunnel could be planned 1 too long, resulting in the exit of the pump meeting with the side of an underground pipe.

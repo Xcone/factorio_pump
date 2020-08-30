@@ -98,7 +98,10 @@ function optimize_construct_entities(construct_entities, toolbox)
             if result.last_hit == nil then
                 remove_pipes(construct_entities, result.pipe_positions)
             elseif result.last_hit.name == "output" then
-                table.insert(result.pipe_positions, result.last_hit_position)
+                if result.last_hit.direction == direction or
+                    result.last_hit.direction == toolbox_direction.opposite then
+                    table.insert(result.pipe_positions, result.last_hit_position)
+                end
                 try_replace_pipes_with_tunnels(construct_entities,
                                                result.pipe_positions, toolbox)
             elseif result.last_hit.name == "pipe_joint" then
