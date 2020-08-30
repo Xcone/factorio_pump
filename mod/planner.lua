@@ -441,26 +441,34 @@ function find_split(segment, direction)
 
     local count = 0
     while count <= middle do
-        if area_contains_obstruction(segment.area, slice) then
-            slice_result.found_obstruction = true
-        else
-            slice_result.unobstructed_slice = helpers.bounding_box.copy(slice)
+        -- If the segment has a even-size, there's no exact middle. Check if the slice passed the bounds of the segmenent.
+        if helpers.bounding_box.contains(segment.area_bounds, slice) then
+            if area_contains_obstruction(segment.area, slice) then
+                slice_result.found_obstruction = true
+            else
+                slice_result.unobstructed_slice =
+                    helpers.bounding_box.copy(slice)
+            end
+
+            if slice_result.unobstructed_slice and
+                slice_result.found_obstruction then
+                return slice_result
+            end
         end
 
-        if slice_result.unobstructed_slice and slice_result.found_obstruction then
-            return slice_result
-        end
+        -- If the segment has a even-size, there's no exact middle. Check if the slice passed the bounds of the segmenent.
+        if helpers.bounding_box.contains(segment.area_bounds, opposite_slice) then
+            if area_contains_obstruction(segment.area, opposite_slice) then
+                opposite_slice_result.found_obstruction = true
+            else
+                opposite_slice_result.unobstructed_slice =
+                    helpers.bounding_box.copy(opposite_slice)
+            end
 
-        if area_contains_obstruction(segment.area, opposite_slice) then
-            opposite_slice_result.found_obstruction = true
-        else
-            opposite_slice_result.unobstructed_slice =
-                helpers.bounding_box.copy(opposite_slice)
-        end
-
-        if opposite_slice_result.unobstructed_slice and
-            opposite_slice_result.found_obstruction then
-            return opposite_slice_result
+            if opposite_slice_result.unobstructed_slice and
+                opposite_slice_result.found_obstruction then
+                return opposite_slice_result
+            end
         end
 
         helpers.bounding_box.translate(slice, sideways, 1)

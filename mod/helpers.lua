@@ -142,6 +142,13 @@ helpers.bounding_box = {
 
     position_to_edge = function(bounds, position, direction)
         return helpers.directions[direction].to_edge(bounds, position)
+    end,
+
+    contains = function(outer, inner)
+        return outer.left_top.x <= inner.left_top.x and outer.left_top.y <=
+                   inner.left_top.y and outer.right_bottom.x >=
+                   inner.right_bottom.x and outer.right_bottom.y >=
+                   inner.right_bottom.y
     end
 }
 
