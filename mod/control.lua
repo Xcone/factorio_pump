@@ -29,9 +29,13 @@ function process_selected_area_with_this_mod(event)
         mod_context.failure = add_area_information(event, mod_context)
     end
 
+    dump_to_file(mod_context, "planner_input")
+
     if not mod_context.failure then
         mod_context.failure = add_construction_plan(mod_context)
     end
+
+    dump_to_file(mod_context, "construction_plan")
 
     if not mod_context.failure then
         mod_context.failure = construct_entities(mod_context.construction_plan,
@@ -43,8 +47,6 @@ function process_selected_area_with_this_mod(event)
         local player = game.get_player(event.player_index)
         player.print(mod_context.failure)
     end
-
-    dump_to_file(mod_context, "planner_input")
 end
 
 function select_tools_for_resource(event, mod_context, player_index)
