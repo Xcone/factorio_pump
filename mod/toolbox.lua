@@ -48,8 +48,7 @@ end
 
 local function pick_tools(player, toolbox, resource_category,
                           available_extractors, force_ui)
-    local extractor_pick = get_extractor_pick_for_resource(
-                               toolbox.resource_category);
+    local extractor_pick = get_extractor_pick_for_resource(resource_category);
 
     local available_extractor_names = {}
     for _, extractor in pairs(available_extractors) do
@@ -100,7 +99,7 @@ local function pick_tools(player, toolbox, resource_category,
 
         frame.add {type = "label", caption = caption}
 
-        local extractor_button = frame.add {
+        frame.add {
             type = "choose-elem-button",
             name = "pump_extractor_picker",
             elem_type = "entity",
@@ -113,42 +112,7 @@ local function pick_tools(player, toolbox, resource_category,
             name = "pump_tool_picker_confirm_button",
             caption = {"pump-toolpicker.confirm"}
         }
-
-        global.toolpicker_ui = {resource_category = resource_category}
     end
-end
-
-function confirm_tool_picker_ui(player)
-    local frame = player.gui.center.pump_tool_picker_frame
-
-    if frame then
-
-        local extractor_pick = get_extractor_pick_for_resource(
-                                   global.toolpicker_ui.resource_category)
-
-        extractor_pick.selected = frame.pump_extractor_picker.elem_value
-
-        frame.destroy()
-    end
-
-    global.toolpicker_ui = nil
-end
-
-function is_ui_open(player)
-
-    local flow = player.gui.center
-    local frame = flow.pump_tool_picker_frame
-
-    if frame then
-        return true
-    else
-        return false
-    end
-end
-
-function table.contains(table, element)
-    for _, value in pairs(table) do if value == element then return true end end
-    return false
 end
 
 local function add_module_config(toolbox, player)
@@ -220,18 +184,20 @@ local function find_available_extractors(resource_category)
     return available_extractors
 end
 
-function add_toolbox(target, resource_category, player, force_ui)
+function add_toolbox(current_action, player, force_ui)
     local toolbox = {}
-    toolbox.resource_category = resource_category
     add_module_config(toolbox, player)
 
-    local available_extractors = find_available_extractors(resource_category)
+    local available_extractors = find_available_extractors(
+                                     current_action.resource_category)
     if #available_extractors == 0 then
-        return {"failure.extractor-must-be-square", resource_category}
+        return {
+            "failure.extractor-must-be-square", current_action.resource_category
+        }
     end
 
-    pick_tools(player, toolbox, resource_category, available_extractors,
-               force_ui)
+    pick_tools(player, toolbox, current_action.resource_category,
+               available_extractors, force_ui)
 
     toolbox.connector = {
         entity_name = "pipe",
@@ -242,7 +208,48 @@ function add_toolbox(target, resource_category, player, force_ui)
         underground_distance_max = 9
     }
 
-    target.toolbox = toolbox
+    current_action.toolbox = toolbox
+end
+
+function confirm_tool_picker_ui(player)
+    local frame = player.gui.center.pump_tool_picker_frame
+
+    if frame then
+
+        local current_action = global.current_action
+
+        -- Apply selection to config for future use
+        local extractor_pick = get_extractor_pick_for_resource(
+                                   current_action.resource_category)
+
+        extractor_pick.selected = frame.pump_extractor_picker.elem_value
+
+        -- Update the extractor for the current action
+        local available_extractors = find_available_extractors(
+                                         current_action.resource_category)
+
+        for _, extractor in pairs(available_extractors) do
+            if extractor.entity_name == extractor_pick.selected then
+                current_action.toolbox.extractor = extractor
+            end
+        end
+
+        -- close form
+        frame.destroy()
+    end
+end
+
+function is_ui_open(player)
+    if player.gui.center.pump_tool_picker_frame then
+        return true
+    else
+        return false
+    end
+end
+
+function table.contains(table, element)
+    for _, value in pairs(table) do if value == element then return true end end
+    return false
 end
 
 function get_resource_category_map_from_data()

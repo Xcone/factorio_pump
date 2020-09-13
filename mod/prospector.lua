@@ -1,45 +1,47 @@
-function add_area_information(event, mod_context)
-    mod_context.area = {}
-    mod_context.area_bounds = event.area
+function add_area_information(current_action, entities, surface)
+    current_action.area = {}
+
+    local area_bounds = current_action.area_bounds
 
     -- fill the map with default data 
-    for x = event.area.left_top.x, event.area.right_bottom.x, 1 do
-        mod_context.area[x] = {}
-        for y = event.area.left_top.y, event.area.right_bottom.y, 1 do
-            mod_context.area[x][y] = "undefined"
+    for x = area_bounds.left_top.x, area_bounds.right_bottom.x, 1 do
+        current_action.area[x] = {}
+        for y = area_bounds.left_top.y, area_bounds.right_bottom.y, 1 do
+            current_action.area[x][y] = "undefined"
         end
     end
 
     -- mark where the pumps will be
-    for i, entity in pairs(event.entities) do
+    for i, entity in pairs(entities) do
         local direction = defines.direction.east
-        if can_place_extractor(event.surface, entity.position, direction,
-                               mod_context.toolbox) then
+        if can_place_extractor(surface, entity.position, direction,
+                               current_action.toolbox) then
 
-            local relative_bounds = mod_context.toolbox.extractor
+            local relative_bounds = current_action.toolbox.extractor
                                         .relative_bounds
 
             for x = relative_bounds.left_top.x, relative_bounds.right_bottom.x do
                 for y = relative_bounds.left_top.y, relative_bounds.right_bottom
                     .y do
 
-                    mod_context.area[entity.position.x + x][entity.position.y +
+                    current_action.area[entity.position.x + x][entity.position.y +
                         y] = "reserved-for-pump"
                 end
             end
-            mod_context.area[entity.position.x][entity.position.y] = "oil-well"
+            current_action.area[entity.position.x][entity.position.y] =
+                "oil-well"
         else
             return {"failure.obstructed-resource"}
         end
     end
 
-    for x, reservations in pairs(mod_context.area) do
+    for x, reservations in pairs(current_action.area) do
         for y, reservation in pairs(reservations) do
             if reservation == "undefined" then
-                if can_place_pipe(event.surface, {x = x, y = y}) then
-                    mod_context.area[x][y] = "can-build"
+                if can_place_pipe(surface, {x = x, y = y}) then
+                    current_action.area[x][y] = "can-build"
                 else
-                    mod_context.area[x][y] = "can-not-build"
+                    current_action.area[x][y] = "can-not-build"
                 end
             end
         end
