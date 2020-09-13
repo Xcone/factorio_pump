@@ -5,16 +5,35 @@ require 'constructor'
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
-        process_selected_area_with_this_mod(event)
+        process_selected_area_with_this_mod(event, false)
     end
 end)
 
-function process_selected_area_with_this_mod(event)
+script.on_event({defines.events.on_player_alt_selected_area}, function(event)
+    if event.item == 'pump-selection-tool' then
+        process_selected_area_with_this_mod(event, true)
+    end
+end)
+
+script.on_event(defines.events.on_gui_click, function(event)
+    local name = event.element.name
+    if name == "pump_tool_picker_confirm_button" then
+        local player = game.players[event.player_index]
+        confirm_tool_picker_ui(player)
+    end
+end)
+
+function process_selected_area_with_this_mod(event, force_ui)
     local mod_context = {failure = nil}
+    local player = game.get_player(event.player_index)
+
+    if is_ui_open(player) then return end
 
     if not mod_context.failure then
         mod_context.failure = select_tools_for_resource(event, mod_context,
-                                                        event.player_index)
+                                                        player, force_ui)
+
+        if is_ui_open(player) then return end
     end
 
     if not mod_context.failure then
@@ -43,13 +62,10 @@ function process_selected_area_with_this_mod(event)
                                                  mod_context.toolbox)
     end
 
-    if mod_context.failure then
-        local player = game.get_player(event.player_index)
-        player.print(mod_context.failure)
-    end
+    if mod_context.failure then player.print(mod_context.failure) end
 end
 
-function select_tools_for_resource(event, mod_context, player_index)
+function select_tools_for_resource(event, mod_context, player, force_ui)
     if #event.entities == 0 then return {"failure.missing-resource"} end
 
     local first_entity = nil
@@ -65,7 +81,7 @@ function select_tools_for_resource(event, mod_context, player_index)
     end
 
     return add_toolbox(mod_context, first_entity.prototype.resource_category,
-                       player_index)
+                       player, force_ui)
 end
 
 function trim_event_area(event)
