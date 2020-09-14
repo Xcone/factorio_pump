@@ -59,9 +59,16 @@ local function pick_tools(player, toolbox, resource_category,
     reset_selection_if_pick_no_longer_available(extractor_pick,
                                                 available_extractor_names)
 
-    -- availble extractors might've changed. In case of a new game, will always be true because the previous selection is empty                                            
-    local available_extractors_changed =
-        not table.compare(extractor_pick.available, available_extractor_names)
+    -- Multiple items, and no previous selection exists. Recipe for disaster!! Better ask.
+    local selection_required = #available_extractor_names > 1 and
+                                   not extractor_pick.selected
+
+    -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
+    local new_options_available = extractor_pick.selected and
+                                      #available_extractor_names > 1 and
+                                      not table.compare(
+                                          extractor_pick.available,
+                                          available_extractor_names)
 
     -- persist the available extractors for next time
     extractor_pick.available = available_extractor_names;
@@ -78,7 +85,7 @@ local function pick_tools(player, toolbox, resource_category,
         end
     end
 
-    if force_ui or available_extractors_changed then
+    if force_ui or selection_required or new_options_available then
 
         local frame = player.gui.center.add {
             type = "frame",
@@ -90,10 +97,10 @@ local function pick_tools(player, toolbox, resource_category,
         local caption = {"pump-toolpicker.choose-extractor-generic"}
 
         if not force_ui then
-            if available_extractors_changed then
-                caption = {"pump-toolpicker.choose-extractor-changed-options"}
-            else
+            if selection_required then
                 caption = {"pump-toolpicker.choose-extractor-unknown-selection"}
+            else
+                caption = {"pump-toolpicker.choose-extractor-changed-options"}
             end
         end
 
