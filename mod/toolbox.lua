@@ -46,6 +46,26 @@ local function reset_selection_if_pick_no_longer_available(pick, available)
     if not table.contains(available, pick.selected) then pick.selected = nil; end
 end
 
+local function add_extractor_buttons_to_flow(extractor_flow, extractor_pick)
+    for _, extractor_name in pairs(extractor_pick.available) do
+        local style = "slot_sized_button"
+
+        if extractor_name == extractor_pick.selected then
+            style = "slot_sized_button_pressed"
+        end
+
+        local button = extractor_flow.add {
+            type = "choose-elem-button",
+            name = "pump_extractor_picker__" .. extractor_name,
+            elem_type = "entity",
+            elem_filters = {{filter = "name", name = extractor_pick.available}},
+            entity = extractor_name,
+            style = style
+        }
+        button.locked = true
+    end
+end
+
 local function pick_tools(player, toolbox, resource_category,
                           available_extractors, force_ui)
     local extractor_pick = get_extractor_pick_for_resource(resource_category);
@@ -106,18 +126,19 @@ local function pick_tools(player, toolbox, resource_category,
 
         frame.add {type = "label", caption = caption}
 
-        frame.add {
-            type = "choose-elem-button",
-            name = "pump_extractor_picker",
-            elem_type = "entity",
-            elem_filters = {{filter = "name", name = available_extractor_names}},
-            entity = extractor_pick.selected
+        local extractor_flow = frame.add {
+            type = "flow",
+            direction = "horizontal",
+            name = "pump_extractor_picker_flow"
         }
+
+        add_extractor_buttons_to_flow(extractor_flow, extractor_pick)
 
         frame.add {
             type = "button",
             name = "pump_tool_picker_confirm_button",
-            caption = {"pump-toolpicker.confirm"}
+            caption = {"pump-toolpicker.confirm"},
+            style = "confirm_button"
         }
     end
 end
@@ -220,18 +241,27 @@ end
 
 function confirm_tool_picker_ui(player)
     local frame = player.gui.center.pump_tool_picker_frame
+    if frame then frame.destroy() end
+end
+
+function on_extractor_selection(player, extractor_name)
+    local frame = player.gui.center.pump_tool_picker_frame
 
     if frame then
 
         local current_action = global.current_action
-
-        -- Apply selection to config for future use
         local extractor_pick = get_extractor_pick_for_resource(
                                    current_action.resource_category)
 
-        extractor_pick.selected = frame.pump_extractor_picker.elem_value
+        -- apply changed selection to extractor pick
+        extractor_pick.selected = extractor_name
 
-        -- Update the extractor for the current action
+        -- refresh buttons on UI
+        frame.pump_extractor_picker_flow.clear()
+        add_extractor_buttons_to_flow(frame.pump_extractor_picker_flow,
+                                      extractor_pick)
+
+        -- update the extractor for the current action
         local available_extractors = find_available_extractors(
                                          current_action.resource_category)
 
@@ -240,9 +270,6 @@ function confirm_tool_picker_ui(player)
                 current_action.toolbox.extractor = extractor
             end
         end
-
-        -- close form
-        frame.destroy()
     end
 end
 

@@ -17,10 +17,17 @@ end)
 
 script.on_event(defines.events.on_gui_click, function(event)
     local name = event.element.name
+    local player = game.players[event.player_index]
     if name == "pump_tool_picker_confirm_button" then
-        local player = game.players[event.player_index]
-        confirm_tool_picker_ui(player)
+        confirm_tool_picker_ui(game.players[event.player_index])
         resume_process_selected_area_with_this_mod()
+    else
+        local button_prefix = "pump_extractor_picker__"
+        if string.find(name, button_prefix) == 1 then
+            local extractor_name = name:sub(string.len(button_prefix) + 1)
+            on_extractor_selection(game.players[event.player_index],
+                                   extractor_name)
+        end
     end
 end)
 
