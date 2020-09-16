@@ -51,3 +51,11 @@ Date: 2020-08-31
   Fixes:
     - Fix issue where a tunnel could be planned 1 too long, resulting in the exit of the pump meeting with the side of an underground pipe.
     - Fix out-of-bounds obstruction checking, leading to crash.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.9
+Date: 2020-09-16
+  Features:
+    - Added menu to select miner for the resource you've selected was added. 
+    - The menu remembers the selection that was made and won't show until new options are available.
+    - The menu won't show if there's only 1 option available.
+    - The menu can be forcefully shown, regardless of above conditions, using the alternative selection. This is activated with the same keybinding as 'Select for cancel deconstruction', default=Shift+LeftMouse.
