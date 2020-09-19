@@ -91,12 +91,13 @@ function optimize_construct_entities(construct_entities, toolbox)
     local pipe_joint_positions = find_in_construct_entities(construct_entities,
                                                             "pipe_joint")
 
+    -- Replace straight pipes between joints/joints or joints/outputs with tunnels                                                            
     xy.each(pipe_joint_positions, function(pipe_joint, position)
         for direction, toolbox_direction in pairs(helpers.directions) do
             local result = take_series_of_pipes(construct_entities, position,
                                                 direction)
             if result.last_hit == nil then
-                remove_pipes(construct_entities, result.pipe_positions)
+                -- Skip dead ends until all tunnels are placed
             elseif result.last_hit.name == "output" then
                 if result.last_hit.direction == direction or
                     result.last_hit.direction == toolbox_direction.opposite then
@@ -107,6 +108,17 @@ function optimize_construct_entities(construct_entities, toolbox)
             elseif result.last_hit.name == "pipe_joint" then
                 try_replace_pipes_with_tunnels(construct_entities,
                                                result.pipe_positions, toolbox)
+            end
+        end
+    end)
+
+    -- Remove dead ends
+    xy.each(pipe_joint_positions, function(pipe_joint, position)
+        for direction, toolbox_direction in pairs(helpers.directions) do
+            local result = take_series_of_pipes(construct_entities, position,
+                                                direction)
+            if result.last_hit == nil then
+                remove_pipes(construct_entities, result.pipe_positions)
             end
         end
     end)
