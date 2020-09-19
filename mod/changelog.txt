@@ -55,7 +55,12 @@ Date: 2020-08-31
 Version: 0.1.9
 Date: 2020-09-16
   Features:
-    - Added menu to select miner for the resource you've selected was added. 
+    - Added menu to select miner for the resource you've selected. 
     - The menu remembers the selection that was made and won't show until new options are available.
     - The menu won't show if there's only 1 option available.
     - The menu can be forcefully shown, regardless of above conditions, using the alternative selection. This is activated with the same keybinding as 'Select for cancel deconstruction', default=Shift+LeftMouse.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.10
+Date: 2020-09-19
+  Fixes:
+    - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.
