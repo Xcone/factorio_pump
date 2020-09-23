@@ -7,7 +7,7 @@ pumpSelectionTool.icon = "__pump__/graphics/icons/pump_icon_32.png"
 pumpSelectionTool.icon_size = 32
 pumpSelectionTool.selection_mode = {"any-entity"}
 pumpSelectionTool.selection_cursor_box_type = "entity"
-pumpSelectionTool.flags = {"only-in-cursor"}
+pumpSelectionTool.flags = {"only-in-cursor", "spawnable"}
 pumpSelectionTool.subgroup = "tool"
 pumpSelectionTool.order = "c[automated-construction]-d[pump-selection-tool]"
 pumpSelectionTool.entity_filters = {"crude-oil"}
@@ -28,6 +28,7 @@ local pumpShortcut = table.deepcopy(data.raw["shortcut"]["give-blueprint"])
 pumpShortcut.name = "pump-shortcut"
 pumpShortcut.localised_name = nil
 pumpShortcut.associated_control_input = nil
+pumpShortcut.item_to_spawn = "pump-selection-tool"
 pumpShortcut.style = "default"
 pumpShortcut.icon = {
     filename = "__pump__/graphics/icons/pump_icon_32.png",
@@ -37,11 +38,11 @@ pumpShortcut.icon = {
     flags = {"icon"}
 }
 pumpShortcut.disabled_icon = {
-  filename = "__pump__/graphics/icons/pump_icon_32_white.png",
-  priority = "extra-high-no-scale",
-  size = 32,
-  scale = 1,
-  flags = {"icon"}
+    filename = "__pump__/graphics/icons/pump_icon_32_white.png",
+    priority = "extra-high-no-scale",
+    size = 32,
+    scale = 1,
+    flags = {"icon"}
 }
 pumpShortcut.small_icon = {
     filename = "__pump__/graphics/icons/pump_icon_24.png",
@@ -51,12 +52,11 @@ pumpShortcut.small_icon = {
     flags = {"icon"}
 }
 pumpShortcut.disabled_small_icon = {
-  filename = "__pump__/graphics/icons/pump_icon_24_white.png",
-  priority = "extra-high-no-scale",
-  size = 24,
-  scale = 1,
-  flags = {"icon"}
+    filename = "__pump__/graphics/icons/pump_icon_24_white.png",
+    priority = "extra-high-no-scale",
+    size = 24,
+    scale = 1,
+    flags = {"icon"}
 }
-pumpShortcut.item_to_create = "pump-selection-tool"
 
 data:extend{pumpSelectionTool, pumpShortcut}

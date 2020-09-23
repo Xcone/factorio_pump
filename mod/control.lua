@@ -37,7 +37,7 @@ function process_selected_area_with_this_mod(event, force_ui)
     -- The game is not paused with a ui open. So make sure a second selection is ignore until the window is closed.
     if is_ui_open(player) then return end
 
-    -- Store required input in global, so it can resume after the uit is potentially shown.
+    -- Store required input in global, so it can resume after the ui is potentially shown.
     global.current_action = {failure = nil}
     local current_action = global.current_action
 
