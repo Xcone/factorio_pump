@@ -1,5 +1,12 @@
 local helpers = require 'helpers'
 
+local function expand_box(box, amount)
+    box.left_top.x = box.left_top.x - amount
+    box.left_top.y = box.left_top.y - amount
+    box.right_bottom.x = box.right_bottom.x + amount
+    box.right_bottom.y = box.right_bottom.y + amount
+end
+
 local function get_planned_entities(construction_plan, toolbox)
     local extractors = {}
     local pipes = {}
@@ -10,10 +17,26 @@ local function get_planned_entities(construction_plan, toolbox)
         local planned_entity_name = planned_entity.name
         local placement = {
             position = position,
-            direction = planned_entity.direction
+            direction = planned_entity.direction,
+            deconstruct_area = {
+                left_top = {x = position.x - 1, y = position.y - 1},
+                right_bottom = {x = position.x + 1, y = position.y + 1}
+            }
         }
 
         if planned_entity_name == "extractor" then
+            local extractor_bounds = toolbox.extractor.relative_bounds;
+            placement.deconstruct_area =
+                {
+                    left_top = {
+                        x = position.x + extractor_bounds.left_top.x - 1,
+                        y = position.y + extractor_bounds.left_top.y - 1
+                    },
+                    right_bottom = {
+                        x = position.x + extractor_bounds.right_bottom.x + 1,
+                        y = position.y + extractor_bounds.right_bottom.y + 1
+                    }
+                }
             table.insert(extractors, placement)
         end
 
@@ -44,8 +67,16 @@ end
 function construct_entities(construction_plan, surface, toolbox)
     local planned_entities = get_planned_entities(construction_plan, toolbox)
 
-    for entity_name, entities_to_place in pairs(planned_entities) do
+    for _, entities_to_place in pairs(planned_entities) do
+        for i, parameters in pairs(entities_to_place) do
+            surface.deconstruct_area {
+                area = parameters.deconstruct_area,
+                force = "player"
+            }
+        end
+    end
 
+    for entity_name, entities_to_place in pairs(planned_entities) do
         local modules = toolbox.module_config[entity_name]
         for i, parameters in pairs(entities_to_place) do
             local ghost = surface.create_entity {

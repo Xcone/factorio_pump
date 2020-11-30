@@ -80,7 +80,8 @@ function can_place_extractor(surface, position, direction, toolbox)
         position = position,
         direction = direction,
         force = "player",
-        build_check_type = defines.build_check_type.ghost_place
+        build_check_type = defines.build_check_type.ghost_place,
+        forced = true
     })
 end
 
@@ -90,6 +91,7 @@ function can_place_pipe(surface, position)
         position = position,
         direction = defines.direction.north,
         force = "player",
-        build_check_type = defines.build_check_type.ghost_place
+        build_check_type = defines.build_check_type.ghost_place,
+        forced = true
     })
 end

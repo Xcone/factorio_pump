@@ -66,6 +66,7 @@ Date: 2020-09-19
     - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.    
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
-Date: ?
+Date: 2020-12-01
   Features:
-    - Compatibility for Factorio 1.1
+    - Factorio 1.1 compatibility.
+    - Ignore/deconstruct trees and rocks.
