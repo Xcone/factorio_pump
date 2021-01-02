@@ -72,7 +72,7 @@ Date: 2020-12-01
     - Ignore/deconstruct trees and rocks. 
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
-Date: 2020-12-01
+Date: 2021-01-02
   Features:
     - Factorio 1.1.6 compatibility.
   Fixes:
