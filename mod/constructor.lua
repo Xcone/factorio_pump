@@ -66,13 +66,15 @@ end
 
 function construct_entities(construction_plan, surface, toolbox)
     local planned_entities = get_planned_entities(construction_plan, toolbox)
+    local player_force = "player"
 
     for _, entities_to_place in pairs(planned_entities) do
         for i, parameters in pairs(entities_to_place) do
-            surface.deconstruct_area {
-                area = parameters.deconstruct_area,
-                force = "player"
-            }
+            local entities_to_remove = surface.find_entities(
+                                           parameters.deconstruct_area);
+            for i, entity in pairs(entities_to_remove) do
+                entity.order_deconstruction(player_force)
+            end
         end
     end
 
@@ -84,7 +86,7 @@ function construct_entities(construction_plan, surface, toolbox)
                 inner_name = entity_name,
                 position = parameters.position,
                 direction = parameters.direction,
-                force = "player"
+                force = player_force
             }
 
             if modules then ghost.item_requests = modules end

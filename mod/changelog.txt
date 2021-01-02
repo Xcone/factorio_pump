@@ -75,3 +75,5 @@ Version: 1.0.1
 Date: 2020-12-01
   Features:
     - Factorio 1.1.6 compatibility.
+  Fixes:
+    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
