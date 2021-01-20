@@ -79,7 +79,7 @@ Date: 2021-01-02
     - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
-Date: ?  
+Date: 2021-01-21
   Features:
     - Added pipe-selection to the selection menu.
   Fixes:
