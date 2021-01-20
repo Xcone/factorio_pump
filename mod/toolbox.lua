@@ -28,10 +28,10 @@ function add_development_toolbox(target)
 end
 
 local function get_extractor_pick_for_resource(resource_category)
-    if not global.toolpicker_config then
-        global.toolpicker_config = {
-            extractor_pick = {selected = nil, available = {}}
-        }
+    if not global.toolpicker_config then global.toolpicker_config = {} end
+
+    if not global.toolpicker_config.extractor_pick then
+        global.toolpicker_config.extractor_pick = {}
     end
 
     if not global.toolpicker_config.extractor_pick[resource_category] then
@@ -40,6 +40,16 @@ local function get_extractor_pick_for_resource(resource_category)
     end
 
     return global.toolpicker_config.extractor_pick[resource_category]
+end
+
+local function get_pipe_pick()
+    if not global.toolpicker_config then global.toolpicker_config = {} end
+
+    if not global.toolpicker_config.pipe_pick then
+        global.toolpicker_config.pipe_pick = {selected = nil, available = {}}
+    end
+
+    return global.toolpicker_config.pipe_pick
 end
 
 local function reset_selection_if_pick_no_longer_available(pick, available)
@@ -66,9 +76,31 @@ local function add_extractor_buttons_to_flow(extractor_flow, extractor_pick)
     end
 end
 
+local function add_pipe_buttons_to_flow(pipe_flow, pipe_pick)
+    for _, pipe_name in pairs(pipe_pick.available) do
+        local style = "slot_sized_button"
+
+        if pipe_name == pipe_pick.selected then
+            style = "slot_sized_button_pressed"
+        end
+
+        local button = pipe_flow.add {
+            type = "choose-elem-button",
+            name = "pump_pipe_picker__" .. pipe_name,
+            elem_type = "entity",
+            elem_filters = {{filter = "name", name = pipe_pick.available}},
+            entity = pipe_name,
+            style = style
+        }
+        button.locked = true
+    end
+end
+
 local function pick_tools(player, toolbox, resource_category,
-                          available_extractors, force_ui)
+                          available_extractors, available_pipes,
+                          available_pipe_tunnels, force_ui)
     local extractor_pick = get_extractor_pick_for_resource(resource_category);
+    local pipe_pick = get_pipe_pick();
 
     local available_extractor_names = {}
     for _, extractor in pairs(available_extractors) do
@@ -79,24 +111,39 @@ local function pick_tools(player, toolbox, resource_category,
     reset_selection_if_pick_no_longer_available(extractor_pick,
                                                 available_extractor_names)
 
+    reset_selection_if_pick_no_longer_available(pipe_pick, available_pipes)
+
     -- Multiple items, and no previous selection exists. Recipe for disaster!! Better ask.
-    local selection_required = #available_extractor_names > 1 and
-                                   not extractor_pick.selected
+    local selection_required = (#available_extractor_names > 1 and
+                                   not extractor_pick.selected) or
+                                   (#available_pipes > 1 and
+                                       not pipe_pick.selected)
 
     -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
-    local new_options_available = extractor_pick.selected and
-                                      #available_extractor_names > 1 and
-                                      not table.compare(
-                                          extractor_pick.available,
-                                          available_extractor_names)
+    local new_extractor_options_available =
+        extractor_pick.selected and #available_extractor_names > 1 and
+            not table.compare(extractor_pick.available,
+                              available_extractor_names)
 
-    -- persist the available extractors for next time
+    local new_pipe_options_available = pipe_pick.selected and #available_pipes >
+                                           1 and
+                                           not table.compare(
+                                               pipe_pick.available,
+                                               available_pipes)
+
+    local new_options_available = new_extractor_options_available or
+                                      new_pipe_options_available
+
+    -- persist the available extractors and pipes for next time
     extractor_pick.available = available_extractor_names;
+    pipe_pick.available = available_pipes;
 
     -- ensure a default selection
     if not extractor_pick.selected then
         extractor_pick.selected = available_extractor_names[1]
     end
+
+    if not pipe_pick.selected then pipe_pick.selected = available_pipes[1] end
 
     -- put selection in toolbox, though it might later be overwritten after the UI closes
     for _, extractor in pairs(available_extractors) do
@@ -104,6 +151,9 @@ local function pick_tools(player, toolbox, resource_category,
             toolbox.extractor = extractor
         end
     end
+    toolbox.connector.entity_name = pipe_pick.selected
+    toolbox.connector.underground_entity_name =
+        pipe_pick.selected .. '-to-ground'
 
     if force_ui or selection_required or new_options_available then
 
@@ -132,7 +182,14 @@ local function pick_tools(player, toolbox, resource_category,
             name = "pump_extractor_picker_flow"
         }
 
+        local pipe_flow = frame.add {
+            type = "flow",
+            direction = "horizontal",
+            name = "pump_pipe_picker_flow"
+        }
+
         add_extractor_buttons_to_flow(extractor_flow, extractor_pick)
+        add_pipe_buttons_to_flow(pipe_flow, pipe_pick)
 
         frame.add {
             type = "button",
@@ -154,6 +211,32 @@ local function add_module_config(toolbox, player)
     end
 
     if not toolbox.module_config then toolbox.module_config = {} end
+end
+
+local function find_available_pipes()
+    local all_pipes = game.get_filtered_entity_prototypes(
+                          {{filter = "type", type = "pipe"}})
+
+    local available_pipes = {}
+
+    for _, pipe in pairs(all_pipes) do
+        table.insert(available_pipes, pipe.name)
+    end
+
+    return available_pipes
+end
+
+local function find_available_pipe_tunnels()
+    local all_pipe_tunnels = game.get_filtered_entity_prototypes(
+                                 {{filter = "type", type = "pipe-to-ground"}})
+
+    local available_pipe_tunnels = {}
+
+    for _, pipe_tunnel in pairs(all_pipe_tunnels) do
+        table.insert(available_pipe_tunnels, pipe_tunnel.name)
+    end
+
+    return available_pipe_tunnels
 end
 
 local function find_available_extractors(resource_category)
@@ -218,15 +301,18 @@ function add_toolbox(current_action, player, force_ui)
 
     local available_extractors = find_available_extractors(
                                      current_action.resource_category)
+
+    local available_pipes = find_available_pipes()
+    local available_pipe_tunnels = find_available_pipe_tunnels()
+
     if #available_extractors == 0 then
         return {
             "failure.extractor-must-be-square", current_action.resource_category
         }
     end
 
-    pick_tools(player, toolbox, current_action.resource_category,
-               available_extractors, force_ui)
-
+    -- TODO: Figure out of the pipe-distance can be dynamically retrieved after pipe selection as well and remove these defaults.
+    -- Note that entity names are being overwritten in the meantime.
     toolbox.connector = {
         entity_name = "pipe",
         underground_entity_name = "pipe-to-ground",
@@ -235,6 +321,10 @@ function add_toolbox(current_action, player, force_ui)
         underground_distance_min = 0,
         underground_distance_max = 9
     }
+
+    pick_tools(player, toolbox, current_action.resource_category,
+               available_extractors, available_pipes, available_pipe_tunnels,
+               force_ui)
 
     current_action.toolbox = toolbox
 end
@@ -270,6 +360,28 @@ function on_extractor_selection(player, extractor_name)
                 current_action.toolbox.extractor = extractor
             end
         end
+    end
+end
+
+function on_pipe_selection(player, pipe_name)
+    local frame = player.gui.center.pump_tool_picker_frame
+
+    if frame then
+
+        local current_action = global.current_action
+        local pipe_pick = get_pipe_pick()
+
+        -- apply changed selection to pipe pick
+        pipe_pick.selected = pipe_name
+
+        -- refresh buttons on UI
+        frame.pump_pipe_picker_flow.clear()
+        add_pipe_buttons_to_flow(frame.pump_pipe_picker_flow, pipe_pick)
+
+        -- update the pipe for the current action
+        current_action.toolbox.connector.entity_name = pipe_pick.selected
+        current_action.toolbox.connector.underground_entity_name =
+            pipe_pick.selected .. '-to-ground'
     end
 end
 

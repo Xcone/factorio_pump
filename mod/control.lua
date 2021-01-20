@@ -28,6 +28,12 @@ script.on_event(defines.events.on_gui_click, function(event)
             on_extractor_selection(game.players[event.player_index],
                                    extractor_name)
         end
+
+        button_prefix = "pump_pipe_picker__"
+        if string.find(name, button_prefix) == 1 then
+            local pipe_name = name:sub(string.len(button_prefix) + 1)
+            on_pipe_selection(game.players[event.player_index], pipe_name)
+        end
     end
 end)
 
@@ -63,7 +69,6 @@ function resume_process_selected_area_with_this_mod()
     local current_action = global.current_action
     local surface = game.get_surface(current_action.surface_index)
     local player = game.get_player(current_action.player_index)
-
     local entities = surface.find_entities_filtered {
         area = current_action.area_bounds,
         name = {current_action.resource_entity_name}
