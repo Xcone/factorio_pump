@@ -9,3 +9,12 @@ if mods["ModuleInserter"] then
         }
     })
 end
+
+data:extend({
+    {
+        type = "bool-setting",
+        name = "pump-ignore-research",
+        setting_type = "runtime-per-user",
+        default_value = false
+    }
+})

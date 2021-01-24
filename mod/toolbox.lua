@@ -27,20 +27,27 @@ function add_development_toolbox(target)
     target.toolbox = toolbox
 end
 
-local function meets_tech_requirement(entity)
+local function meets_tech_requirement(entity, player)
     entity_is_unlocked = false;
 
-    local recipies_for_entity = game.get_filtered_recipe_prototypes {
-        {
-            filter = "has-product-item",
-            elem_filters = {{filter = "name", name = entity.name}}
-        }
-    }
+    local setting = player.mod_settings["pump-ignore-research"]
+    local ignore_resaearch = setting and setting.value
 
-    for recipe_name, _ in pairs(recipies_for_entity) do
-        local recipe = game.forces["player"].recipes[recipe_name]
-        if recipe ~= nil and recipe.enabled then
-            entity_is_unlocked = true
+    if ignore_resaearch then
+        entity_is_unlocked = true
+    else
+        local recipies_for_entity = game.get_filtered_recipe_prototypes {
+            {
+                filter = "has-product-item",
+                elem_filters = {{filter = "name", name = entity.name}}
+            }
+        }
+
+        for recipe_name, _ in pairs(recipies_for_entity) do
+            local recipe = player.force.recipes[recipe_name]
+            if recipe ~= nil and recipe.enabled then
+                entity_is_unlocked = true
+            end
         end
     end
     return entity_is_unlocked
@@ -231,12 +238,12 @@ local function add_module_config(toolbox, player)
     if not toolbox.module_config then toolbox.module_config = {} end
 end
 
-local function add_available_pipes(available_pipes)
+local function add_available_pipes(available_pipes, player)
     local all_pipes = game.get_filtered_entity_prototypes(
                           {{filter = "type", type = "pipe"}})
 
     for _, pipe in pairs(all_pipes) do
-        if meets_tech_requirement(pipe) then
+        if meets_tech_requirement(pipe, player) then
             table.insert(available_pipes, pipe.name)
         end
     end
@@ -244,14 +251,15 @@ local function add_available_pipes(available_pipes)
     if #available_pipes == 0 then return {"failure.no-pipes"} end
 end
 
-local function add_available_extractors(available_extractors, resource_category)
+local function add_available_extractors(available_extractors, resource_category,
+                                        player)
     local all_extractors = game.get_filtered_entity_prototypes(
                                {{filter = "type", type = "mining-drill"}})
 
     local suitable_extractors = {}
     for _, extractor in pairs(all_extractors) do
         if extractor.resource_categories[resource_category] and
-            meets_tech_requirement(extractor) then
+            meets_tech_requirement(extractor, player) then
             table.insert(suitable_extractors, extractor)
         end
     end
@@ -308,12 +316,12 @@ function add_toolbox(current_action, player, force_ui)
     local failure = {}
     local available_extractors = {}
     failure = add_available_extractors(available_extractors,
-                                       current_action.resource_category)
+                                       current_action.resource_category, player)
 
     if failure then return failure end
 
     local available_pipes = {}
-    add_available_pipes(available_pipes)
+    add_available_pipes(available_pipes, player)
 
     if failure then return failure end
 
@@ -359,7 +367,8 @@ function on_extractor_selection(player, extractor_name)
         -- update the extractor for the current action
         local available_extractors = {}
         local failure = add_available_extractors(available_extractors,
-                                                 current_action.resource_category)
+                                                 current_action.resource_category,
+                                                 player)
         -- Note: The above failure does not need handling, because if it would've failed, the call before showing the UI would already have stopped the current action.
 
         for _, extractor in pairs(available_extractors) do
