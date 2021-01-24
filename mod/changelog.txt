@@ -87,7 +87,7 @@ Date: 2021-01-21
     - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
-Date: ??
+Date: 2012-01-24
   Features:    
     - Check research requirements for extractors and pipes before offering them in the selection menu.
     - Added setting to ignore the research requirements for extractors and pipes
