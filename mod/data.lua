@@ -26,6 +26,7 @@ pumpSelectionTool.alt_tile_filters = pumpSelectionTool.tile_filters
 
 local pumpShortcut = table.deepcopy(data.raw["shortcut"]["give-blueprint"])
 pumpShortcut.name = "pump-shortcut"
+pumpShortcut.technology_to_unlock = nil
 pumpShortcut.localised_name = nil
 pumpShortcut.associated_control_input = nil
 pumpShortcut.item_to_spawn = "pump-selection-tool"

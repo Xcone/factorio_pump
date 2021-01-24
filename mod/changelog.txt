@@ -91,3 +91,5 @@ Date: ??
   Features:    
     - Check research requirements for extractors and pipes before offering them in the selection menu.
     - Added setting to ignore the research requirements for extractors and pipes
+  Changes:
+    - Removed the tech requirement for the P.U.M.P. shortcut, which has become obsolete due to the added features.
