@@ -84,3 +84,9 @@ Date: 2021-01-21
     - Added pipe-selection to the selection menu.
   Fixes:
     - Fix crash when an extractor larger then 3x3 is used.  
+    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
+---------------------------------------------------------------------------------------------------
+Version: 1.1.0
+Date: ??
+  Features:    
+    - Check research requirements for extractors and pipes

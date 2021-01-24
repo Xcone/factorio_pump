@@ -27,6 +27,25 @@ function add_development_toolbox(target)
     target.toolbox = toolbox
 end
 
+local function meets_tech_requirement(entity)
+    entity_is_unlocked = false;
+
+    local recipies_for_entity = game.get_filtered_recipe_prototypes {
+        {
+            filter = "has-product-item",
+            elem_filters = {{filter = "name", name = entity.name}}
+        }
+    }
+
+    for recipe_name, _ in pairs(recipies_for_entity) do
+        local recipe = game.forces["player"].recipes[recipe_name]
+        if recipe ~= nil and recipe.enabled then
+            entity_is_unlocked = true
+        end
+    end
+    return entity_is_unlocked
+end
+
 local function get_extractor_pick_for_resource(resource_category)
     if not global.toolpicker_config then global.toolpicker_config = {} end
 
@@ -97,8 +116,7 @@ local function add_pipe_buttons_to_flow(pipe_flow, pipe_pick)
 end
 
 local function pick_tools(player, toolbox, resource_category,
-                          available_extractors, available_pipes,
-                          available_pipe_tunnels, force_ui)
+                          available_extractors, available_pipes, force_ui)
     local extractor_pick = get_extractor_pick_for_resource(resource_category);
     local pipe_pick = get_pipe_pick();
 
@@ -213,39 +231,27 @@ local function add_module_config(toolbox, player)
     if not toolbox.module_config then toolbox.module_config = {} end
 end
 
-local function find_available_pipes()
+local function add_available_pipes(available_pipes)
     local all_pipes = game.get_filtered_entity_prototypes(
                           {{filter = "type", type = "pipe"}})
 
-    local available_pipes = {}
-
     for _, pipe in pairs(all_pipes) do
-        table.insert(available_pipes, pipe.name)
+        if meets_tech_requirement(pipe) then
+            table.insert(available_pipes, pipe.name)
+        end
     end
 
-    return available_pipes
+    if #available_pipes == 0 then return {"failure.no-pipes"} end
 end
 
-local function find_available_pipe_tunnels()
-    local all_pipe_tunnels = game.get_filtered_entity_prototypes(
-                                 {{filter = "type", type = "pipe-to-ground"}})
-
-    local available_pipe_tunnels = {}
-
-    for _, pipe_tunnel in pairs(all_pipe_tunnels) do
-        table.insert(available_pipe_tunnels, pipe_tunnel.name)
-    end
-
-    return available_pipe_tunnels
-end
-
-local function find_available_extractors(resource_category)
+local function add_available_extractors(available_extractors, resource_category)
     local all_extractors = game.get_filtered_entity_prototypes(
                                {{filter = "type", type = "mining-drill"}})
 
     local suitable_extractors = {}
     for _, extractor in pairs(all_extractors) do
-        if extractor.resource_categories[resource_category] then
+        if extractor.resource_categories[resource_category] and
+            meets_tech_requirement(extractor) then
             table.insert(suitable_extractors, extractor)
         end
     end
@@ -253,8 +259,6 @@ local function find_available_extractors(resource_category)
     if #suitable_extractors == 0 then
         return {"failure.no-suitable-extractor", resource_category}
     end
-
-    local available_extractors = {}
 
     for _, extractor in pairs(suitable_extractors) do
         local cardinal_output_positions =
@@ -292,24 +296,26 @@ local function find_available_extractors(resource_category)
         end
     end
 
-    return available_extractors
+    if #available_extractors == 0 then
+        return {"failure.extractor-must-be-square", resource_category}
+    end
 end
 
 function add_toolbox(current_action, player, force_ui)
     local toolbox = {}
     add_module_config(toolbox, player)
 
-    local available_extractors = find_available_extractors(
-                                     current_action.resource_category)
+    local failure = {}
+    local available_extractors = {}
+    failure = add_available_extractors(available_extractors,
+                                       current_action.resource_category)
 
-    local available_pipes = find_available_pipes()
-    local available_pipe_tunnels = find_available_pipe_tunnels()
+    if failure then return failure end
 
-    if #available_extractors == 0 then
-        return {
-            "failure.extractor-must-be-square", current_action.resource_category
-        }
-    end
+    local available_pipes = {}
+    add_available_pipes(available_pipes)
+
+    if failure then return failure end
 
     -- TODO: Figure out of the pipe-distance can be dynamically retrieved after pipe selection as well and remove these defaults.
     -- Note that entity names are being overwritten in the meantime.
@@ -323,8 +329,7 @@ function add_toolbox(current_action, player, force_ui)
     }
 
     pick_tools(player, toolbox, current_action.resource_category,
-               available_extractors, available_pipes, available_pipe_tunnels,
-               force_ui)
+               available_extractors, available_pipes, force_ui)
 
     current_action.toolbox = toolbox
 end
@@ -352,8 +357,10 @@ function on_extractor_selection(player, extractor_name)
                                       extractor_pick)
 
         -- update the extractor for the current action
-        local available_extractors = find_available_extractors(
-                                         current_action.resource_category)
+        local available_extractors = {}
+        local failure = add_available_extractors(available_extractors,
+                                                 current_action.resource_category)
+        -- Note: The above failure does not need handling, because if it would've failed, the call before showing the UI would already have stopped the current action.
 
         for _, extractor in pairs(available_extractors) do
             if extractor.entity_name == extractor_pick.selected then
