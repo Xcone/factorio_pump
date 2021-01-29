@@ -63,7 +63,7 @@ Date: 2020-09-16
 Version: 0.1.10
 Date: 2020-09-19
   Fixes:
-    - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.    
+    - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2020-12-01
@@ -87,9 +87,9 @@ Date: 2021-01-21
     - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
-Date: 2012-01-24
-  Features:    
+Date: 2021-01-24
+  Features:
     - Check research requirements for extractors and pipes before offering them in the selection menu.
-    - Added setting to ignore the research requirements for extractors and pipes
+    - Added setting to ignore the research requirements for extractors and pipes.
   Changes:
     - Removed the tech requirement for the P.U.M.P. shortcut, which has become obsolete due to the added features.
