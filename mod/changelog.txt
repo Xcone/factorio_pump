@@ -93,3 +93,9 @@ Date: 2021-01-24
     - Added setting to ignore the research requirements for extractors and pipes.
   Changes:
     - Removed the tech requirement for the P.U.M.P. shortcut, which has become obsolete due to the added features.
+---------------------------------------------------------------------------------------------------
+Version: 1.1.1
+Date: 2021-01-29
+  Fixes:
+    - Fixed changelog not visible in game due to wrong formatting.
+    - Fixed warning showing up in the logs for icon-mipmaps.

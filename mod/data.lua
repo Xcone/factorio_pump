@@ -5,6 +5,7 @@ local pumpSelectionTool = table.deepcopy(
 pumpSelectionTool.name = "pump-selection-tool"
 pumpSelectionTool.icon = "__pump__/graphics/icons/pump_icon_32.png"
 pumpSelectionTool.icon_size = 32
+pumpSelectionTool.icon_mipmaps = 0
 pumpSelectionTool.selection_mode = {"any-entity"}
 pumpSelectionTool.selection_cursor_box_type = "entity"
 pumpSelectionTool.flags = {"only-in-cursor", "spawnable"}
