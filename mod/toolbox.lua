@@ -238,13 +238,30 @@ local function add_module_config(toolbox, player)
     if not toolbox.module_config then toolbox.module_config = {} end
 end
 
+local function has_matching_pipe_to_ground(pipe_name)
+    local matching_pipe_to_ground_result =
+        game.get_filtered_entity_prototypes(
+            {
+                {filter = "type", type = "pipe-to-ground"},
+                {
+                    filter = "name",
+                    name = pipe_name .. "-to-ground",
+                    mode = "and"
+                }
+            })
+
+    return #matching_pipe_to_ground_result > 0
+end
+
 local function add_available_pipes(available_pipes, player)
     local all_pipes = game.get_filtered_entity_prototypes(
                           {{filter = "type", type = "pipe"}})
 
     for _, pipe in pairs(all_pipes) do
         if meets_tech_requirement(pipe, player) then
-            table.insert(available_pipes, pipe.name)
+            if has_matching_pipe_to_ground(pipe.name) then
+                table.insert(available_pipes, pipe.name)
+            end
         end
     end
 
