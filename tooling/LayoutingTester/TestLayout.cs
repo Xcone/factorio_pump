@@ -121,6 +121,11 @@ namespace LayoutingTester
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 AddConstructEntities(constructEntities);
 
+                Print("---------------");
+                Print("Result");
+                Print("---------------");
+                Print(constructEntities);
+
 
             }
             catch (LuaScriptException e)
