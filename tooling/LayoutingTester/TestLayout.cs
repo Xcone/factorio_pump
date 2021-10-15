@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -68,6 +69,8 @@ namespace LayoutingTester
 
         public void RunLua()
         {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            
             lua = new Lua();
             //lua.SetDebugHook(LuaHookMask.Line, 1);
             lua.DebugHook += Lua_DebugHook;
