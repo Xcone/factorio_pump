@@ -104,3 +104,8 @@ Version: 1.1.2
 Date: 2021-04-28
   Changes:
     - Dialog only shows pipes that have a matching pipe-to-ground (based on vanilla naming; by adding '-to-ground' to the pipe name)
+---------------------------------------------------------------------------------------------------
+Version: 1.1.3
+Date: 2021-10-16
+  Fixes:
+    - Fixed issue of occasionally a pump not being connected, due to it plan being overwritten by another pump connecting to the same pipe segment.

@@ -592,8 +592,8 @@ function try_connect_extractors(segment)
             end
         end
 
-        local best_option = get_best_extractor_placement(
-                                oilwells[i].construction_analysis)
+        local best_option = get_best_extractor_placement(oilwells[i]
+                                                             .construction_analysis)
         if best_option ~= nil then
 
             add_extractor(construct_entities, extractor_position,
@@ -613,7 +613,8 @@ function try_connect_extractors(segment)
                                best_option.pump_direction)
                 elseif pipe_index == best_option.edge_distance then
                     add_connector_joint(construct_entities, pipe_position)
-                else
+                elseif xy.get(construct_entities, pipe_position) == nil then
+                    -- outputs or joint take precedence.
                     add_connector(construct_entities, pipe_position)
                 end
             end
@@ -705,9 +706,9 @@ function get_distance_to_edge(segment, position, direction)
                                                             vector_inwards)
 
         local is_on_outer_edge = not is_in_segment and
-                                     math2d.bounding_box.contains_point(
-                                         segment.area_bounds,
-                                         position_offset_inwards)
+                                     math2d.bounding_box
+                                         .contains_point(segment.area_bounds,
+                                                         position_offset_inwards)
 
         if is_on_outer_edge then return 0 end
     end
