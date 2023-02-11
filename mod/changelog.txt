@@ -109,3 +109,8 @@ Version: 1.1.3
 Date: 2021-10-16
   Fixes:
     - Fixed issue of occasionally a pump not being connected, due to it plan being overwritten by another pump connecting to the same pipe segment.
+---------------------------------------------------------------------------------------------------
+Version: 1.1.4
+Date: 2023-02-11
+  Changes:
+    - Added check that potential extractors have an output-fluidbox. This allows other mods to add solid-resources to the P.U.M.P. selection tool that are turned liquid by their specific extractors; while keeping the risk of attaching to a (for instance) sulfuric acid input to a minimum.
