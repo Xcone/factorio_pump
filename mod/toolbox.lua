@@ -268,6 +268,16 @@ local function add_available_pipes(available_pipes, player)
     if #available_pipes == 0 then return {"failure.no-pipes"} end
 end
 
+local function get_output_fluidbox(extractor)
+    local output_fluid_boxes = {}
+    for _, fluidbox in pairs(extractor.fluidbox_prototypes) do
+        if fluidbox and fluidbox.production_type == "output" then
+            table.insert(output_fluid_boxes, fluidbox);
+        end
+    end
+    return output_fluid_boxes[1];
+end
+
 local function add_available_extractors(available_extractors, resource_category,
                                         player)
     local all_extractors = game.get_filtered_entity_prototypes(
@@ -275,7 +285,7 @@ local function add_available_extractors(available_extractors, resource_category,
 
     local suitable_extractors = {}
     for _, extractor in pairs(all_extractors) do
-        if extractor.resource_categories[resource_category] and
+        if extractor.resource_categories[resource_category] and get_output_fluidbox(extractor) and
             meets_tech_requirement(extractor, player) then
             table.insert(suitable_extractors, extractor)
         end
@@ -286,8 +296,7 @@ local function add_available_extractors(available_extractors, resource_category,
     end
 
     for _, extractor in pairs(suitable_extractors) do
-        local cardinal_output_positions =
-            extractor.fluidbox_prototypes[1].pipe_connections[1].positions
+        local cardinal_output_positions = get_output_fluidbox(extractor).pipe_connections[1].positions
 
         local output_offsets = {
             [defines.direction.north] = cardinal_output_positions[1],
