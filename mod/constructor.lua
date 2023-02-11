@@ -90,7 +90,9 @@ function construct_entities(construction_plan, surface, toolbox)
             }
 
             if modules then ghost.item_requests = modules end
-            script.raise_script_built{entity=ghost} -- raise built event so other mods can detect the new ghost
+
+            -- raise built event so other mods can detect the new ghost
+            script.raise_script_built{entity=ghost}
         end
     end
 end

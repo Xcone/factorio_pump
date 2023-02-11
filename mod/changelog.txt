@@ -114,3 +114,8 @@ Version: 1.1.4
 Date: 2023-02-11
   Changes:
     - Added check that potential extractors have an output-fluidbox. This allows other mods to add solid-resources to the P.U.M.P. selection tool that are turned liquid by their specific extractors; while keeping the risk of attaching to a (for instance) sulfuric acid input to a minimum.
+---------------------------------------------------------------------------------------------------
+Version: 1.1.5
+Date: 2023-02-11  
+  Changes:
+    - Perform a 'raise_script_built' event for the ghosts placed by P.U.M.P.
