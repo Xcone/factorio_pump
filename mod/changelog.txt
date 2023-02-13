@@ -119,3 +119,8 @@ Version: 1.1.5
 Date: 2023-02-11  
   Changes:
     - Perform a 'raise_script_built' event for the ghosts placed by P.U.M.P.
+---------------------------------------------------------------------------------------------------
+Version: 1.1.6
+Date: 2023-02-13  
+  Features:
+    - Russian localisation file; kindly provided by https://github.com/Astorin 
