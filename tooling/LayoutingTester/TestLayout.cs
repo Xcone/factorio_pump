@@ -110,7 +110,7 @@ namespace LayoutingTester
 
                 // Act
                 var planFunction = lua["add_construction_plan"] as LuaFunction;
-                var failure = planFunction.Call(plannerInput)?.First();
+                var failure = planFunction.Call(plannerInput)?.FirstOrDefault();
 
                 // Extract result
                 if (failure != null)
