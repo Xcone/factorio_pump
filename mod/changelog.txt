@@ -1,90 +1,39 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.0
-Date: 2020-04-20
-  Features:
-    - P.U.M.P. selection tool available for the shurtcut bar.
-    - For all oil wells within a selection, ghosts for pumpjacks and the pipes connecting the pumpjacks will be placed.
-    - Underground pipes will be used as much as possible.
----------------------------------------------------------------------------------------------------
-Version: 0.1.1
-Date: 2020-04-24
-  Fixes:
-    - Bug when detection to place multiple underground pipes for a longer distance failed, and would instead place the remaining distance above ground.
----------------------------------------------------------------------------------------------------
-Version: 0.1.2
-Date: 2020-04-27
+Version: 1.1.7
+Date: T.B.D.
   Changes:
-    - Start underground pipe directly from pump output when possible.
+    - Swapped order of change-log (newest on top, consistent with most other mods)
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.3
-Date: 2020-04-27
-  Fixes:
-    - Miscalutation in underground pipe distance.
+Version: 1.1.6
+Date: 2023-02-13  
+  Features:
+    - Russian localisation file; kindly provided by https://github.com/Astorin 
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.4
-Date: 2020-05-02
+Version: 1.1.5
+Date: 2023-02-11  
   Changes:
-    - Improve behavior for very small selections.
-  Features:
-    - Add support for any liquid resource for which a suitable miner is available. If there's multiple miner types available for the same resource, the one Factorio returns first is picked. Rectangular shaped miners are excluded due to limitations in the planner routine.
-    - Retrieve miner's pipe output position and size from its prototype. If there are mutliple output resources, or multiple outputs for the same resource, the ones Factorio returns first are picked. 
+    - Perform a 'raise_script_built' event for the ghosts placed by P.U.M.P.
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.5
-Date: 2020-05-04
-  Features:
-    - If 'Module Inserter' is installed, retrieve and apply module configuration for the entities placed by P.U.M.P.. If 'Module Inserter' is not installed, no modules are added.
-    - Add setting to enable/disable the usage of 'Module Inserter'. If 'Module Inserter' is not installed, the setting is hidden. It's enabled by default.  
+Version: 1.1.4
+Date: 2023-02-11
+  Changes:
+    - Added check that potential extractors have an output-fluidbox. This allows other mods to add solid-resources to the P.U.M.P. selection tool that are turned liquid by their specific extractors; while keeping the risk of attaching to a (for instance) sulfuric acid input to a minimum.
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.6
-Date: 2020-05-04
+Version: 1.1.3
+Date: 2021-10-16
   Fixes:
-    - Check if setting to interface with Module Inserter exists.
+    - Fixed issue of occasionally a pump not being connected, due to it plan being overwritten by another pump connecting to the same pipe segment.
 ---------------------------------------------------------------------------------------------------
-Version: 0.1.7
-Date: 2020-08-29
+Version: 1.1.2
+Date: 2021-04-28
+  Changes:
+    - Dialog only shows pipes that have a matching pipe-to-ground (based on vanilla naming; by adding '-to-ground' to the pipe name)
+---------------------------------------------------------------------------------------------------
+Version: 1.1.1
+Date: 2021-01-29
   Fixes:
-    - Disabled shortcut now has a P.U.M.P. icon instead of a blueprint icon.
-    - Added values for item name and sorting.
----------------------------------------------------------------------------------------------------
-Version: 0.1.8
-Date: 2020-08-31
-  Fixes:
-    - Fix issue where a tunnel could be planned 1 too long, resulting in the exit of the pump meeting with the side of an underground pipe.
-    - Fix out-of-bounds obstruction checking, leading to crash.
----------------------------------------------------------------------------------------------------
-Version: 0.1.9
-Date: 2020-09-16
-  Features:
-    - Added menu to select miner for the resource you've selected. 
-    - The menu remembers the selection that was made and won't show until new options are available.
-    - The menu won't show if there's only 1 option available.
-    - The menu can be forcefully shown, regardless of above conditions, using the alternative selection. This is activated with the same keybinding as 'Select for cancel deconstruction', default=Shift+LeftMouse.
----------------------------------------------------------------------------------------------------
-Version: 0.1.10
-Date: 2020-09-19
-  Fixes:
-    - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.
----------------------------------------------------------------------------------------------------
-Version: 1.0.0
-Date: 2020-12-01
-  Features:
-    - Factorio 1.1 compatibility.
-    - Ignore/deconstruct trees and rocks. 
----------------------------------------------------------------------------------------------------
-Version: 1.0.1
-Date: 2021-01-02
-  Features:
-    - Factorio 1.1.6 compatibility.
-  Fixes:
-    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
----------------------------------------------------------------------------------------------------
-Version: 1.0.2
-Date: 2021-01-21
-  Features:
-    - Added pipe-selection to the selection menu.
-  Fixes:
-    - Fix crash when an extractor larger then 3x3 is used.  
-    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
+    - Fixed changelog not visible in game due to wrong formatting.
+    - Fixed warning showing up in the logs for icon-mipmaps.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2021-01-24
@@ -94,33 +43,89 @@ Date: 2021-01-24
   Changes:
     - Removed the tech requirement for the P.U.M.P. shortcut, which has become obsolete due to the added features.
 ---------------------------------------------------------------------------------------------------
-Version: 1.1.1
-Date: 2021-01-29
-  Fixes:
-    - Fixed changelog not visible in game due to wrong formatting.
-    - Fixed warning showing up in the logs for icon-mipmaps.
----------------------------------------------------------------------------------------------------
-Version: 1.1.2
-Date: 2021-04-28
-  Changes:
-    - Dialog only shows pipes that have a matching pipe-to-ground (based on vanilla naming; by adding '-to-ground' to the pipe name)
----------------------------------------------------------------------------------------------------
-Version: 1.1.3
-Date: 2021-10-16
-  Fixes:
-    - Fixed issue of occasionally a pump not being connected, due to it plan being overwritten by another pump connecting to the same pipe segment.
----------------------------------------------------------------------------------------------------
-Version: 1.1.4
-Date: 2023-02-11
-  Changes:
-    - Added check that potential extractors have an output-fluidbox. This allows other mods to add solid-resources to the P.U.M.P. selection tool that are turned liquid by their specific extractors; while keeping the risk of attaching to a (for instance) sulfuric acid input to a minimum.
----------------------------------------------------------------------------------------------------
-Version: 1.1.5
-Date: 2023-02-11  
-  Changes:
-    - Perform a 'raise_script_built' event for the ghosts placed by P.U.M.P.
----------------------------------------------------------------------------------------------------
-Version: 1.1.6
-Date: 2023-02-13  
+Version: 1.0.2
+Date: 2021-01-21
   Features:
-    - Russian localisation file; kindly provided by https://github.com/Astorin 
+    - Added pipe-selection to the selection menu.
+  Fixes:
+    - Fix crash when an extractor larger then 3x3 is used.  
+    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
+---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 2021-01-02
+  Features:
+    - Factorio 1.1.6 compatibility.
+  Fixes:
+    - Tiles are no longer being removed. They were unintentionally being removed as well when clearing the area of trees and rocks.
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2020-12-01
+  Features:
+    - Factorio 1.1 compatibility.
+    - Ignore/deconstruct trees and rocks. 
+---------------------------------------------------------------------------------------------------
+Version: 0.1.10
+Date: 2020-09-19
+  Fixes:
+    - Fixed issue where tunnel would not always be placed for 2 parallel pipes without space in between.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.9
+Date: 2020-09-16
+  Features:
+    - Added menu to select miner for the resource you've selected. 
+    - The menu remembers the selection that was made and won't show until new options are available.
+    - The menu won't show if there's only 1 option available.
+    - The menu can be forcefully shown, regardless of above conditions, using the alternative selection. This is activated with the same keybinding as 'Select for cancel deconstruction', default=Shift+LeftMouse.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.8
+Date: 2020-08-31
+  Fixes:
+    - Fix issue where a tunnel could be planned 1 too long, resulting in the exit of the pump meeting with the side of an underground pipe.
+    - Fix out-of-bounds obstruction checking, leading to crash.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.7
+Date: 2020-08-29
+  Fixes:
+    - Disabled shortcut now has a P.U.M.P. icon instead of a blueprint icon.
+    - Added values for item name and sorting.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.6
+Date: 2020-05-04
+  Fixes:
+    - Check if setting to interface with Module Inserter exists.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.5
+Date: 2020-05-04
+  Features:
+    - If 'Module Inserter' is installed, retrieve and apply module configuration for the entities placed by P.U.M.P.. If 'Module Inserter' is not installed, no modules are added.
+    - Add setting to enable/disable the usage of 'Module Inserter'. If 'Module Inserter' is not installed, the setting is hidden. It's enabled by default.  
+---------------------------------------------------------------------------------------------------
+Version: 0.1.4
+Date: 2020-05-02
+  Changes:
+    - Improve behavior for very small selections.
+  Features:
+    - Add support for any liquid resource for which a suitable miner is available. If there's multiple miner types available for the same resource, the one Factorio returns first is picked. Rectangular shaped miners are excluded due to limitations in the planner routine.
+    - Retrieve miner's pipe output position and size from its prototype. If there are mutliple output resources, or multiple outputs for the same resource, the ones Factorio returns first are picked. 
+---------------------------------------------------------------------------------------------------
+Version: 0.1.3
+Date: 2020-04-27
+  Fixes:
+    - Miscalutation in underground pipe distance.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.2
+Date: 2020-04-27
+  Changes:
+    - Start underground pipe directly from pump output when possible.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: 2020-04-24
+  Fixes:
+    - Bug when detection to place multiple underground pipes for a longer distance failed, and would instead place the remaining distance above ground.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2020-04-20
+  Features:
+    - P.U.M.P. selection tool available for the shurtcut bar.
+    - For all oil wells within a selection, ghosts for pumpjacks and the pipes connecting the pumpjacks will be placed.
+    - Underground pipes will be used as much as possible.
