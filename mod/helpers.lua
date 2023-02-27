@@ -149,10 +149,51 @@ helpers.bounding_box = {
                    inner.left_top.y and outer.right_bottom.x >=
                    inner.right_bottom.x and outer.right_bottom.y >=
                    inner.right_bottom.y
+    end,
+
+    each_grid_position = function(bounds, action)
+        for x = bounds.left_top.x, bounds.right_bottom.x do
+            for y = bounds.left_top.y, bounds.right_bottom.y do
+                local position = {x = x, y = y}
+                action(position)
+            end
+        end
+    end,
+
+    each_edge_position = function(bounds, action)
+        for x = bounds.left_top.x, bounds.right_bottom.x do
+            if x == bounds.left_top.x or bounds.right_bottom.x then
+                for y = bounds.left_top.y, bounds.right_bottom.y do                    
+                    action({x = x, y = y})
+                end
+            else                
+                action({x = x, y = bounds.left_top.y})            
+                if bounds.left_top.y ~= bounds.right_bottom.y then
+                    action({x = x, y = bounds.right_bottom.y})
+                end
+            end
+        end
+    end,
+
+    grow = function(bounds, amount)
+        bounds.left_top.x = bounds.left_top.x - amount
+        bounds.left_top.y = bounds.left_top.y - amount
+        bounds.right_bottom.x = bounds.right_bottom.x + amount
+        bounds.right_bottom.y = bounds.right_bottom.y + amount
     end
 }
 
 helpers.xy = {
+    first = function(xy_table, action)
+        for x, subtable in pairs(xy_table) do
+            for y, subject in pairs(subtable) do
+                local position = {x = x, y = y}
+                action(subject, position)
+                return
+            end
+        end
+    end,
+
     each = function(xy_table, action)
         for x, subtable in pairs(xy_table) do
             for y, subject in pairs(subtable) do
@@ -185,7 +226,23 @@ helpers.xy = {
         local subtable = xy_table[position.x]
         if subtable == nil then return nil end
         return subtable[position.y]
-    end
+    end,
+
+    any = function(xy_table) 
+        return next(xy_table) ~= nil
+    end,
+
+    remove = function(xy_table, position)
+        local subtable = xy_table[position.x]
+        if subtable ~= nil then
+            subtable[position.y] = nil
+            if next(subtable) == nil then
+                xy_table[position.x] = nil
+            end
+        end
+    end,
+
+
 }
 
 return helpers

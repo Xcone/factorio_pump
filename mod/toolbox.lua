@@ -1,4 +1,6 @@
 require 'util'
+local math2d = require 'math2d'
+local helpers = require 'helpers'
 
 -- Simplified non-dynamic variation of the toolbox used by the C# WPF application to test planner.lua without mimicing all of factorio
 function add_development_toolbox(target)
@@ -22,6 +24,15 @@ function add_development_toolbox(target)
         underground_entity_name = 'not-used-by-visualizer',
         underground_distance_min = 0,
         underground_distance_max = 9
+    }
+
+    toolbox.power_pole = {
+        entity_name = "not-used-by-visualizer",
+        supply_range = 3.5,
+        wire_range = 9,
+        --supply_range = 2.5,
+        --wire_range = 7.5,
+        size = 1,
     }
 
     target.toolbox = toolbox
@@ -78,6 +89,16 @@ local function get_pipe_pick()
     return global.toolpicker_config.pipe_pick
 end
 
+local function get_power_pole_pick()
+    if not global.toolpicker_config then global.toolpicker_config = {} end
+
+    if not global.toolpicker_config.power_pole_pick then
+        global.toolpicker_config.power_pole_pick = {selected = nil, available = {}}
+    end
+
+    return global.toolpicker_config.power_pole_pick
+end
+
 local function reset_selection_if_pick_no_longer_available(pick, available)
     if not table.contains(available, pick.selected) then pick.selected = nil; end
 end
@@ -122,53 +143,75 @@ local function add_pipe_buttons_to_flow(pipe_flow, pipe_pick)
     end
 end
 
-local function pick_tools(player, toolbox, resource_category,
-                          available_extractors, available_pipes, force_ui)
+local function add_power_pole_buttons_to_flow(power_pole_flow, power_pole_pick)
+    for _, power_pole_name in pairs(power_pole_pick.available) do
+        local style = "slot_sized_button"
+
+        if power_pole_name == power_pole_pick.selected then
+            style = "slot_sized_button_pressed"
+        end
+
+        local button = power_pole_flow.add {
+            type = "choose-elem-button",
+            name = "pump_power_pole_picker__" .. power_pole_name,
+            elem_type = "entity",
+            elem_filters = {{filter = "name", name = power_pole_pick.available}},
+            entity = power_pole_name,
+            style = style
+        }
+        button.locked = true
+    end
+end
+
+local function pick_tools(player, toolbox, resource_category, available_extractors, available_pipes, available_power_poles, force_ui)
     local extractor_pick = get_extractor_pick_for_resource(resource_category);
     local pipe_pick = get_pipe_pick();
+    local power_pole_pick = get_power_pole_pick();
 
     local available_extractor_names = {}
     for _, extractor in pairs(available_extractors) do
         table.insert(available_extractor_names, extractor.entity_name)
     end
 
-    -- A mod might've been removed
-    reset_selection_if_pick_no_longer_available(extractor_pick,
-                                                available_extractor_names)
-
-    reset_selection_if_pick_no_longer_available(pipe_pick, available_pipes)
-
-    -- Multiple items, and no previous selection exists. Recipe for disaster!! Better ask.
-    local selection_required = (#available_extractor_names > 1 and
-                                   not extractor_pick.selected) or
-                                   (#available_pipes > 1 and
-                                       not pipe_pick.selected)
-
-    -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
-    local new_extractor_options_available =
-        extractor_pick.selected and #available_extractor_names > 1 and
-            not table.compare(extractor_pick.available,
-                              available_extractor_names)
-
-    local new_pipe_options_available = pipe_pick.selected and #available_pipes >
-                                           1 and
-                                           not table.compare(
-                                               pipe_pick.available,
-                                               available_pipes)
-
-    local new_options_available = new_extractor_options_available or
-                                      new_pipe_options_available
-
-    -- persist the available extractors and pipes for next time
-    extractor_pick.available = available_extractor_names;
-    pipe_pick.available = available_pipes;
-
-    -- ensure a default selection
-    if not extractor_pick.selected then
-        extractor_pick.selected = available_extractor_names[1]
+    local available_power_pole_names = {}
+    for _, pole in pairs(available_power_poles) do
+        table.insert(available_power_pole_names, pole.entity_name)
     end
 
+    -- A mod might've been removed
+    reset_selection_if_pick_no_longer_available(extractor_pick, available_extractor_names)
+    reset_selection_if_pick_no_longer_available(pipe_pick, available_pipes)
+    reset_selection_if_pick_no_longer_available(power_pole_pick, available_power_pole_names)
+
+    -- Multiple items, and no previous selection exists. Recipe for disaster!! Better ask.
+    local selection_required = (#available_extractor_names > 1 and not extractor_pick.selected) or
+                               (#available_pipes > 1 and not pipe_pick.selected) or
+                               (#available_power_pole_names > 1 and not power_pole_pick.selected) 
+
+    -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
+    local new_extractor_options_available = extractor_pick.selected and 
+                                            #available_extractor_names > 1 and
+                                            not table.compare(extractor_pick.available, available_extractor_names)
+
+    local new_pipe_options_available = pipe_pick.selected and 
+                                       #available_pipes > 1 and 
+                                       not table.compare(pipe_pick.available, available_pipes)
+
+    local new_power_pole_options_available = power_pole_pick.selected and 
+                                       #available_power_pole_names > 1 and 
+                                       not table.compare(power_pole_pick.available, available_power_pole_names)
+
+    local new_options_available = new_extractor_options_available or new_pipe_options_available or new_power_pole_options_available
+
+    -- persist the available extractors and pipes for next time
+    extractor_pick.available = available_extractor_names
+    pipe_pick.available = available_pipes
+    power_pole_pick.available = available_power_pole_names
+
+    -- ensure a default selection
+    if not extractor_pick.selected then extractor_pick.selected = available_extractor_names[1] end
     if not pipe_pick.selected then pipe_pick.selected = available_pipes[1] end
+    if not power_pole_pick.selected then power_pole_pick.selected = available_power_pole_names[1] end
 
     -- put selection in toolbox, though it might later be overwritten after the UI closes
     for _, extractor in pairs(available_extractors) do
@@ -177,8 +220,12 @@ local function pick_tools(player, toolbox, resource_category,
         end
     end
     toolbox.connector.entity_name = pipe_pick.selected
-    toolbox.connector.underground_entity_name =
-        pipe_pick.selected .. '-to-ground'
+    toolbox.connector.underground_entity_name = pipe_pick.selected .. '-to-ground'
+    for _, pole in pairs(available_power_poles) do
+        if pole.entity_name == power_pole_pick.selected then
+            toolbox.power_pole = pole
+        end
+    end
 
     if force_ui or selection_required or new_options_available then
 
@@ -213,8 +260,15 @@ local function pick_tools(player, toolbox, resource_category,
             name = "pump_pipe_picker_flow"
         }
 
+        local power_pole_flow = frame.add {
+            type = "flow",
+            direction = "horizontal",
+            name = "pump_power_pole_picker_flow"
+        }
+
         add_extractor_buttons_to_flow(extractor_flow, extractor_pick)
         add_pipe_buttons_to_flow(pipe_flow, pipe_pick)
+        add_power_pole_buttons_to_flow(power_pole_flow, power_pole_pick)
 
         frame.add {
             type = "button",
@@ -335,20 +389,51 @@ local function add_available_extractors(available_extractors, resource_category,
     end
 end
 
+local function add_available_power_poles(available_power_poles, player)
+    local all_poles = game.get_filtered_entity_prototypes({{filter = "type", type = "electric-pole"}})
+    local has_big_poles = false
+
+    for _, pole in pairs(all_poles) do
+        if meets_tech_requirement(pole, player) then            
+            local pole_collision_box = math2d.bounding_box.ensure_xy(pole.collision_box)    
+            local size = math.abs(pole_collision_box.left_top.x) + math.abs(pole_collision_box.right_bottom.x)
+            player.print(size) 
+            if size < 1 then
+                table.insert(available_power_poles, {
+                    entity_name = pole.name,
+                    supply_range = pole.supply_area_distance,
+                    wire_range = pole.max_wire_distance,
+                    size = 1,
+                })
+            else
+                has_big_poles = true
+            end
+        end
+    end
+
+    if #available_power_poles == 0 then
+        if has_big_poles then
+            return {"failure.no-suitable-power-pole"}
+        end
+        return {"failure.no-pole"}
+    end
+end
+
 function add_toolbox(current_action, player, force_ui)
     local toolbox = {}
     add_module_config(toolbox, player)
 
     local failure = {}
     local available_extractors = {}
-    failure = add_available_extractors(available_extractors,
-                                       current_action.resource_category, player)
-
+    failure = add_available_extractors(available_extractors, current_action.resource_category, player)
     if failure then return failure end
 
     local available_pipes = {}
-    add_available_pipes(available_pipes, player)
+    failure = add_available_pipes(available_pipes, player)
+    if failure then return failure end
 
+    local available_power_poles = {}
+    failure = add_available_power_poles(available_power_poles, player)
     if failure then return failure end
 
     -- TODO: Figure out of the pipe-distance can be dynamically retrieved after pipe selection as well and remove these defaults.
@@ -360,10 +445,9 @@ function add_toolbox(current_action, player, force_ui)
         -- underground_distance is excluding the entity placement itself. But rather the available space between connector entities.        
         underground_distance_min = 0,
         underground_distance_max = 9
-    }
+    }    
 
-    pick_tools(player, toolbox, current_action.resource_category,
-               available_extractors, available_pipes, force_ui)
+    pick_tools(player, toolbox, current_action.resource_category, available_extractors, available_pipes, available_power_poles, force_ui)
 
     current_action.toolbox = toolbox
 end
@@ -422,8 +506,33 @@ function on_pipe_selection(player, pipe_name)
 
         -- update the pipe for the current action
         current_action.toolbox.connector.entity_name = pipe_pick.selected
-        current_action.toolbox.connector.underground_entity_name =
-            pipe_pick.selected .. '-to-ground'
+        current_action.toolbox.connector.underground_entity_name = pipe_pick.selected .. '-to-ground'
+    end
+end
+
+function on_power_pole_selection(player, power_pole_name)
+    local frame = player.gui.center.pump_tool_picker_frame
+
+    if frame then
+        local current_action = global.current_action
+        local power_pole_pick = get_power_pole_pick()
+
+        -- apply changed selection to power pole pick
+        power_pole_pick.selected = power_pole_name
+
+        -- refresh buttons on UI
+        frame.pump_power_pole_picker_flow.clear()
+        add_power_pole_buttons_to_flow(frame.pump_power_pole_picker_flow, power_pole_pick)
+
+        -- update the power pole for the current action
+        local available_power_poles = {}
+        add_available_power_poles(available_power_poles, player)
+
+        for _, power_pole in pairs(available_power_poles) do
+            if power_pole.entity_name == power_pole_pick.selected then
+                current_action.toolbox.power_pole = power_pole
+            end
+        end 
     end
 end
 

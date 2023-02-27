@@ -59,6 +59,11 @@
                                                     <Setter Property="Border.Background" Value="DarkOrange"></Setter>
                                                     <Setter Property="Border.BorderBrush" Value="Orange"></Setter>
                                                 </DataTrigger>
+
+                                                <DataTrigger Binding="{Binding Content}" Value="power_pole">
+                                                    <Setter Property="Border.Background" Value="#FF5151B3"></Setter>
+                                                    <Setter Property="Border.BorderBrush" Value="#FF7689C5"></Setter>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>

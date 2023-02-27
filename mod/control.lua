@@ -34,6 +34,12 @@ script.on_event(defines.events.on_gui_click, function(event)
             local pipe_name = name:sub(string.len(button_prefix) + 1)
             on_pipe_selection(game.players[event.player_index], pipe_name)
         end
+
+        button_prefix = "pump_power_pole_picker__"
+        if string.find(name, button_prefix) == 1 then
+            local power_pole_name = name:sub(string.len(button_prefix) + 1)
+            on_power_pole_selection(game.players[event.player_index], power_pole_name)
+        end
     end
 end)
 

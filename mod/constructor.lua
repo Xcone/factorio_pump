@@ -11,6 +11,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local extractors = {}
     local pipes = {}
     local pipe_tunnels = {}
+    local power_poles = {}
 
     helpers.xy.each(construction_plan, function(planned_entity, position)
 
@@ -55,12 +56,18 @@ local function get_planned_entities(construction_plan, toolbox)
         if planned_entity_name == "pipe_tunnel" then
             table.insert(pipe_tunnels, placement)
         end
+
+        if planned_entity_name == "power_pole" then
+            table.insert(power_poles, placement)
+        end
+        
     end)
 
     return {
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
-        [toolbox.connector.underground_entity_name] = pipe_tunnels
+        [toolbox.connector.underground_entity_name] = pipe_tunnels,
+        [toolbox.power_pole.entity_name] = power_poles
     }
 end
 

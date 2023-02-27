@@ -26,11 +26,11 @@ namespace LayoutingTester
         {
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
             Columns = PlannerInput.ToColumns();
-
+            
             RunLua();
-
+            
             Print(DateTime.Now);
-        }
+        }        
 
         public void Print(object message)
         {
@@ -109,8 +109,14 @@ namespace LayoutingTester
                 toolboxFunction.Call(plannerInput);
 
                 // Act
+                var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+
                 var planFunction = lua["add_construction_plan"] as LuaFunction;
                 var failure = planFunction.Call(plannerInput)?.FirstOrDefault();
+
+                stopWatch.Stop();
+                Print($"'add_construction_plan' took {stopWatch.ElapsedMilliseconds}ms");
+
 
                 // Extract result
                 if (failure != null)
@@ -124,9 +130,8 @@ namespace LayoutingTester
                 Print("---------------");
                 Print("Result");
                 Print("---------------");
-                Print(constructEntities);
-
-
+                Print(constructEntities != null ? constructEntities : "Nothing ... ");
+                
             }
             catch (LuaScriptException e)
             {
@@ -162,6 +167,8 @@ namespace LayoutingTester
 
         private void AddConstructEntities(LuaTable constructionParameters)
         {
+            if (constructionParameters == null) return;
+
             foreach (var xKey in constructionParameters.Keys)
             {
                 var tableY = (LuaTable)constructionParameters[xKey];
@@ -171,11 +178,9 @@ namespace LayoutingTester
                     var plannedEntity = (LuaTable)tableY[yKey];
                     var x = (double) xKey;
                     var y = (double) yKey;
-                    var name = (string)plannedEntity["name"];
-                    var direction = (long) plannedEntity["direction"];
+                    var name = (string)plannedEntity["name"];                    
 
-
-                    Columns.First(c => c.X == x).AddConstructionResult(name, y, direction);
+                    Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
                 }
             }
         }
@@ -188,19 +193,19 @@ namespace LayoutingTester
 
         public TestLayoutColumn(string x, TestLayoutCell[] cells)
         {
-            X = float.Parse(x);
+            X = float.Parse(x, CultureInfo.InvariantCulture);
             Cells = cells;
         }
 
-        public void AddConstructionResult(string name, double y, long direction)
+        public void AddConstructionResult(string name, double y, LuaTable plannedEntity)
         {
-            Cells.First(c => c.Y == y).AddConstructionResult(name, direction, X);
+            Cells.First(c => c.Y == y).AddConstructionResult(name, plannedEntity);
         }
     }
 
     public class TestLayoutCell
     {
-        public string Content { get; }
+        public string Content { get; private set;}
         public float X { get; }
         public float Y { get; }
 
@@ -209,16 +214,16 @@ namespace LayoutingTester
 
         public TestLayoutCell(string x, string y, string content)
         {
-            X = float.Parse(x);
-            Y = float.Parse(y);
+            X = float.Parse(x, CultureInfo.InvariantCulture);
+            Y = float.Parse(y, CultureInfo.InvariantCulture);
             Content = content;
         }
 
-        public void AddConstructionResult(string name, long direction, float x)
+        public void AddConstructionResult(string name, LuaTable plannedEntity)
         {
             if (EntityToConstruct != null)
             {
-                throw new ArgumentException($"Can't add {name} at position x={x},y={Y}. A {EntityToConstruct} is already assigned here.");
+                throw new ArgumentException($"Can't add {name} at position x={X},y={Y}. A {EntityToConstruct} is already assigned here.");
             }
 
             if (name == "pipe")
@@ -241,7 +246,14 @@ namespace LayoutingTester
             {
                 EntityToConstruct = "t";
             }
+            else if (name == "power_pole")
+            {
+                var group = (long)plannedEntity["group"];
+                EntityToConstruct = group.ToString();
+                Content = "power_pole";
+            }
 
+            var direction = (long)plannedEntity["direction"];
             EntityToConstructDirection = direction;
         }
     }
