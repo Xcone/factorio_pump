@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.7
 Date: T.B.D.
+  Features:
+    - Added placing ghosts for electric poles.
   Changes:
     - Swapped order of change-log (newest on top, consistent with most other mods)
 ---------------------------------------------------------------------------------------------------

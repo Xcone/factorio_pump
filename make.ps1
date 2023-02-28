@@ -1,4 +1,4 @@
-﻿$version = (Get-Content ./mod/changelog.txt | Select-String -Pattern "Version:" | Select-Object -Last 1).ToString().Split(": ")[2]
+﻿$version = (Get-Content ./mod/changelog.txt | Select-String -Pattern "Version:" | Select-Object -First 1).ToString().Split(": ")[2]
 
 $mod = 'pump_' + $version
 $stagedir = '.build\' + $mod
