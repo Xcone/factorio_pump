@@ -19,26 +19,12 @@ script.on_event(defines.events.on_gui_click, function(event)
     local name = event.element.name
     local player = game.players[event.player_index]
     if name == "pump_tool_picker_confirm_button" then
-        confirm_tool_picker_ui(game.players[event.player_index])
+        confirm_tool_picker_ui(player)
         resume_process_selected_area_with_this_mod()
     else
-        local button_prefix = "pump_extractor_picker__"
+        local button_prefix = "pump_toolbox_picker_button_"
         if string.find(name, button_prefix) == 1 then
-            local extractor_name = name:sub(string.len(button_prefix) + 1)
-            on_extractor_selection(game.players[event.player_index],
-                                   extractor_name)
-        end
-
-        button_prefix = "pump_pipe_picker__"
-        if string.find(name, button_prefix) == 1 then
-            local pipe_name = name:sub(string.len(button_prefix) + 1)
-            on_pipe_selection(game.players[event.player_index], pipe_name)
-        end
-
-        button_prefix = "pump_power_pole_picker__"
-        if string.find(name, button_prefix) == 1 then
-            local power_pole_name = name:sub(string.len(button_prefix) + 1)
-            on_power_pole_selection(game.players[event.player_index], power_pole_name)
+            handle_gui_element_click(name, player)
         end
     end
 end)
