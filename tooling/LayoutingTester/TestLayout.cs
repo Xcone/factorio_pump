@@ -98,7 +98,8 @@ namespace LayoutingTester
 
                 lua.DoString("require 'helpers'");
                 lua.DoString("require 'toolbox'");
-                lua.DoString("require 'planner'");
+                lua.DoString("require 'plumber'");
+                lua.DoString("require 'electrician'");
 
 
                 lua.NewTable("planner_input_stage");
@@ -111,17 +112,23 @@ namespace LayoutingTester
                 // Act
                 var stopWatch = System.Diagnostics.Stopwatch.StartNew();
 
-                var planFunction = lua["add_construction_plan"] as LuaFunction;
-                var failure = planFunction.Call(plannerInput)?.FirstOrDefault();
+                var plumberFunction = lua["plan_plumbing"] as LuaFunction;
+                var electricianFunction = lua["plan_power"] as LuaFunction;
+                var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault();
+                var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault();
 
                 stopWatch.Stop();
                 Print($"'add_construction_plan' took {stopWatch.ElapsedMilliseconds}ms");
 
 
                 // Extract result
-                if (failure != null)
+                if (plumberFailure != null)
                 {
-                    Print(failure);
+                    Print(plumberFailure);
+                }
+                if (electricianFailure != null)
+                {
+                    Print(electricianFailure);
                 }
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;

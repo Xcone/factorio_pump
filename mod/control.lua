@@ -1,6 +1,7 @@
 require "toolbox"
 require "prospector"
-require "planner"
+require "plumber"
+require "electrician"
 require 'constructor'
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
@@ -83,7 +84,11 @@ function resume_process_selected_area_with_this_mod()
     dump_to_file(current_action, "planner_input")
 
     if not current_action.failure then
-        current_action.failure = add_construction_plan(current_action)
+        current_action.failure = plan_plumbing(current_action)
+    end
+
+    if not current_action.failure then
+        current_action.failure = plan_power(current_action)
     end
 
     dump_to_file(current_action, "construction_plan")
