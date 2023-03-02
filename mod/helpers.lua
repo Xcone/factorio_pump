@@ -1,5 +1,10 @@
 local math2d = require 'math2d'
 
+-- custom log method used in conjunction with the C# LayoutTester-tool
+function pump_log(object_to_log)
+    if pumpdebug then pumpdebug.log(object_to_log) end
+end
+
 local helpers = {}
 helpers.directions = {
     [defines.direction.north] = {
@@ -242,7 +247,22 @@ helpers.xy = {
         end
     end,
 
+    nearest = function (xy_table, search_position)
+        local nearest_distance = 99999
+        local nearest_position = nil
+        local nearest_value = nil
 
+        helpers.xy.each(xy_table, function(value, entry_position)
+            local d = math2d.position.distance(search_position, entry_position)
+            if d < nearest_distance then
+                nearest_distance = d
+                nearest_position = entry_position
+                nearest_value = value
+            end
+        end)
+
+        return {position = nearest_position, distance = nearest_distance, value = nearest_value}
+    end
 }
 
 return helpers

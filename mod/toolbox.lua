@@ -28,10 +28,17 @@ function add_development_toolbox(target)
 
     toolbox.power_pole = {
         entity_name = "not-used-by-visualizer",
+        --// medium-range
         supply_range = 3.5,
         wire_range = 9,
-        --supply_range = 2.5,
-        --wire_range = 7.5,
+
+        --// small-range
+        -- supply_range = 2.5,
+        -- wire_range = 7.5,
+        
+        --// substation
+        -- wire_range = 18,
+        -- supply_range = 9,
         size = 1,
     }
 

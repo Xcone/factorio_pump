@@ -3,31 +3,45 @@ local math2d = require 'math2d'
 local helpers = require 'helpers'
 local xy = helpers.xy
 
-
 -- Heuristics
-local score_adjacent_extractor = 0.55
-local score_adjacent_pipe = 0.55
-local max_adjacent_score = math.max(score_adjacent_extractor, score_adjacent_pipe) * 4
+local score_adjacent_extractor = 0.45
+local score_adjacent_pipe = 0.45
+local score_supplying_consumer = 1.5
+local score_cardinally_aligned_over_distance = 2
+local score_optimal_distance = 2.5
 
-local function score_consumer_count(pole)
-    local consumer_weight = 1;
-    return pole.consumer_count * consumer_weight
-end
-
-local function score_in_range_of_nearby_pole(mod_context, position, nearby_pole_position)
-    local wire_range = mod_context.toolbox.power_pole.wire_range
-
-    if nearby_pole_position ~= nil then
-        if math2d.position.distance(position, nearby_pole_position) <= wire_range then
-            return 1
-        end
+local function score_consumer_count(mod_context, score, pole)
+    if pole == nil then 
+        return 0 
     end
 
-    return 0
+    score.consumers = pole.consumer_count * score_supplying_consumer
 end
 
-local function score_adjacent_cells(mod_context, position)    
-    local score = 0
+local function score_position_to_planned_poles(mod_context, score, test_position, planned_poles)
+    local wire_range = mod_context.toolbox.power_pole.wire_range    
+    local cardinally_aligned_score = 0
+    local distance_closest_pole = -1
+
+    xy.each(planned_poles, function(pole, pole_position)
+        local distance = math2d.position.distance(test_position, pole_position)       
+        
+        if distance <= wire_range and (distance <= distance_closest_pole or distance_closest_pole < 0) then
+            distance_closest_pole = distance
+        end
+
+        if test_position.x == pole_position.x or test_position.y == pole_position.y then
+            cardinally_aligned_score = math.min(score_cardinally_aligned_over_distance, ((1 / distance) * wire_range * score_cardinally_aligned_over_distance))
+        end
+    end)
+
+    score.cardinally_aligned_score = cardinally_aligned_score
+    score.distance_score = (distance_closest_pole / wire_range) * score_optimal_distance
+end
+
+local function score_adjacent_cells(mod_context, score, position)
+    score.adjacent_extractors = 0
+    score.adjacent_pipes = 0
 
     for _, direction in pairs(helpers.directions) do
         local offset_position = math2d.position.add(position, direction.vector)
@@ -35,25 +49,31 @@ local function score_adjacent_cells(mod_context, position)
         
         if neighbour_cell ~= nil then            
             if neighbour_cell == "reserved-for-pump" then
-                score = score + score_adjacent_extractor
+                score.adjacent_extractors = score.adjacent_extractors + score_adjacent_extractor
             else 
                 if neighbour_cell == "construct-pipe" then
-                    score = score + score_adjacent_pipe
+                    score.adjacent_pipes = score.adjacent_pipes + score_adjacent_pipe
                 end
             end
         end
     end
 
-    return score
 end
 
-local function score_potential_pole(mod_context, pole, position, nearby_pole_position, score_to_beat)
-    local score = score_consumer_count(pole)
-    score = score + score_in_range_of_nearby_pole(mod_context, position, nearby_pole_position)
-    if (score + max_adjacent_score) >= score_to_beat then
-        score = score + score_adjacent_cells(mod_context, position)
+local function score_potential_pole(mod_context, position, pole_consumer_reach, planned_poles)
+    local score = {}
+    score_consumer_count(mod_context, score, pole_consumer_reach)
+    score_position_to_planned_poles(mod_context, score, position, planned_poles)
+    score_adjacent_cells(mod_context, score, position)
+
+    local total = 0
+    for key, value in pairs(score) do
+        total = total + value
     end
 
+    score.pole_nr = mod_context.pole_count
+    score.total = total   
+    score.position = position
     return score
 end
 
@@ -69,121 +89,6 @@ local function get_power_pole_bounds_for_consumer(mod_context, consumer_position
          left_top = math2d.position.add(consumer_position, {x=-supply_range, y=-supply_range}),
          right_bottom = math2d.position.add(consumer_position, {x=supply_range, y=supply_range})
     }
-end
-
-local function remove_consumer_from_pole_positions(mod_context, potential_pole_positions, consumer_position)
-    local pole_position_area = get_power_pole_bounds_for_consumer(mod_context, consumer_position);
-
-    helpers.bounding_box.each_grid_position(pole_position_area, function (power_pole_position)
-        local power_pole = xy.get(potential_pole_positions, power_pole_position)        
-        if (power_pole ~= nil) then
-            for key, pole_consumer_position in pairs(power_pole.consumer_positions) do
-                if consumer_position.x == pole_consumer_position.x and consumer_position.y == pole_consumer_position.y then
-                    power_pole.consumer_positions[key] = nil
-                    power_pole.consumer_count = power_pole.consumer_count - 1
-                    if power_pole.consumer_count == 0 then
-                        xy.remove(potential_pole_positions, power_pole_position)
-                    end
-                end
-            end
-        end
-    end)
-end
-
-local function find_next_power_pole(mod_context, potential_pole_positions, pole_groups, remaining_consumers)
-    local center = math2d.bounding_box.get_centre(mod_context.area_bounds)
-
-    local nearby_consumer_position = nil
-    local nearby_pole_position = nil
-    local nearby_pole_group = 0
-    local nearest_distance = 99999
-
-    -- Find the consumer that's closest to one of the chosen pole positions
-    xy.each(pole_groups.positions, function(pole, pole_position)
-        xy.each(remaining_consumers, function(consumer, consumer_position)
-            local d = math2d.position.distance(pole_position, consumer_position)
-            if d < nearest_distance then
-                nearest_distance = d
-                nearby_consumer_position = consumer_position
-                nearby_pole_position = pole_position
-                nearby_pole_group = pole.group
-            end
-        end)
-    end)
-
-    if nearby_consumer_position == nil then
-        xy.each(remaining_consumers, function(consumer, consumer_position)
-            local d = math2d.position.distance(center, consumer_position)
-            if d < nearest_distance then
-                nearest_distance = d
-                nearby_consumer_position = consumer_position
-            end
-        end)
-    end
-
-    local nearby_consumer_supply_area = get_power_pole_bounds_for_consumer(mod_context, nearby_consumer_position)
-    local best_pole_score = 0;
-    local best_pole_positions = {}
-
-    helpers.bounding_box.each_grid_position(nearby_consumer_supply_area, function(position)
-        local pole = xy.get(potential_pole_positions, position)
-        if pole ~= nil then
-            local score = score_potential_pole(mod_context, pole, position, nearby_pole_position, best_pole_score)
-    
-            if ((score) > best_pole_score) then
-                best_pole_score = score;
-                best_pole_positions = {}
-            end
-
-            if (score == best_pole_score) then
-                xy.set(best_pole_positions, position, pole)
-            end
-        end
-    end)
-        
-    local pole_distance_to_center = 99999;    
-    local pole_closest_to_center = nil
-    local pole_position = nil
-    xy.each(best_pole_positions, function(pole, position) 
-        local distance = math2d.position.distance(center, position)
-        if distance < pole_distance_to_center then
-            pole_closest_to_center = pole
-            pole_distance_to_center = distance
-            pole_position = position
-        end
-    end)
-
-    if score_in_range_of_nearby_pole(mod_context, pole_position, nearby_pole_position) == 0 then
-        pole_groups.group_count = pole_groups.group_count + 1
-        pole_closest_to_center.group = pole_groups.group_count
-    else
-        pole_closest_to_center.group = nearby_pole_group
-    end    
-
-    return {pole = pole_closest_to_center, position = pole_position}
-end
-
-local function group_power_poles(mod_context, potential_pole_positions, consumer_positions)
-    local iterations = 0;
-    local pole_groups = {group_count=0, positions={}}
-
-    local remaining_consumers = table.deepcopy(consumer_positions)
-
-    while (xy.any(remaining_consumers) and iterations < 100) do
-        iterations = iterations + 1
-
-        local next_pole = find_next_power_pole(mod_context, potential_pole_positions, pole_groups, remaining_consumers)
-        
-        for _, consumer_position in pairs(next_pole.pole.consumer_positions) do
-            remove_consumer_from_pole_positions(mod_context, potential_pole_positions, consumer_position)
-            xy.remove(remaining_consumers, consumer_position)
-        end
-
-        xy.set(pole_groups.positions, next_pole.position, next_pole.pole)
-    
-    end
-
-    return pole_groups
 end
 
 local function map_possible_consumer_power_pole_positions(mod_context, consumer_positions) 
@@ -211,104 +116,121 @@ local function map_possible_consumer_power_pole_positions(mod_context, consumer_
     return power_poles_with_consumers_in_range;
 end
 
-local function merge_power_pole_groups(mod_context, pole_groups)
-    local result = xy.where(pole_groups.positions, function(pole, position) return pole.group == 1 end)
-    pole_groups.positions = xy.where(pole_groups.positions, function(pole, position) return pole.group ~= 1 end)
-    pole_groups.group_count = pole_groups.group_count - 1
+local function initial_search_radius(mod_context)
+    return math.floor(mod_context.toolbox.power_pole.supply_range)
+end
 
-    while pole_groups.group_count > 0 do
+local function find_pole_position_nearby(mod_context, position, planned_poles, pole_to_consumer_reach)
+    local search_area = helpers.bounding_box.create(position, position)
+    helpers.bounding_box.grow(search_area, initial_search_radius(mod_context))
+    
+    local best_pole_score = {total = 0};
+    local best_pole_position = nil
 
-        local result_position = nil
-        local nearby_position = nil
-        local nearby_distance = 99999
-        local nearby_group = 0        
-
-        xy.each(result, function (result_pole, a) 
-            xy.each(pole_groups.positions, function (nearby_pole, b)
-                local d = math2d.position.distance(a, b)
-                if d < nearby_distance then
-                    result_position = a
-                    nearby_position = b
-                    nearby_group = nearby_pole.group
-                    nearby_distance = d
-                end
-            end)
-        end)
-
-        local wire_range = mod_context.toolbox.power_pole.wire_range
-        local last_position = result_position
-        local number_of_connecting_poles = 0
-        while math2d.position.distance(last_position, nearby_position) > wire_range do
-            local initial_search_radius = 2
-            
-            local ideal_pole_position_unaligned = math2d.position.add(
-                last_position, 
-                math2d.position.multiply_scalar(
-                    math2d.position.get_normalised(
-                        math2d.position.subtract(
-                            nearby_position, 
-                            last_position                    
-                        )
-                    ),
-                    wire_range - initial_search_radius 
-                )
-            )
-
-            local diff = math2d.position.subtract(ideal_pole_position_unaligned, last_position)
-            diff.x = math.floor(diff.x)
-            if diff.x < 0 then
-                diff.x = diff.x + 1
+    local test_position = function (position)
+        if xy.get(mod_context.area, position) == "can-build" then
+            local pole = xy.get(pole_to_consumer_reach, position)
+            local score = score_potential_pole(mod_context, position, pole, planned_poles)
+            if score.total > best_pole_score.total then
+                best_pole_position = position
+                best_pole_score = score
             end
-            diff.y = math.floor(diff.y)
-            if diff.y < 0 then
-                diff.y = diff.y + 1
-            end
-
-            local search_position = math2d.position.add(last_position, diff)
-            local search_box = helpers.bounding_box.create(search_position, search_position)
-            helpers.bounding_box.grow(search_box, initial_search_radius)     
-            local best_position = nil
-            local best_score = 0
-
-            local test_position = function (position)
-                local result_distance = math2d.position.distance(position, last_position)
-                if xy.get(mod_context.area, position) == "can-build" and result_distance < wire_range then                
-                    local score = score_adjacent_cells(mod_context, position)
-                    score = score + (result_distance * 0.25)
-                    if score > best_score then
-                        best_position = position
-                        best_score = score
-                    end
-                end
-            end
-
-            helpers.bounding_box.each_grid_position(search_box, test_position)
-            while(best_position == nil) do
-                helpers.bounding_box.each_edge_position(search_box, test_position)
-                helpers.bounding_box.grow(search_box, 1)
-            end
-        
-            xy.set(result, best_position, {group=0})
-            last_position = best_position
-            number_of_connecting_poles = number_of_connecting_poles + 1
         end
-        
-        xy.each(pole_groups.positions, function (nearby_pole, position)
-            if nearby_pole.group == nearby_group then
-                xy.set(result, position, nearby_pole)
-                xy.remove(pole_groups.positions, position)
-            end
-        end)
-        
-        pole_groups.group_count = pole_groups.group_count - 1
-       
     end
 
-    return result
+    helpers.bounding_box.each_grid_position(search_area, test_position)
+    while(best_pole_position == nil) do
+        helpers.bounding_box.each_edge_position(search_area, test_position)
+        helpers.bounding_box.grow(search_area, 1)
+    end
+
+    return best_pole_position
+end
+
+local function remove_consumers_in_reach(mod_context, pole_to_consumer_reach, placed_pole_position, unplanned_consumer_positions)
+    local reachable_consumers_by_placed_pole = xy.get(pole_to_consumer_reach, placed_pole_position)
+    if reachable_consumers_by_placed_pole then
+        for _, consumer_position in pairs(reachable_consumers_by_placed_pole.consumer_positions) do
+            local pole_position_area = get_power_pole_bounds_for_consumer(mod_context, consumer_position);
+            xy.remove(unplanned_consumer_positions, consumer_position)
+
+            helpers.bounding_box.each_grid_position(pole_position_area, function (power_pole_position)
+                local power_pole = xy.get(pole_to_consumer_reach, power_pole_position)
+                if (power_pole ~= nil) then
+                    for key, pole_consumer_position in pairs(power_pole.consumer_positions) do
+                        if consumer_position.x == pole_consumer_position.x and consumer_position.y == pole_consumer_position.y then
+                            power_pole.consumer_positions[key] = nil
+                            power_pole.consumer_count = power_pole.consumer_count - 1
+                            if power_pole.consumer_count == 0 then
+                                xy.remove(pole_to_consumer_reach, power_pole_position)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end
+
+local function commit_pole(mod_context, pole_position, planned_poles, pole_to_consumer_reach, unplanned_consumer_positions)
+    xy.set(planned_poles, pole_position, {group=mod_context.pole_count})
+    remove_consumers_in_reach(mod_context, pole_to_consumer_reach, pole_position, unplanned_consumer_positions)
+    mod_context.pole_count = mod_context.pole_count + 1;
+    
+end
+
+function find_nearby_pole_and_consumer(planned_poles, unplanned_consumer_positions)
+    local nearest = nil
+    xy.each(planned_poles, function(_, pole_position)
+        local current = xy.nearest(unplanned_consumer_positions,  pole_position)
+        if nearest == nil or nearest.distance > current.distance then
+            nearest = {
+                pole_position = pole_position,
+                consumer_position = current.position,
+                distance = current.distance
+            }
+        end
+    end)
+
+    return nearest
+end
+
+function get_next_pole_search_position(mod_context, pole_and_consumer_position)
+    if pole_and_consumer_position.distance < mod_context.toolbox.power_pole.wire_range then
+        return pole_and_consumer_position.consumer_position
+    end
+
+    local pole_position = pole_and_consumer_position.pole_position
+
+    local ideal_pole_position_unaligned = math2d.position.add(
+        pole_position, 
+        math2d.position.multiply_scalar(
+            math2d.position.get_normalised(
+                math2d.position.subtract(
+                    pole_and_consumer_position.consumer_position,
+                    pole_position
+                )
+            ),
+            mod_context.toolbox.power_pole.wire_range - initial_search_radius(mod_context)
+        )
+    )
+
+    local diff = math2d.position.subtract(ideal_pole_position_unaligned, pole_position)
+    diff.x = math.ceil(diff.x)
+    if diff.x < 0 then
+        diff.x = diff.x - 1
+    end
+    diff.y = math.ceil(diff.y)
+    if diff.y < 0 then
+        diff.y = diff.y - 1
+    end
+
+    return math2d.position.add(pole_position, diff)
 end
 
 function plan_power(mod_context)
-    local consumer_positions = {};
+    mod_context.pole_count = 0
+    local consumer_positions = {}
     
     xy.each(mod_context.construction_plan, function(planned_entity, position)
         xy.set(mod_context.area, position, "construct-pipe")
@@ -316,13 +238,34 @@ function plan_power(mod_context)
         if (planned_entity.name == "extractor") then
             xy.set(consumer_positions, position, {--[[Maybe add some info later?]]})
         end
-    end)   
-    
-    local consumer_power_poles_map = map_possible_consumer_power_pole_positions(mod_context, consumer_positions)
-    local pole_groups = group_power_poles(mod_context, consumer_power_poles_map, consumer_positions)
-    local connected_poles = merge_power_pole_groups(mod_context, pole_groups)
+    end)
 
-    xy.each(connected_poles, function (pole_plan, position)
+    local planned_poles = {}
+    local unplanned_consumer_positions = table.deepcopy(consumer_positions)
+    local pole_to_consumer_reach = map_possible_consumer_power_pole_positions(mod_context, consumer_positions)
+
+    local first_consumer = xy.nearest(unplanned_consumer_positions, math2d.bounding_box.get_centre(mod_context.area_bounds))
+    local first_pole_position = find_pole_position_nearby(mod_context, first_consumer.position, planned_poles, pole_to_consumer_reach)
+    commit_pole(mod_context, first_pole_position, planned_poles, pole_to_consumer_reach, unplanned_consumer_positions)
+
+
+    local iteration_count = 0
+
+    while(xy.any(unplanned_consumer_positions)) do
+        iteration_count = iteration_count + 1
+        if iteration_count > 100 then
+            return "Planning failure"
+        end
+
+        local pole_and_consumer = find_nearby_pole_and_consumer(planned_poles, unplanned_consumer_positions)
+        local next_pole_search_position = get_next_pole_search_position(mod_context, pole_and_consumer)
+        local next_pole_position = find_pole_position_nearby(mod_context, next_pole_search_position, planned_poles, pole_to_consumer_reach)
+        
+        commit_pole(mod_context, next_pole_position, planned_poles, pole_to_consumer_reach, unplanned_consumer_positions)        
+    end
+
+
+    xy.each(planned_poles, function (pole_plan, position)
         xy.set(mod_context.construction_plan, position, {name="power_pole", direction = defines.direction.north, group = pole_plan.group})
     end)
 end

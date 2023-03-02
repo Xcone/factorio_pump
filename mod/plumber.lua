@@ -3,11 +3,6 @@ local math2d = require 'math2d'
 local helpers = require 'helpers'
 local xy = helpers.xy
 
--- custom log method used in conjunction with the C# LayoutTester-tool
-local function pump_log(object_to_log)
-    if pumpdebug then pumpdebug.log(object_to_log) end
-end
-
 local function area_contains_obstruction(area, bounds)
     for x = bounds.left_top.x, bounds.right_bottom.x, 1 do
         for y = bounds.left_top.y, bounds.right_bottom.y, 1 do
