@@ -388,12 +388,8 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
 
     for _, options in pairs(all_toolbox_options) do
 
-        player.print(options.pick.selected)
-
         -- A mod might've been removed
         reset_selection_if_pick_no_longer_available(options.pick, options.entity_names)
-
-        player.print(options.pick.selected)
 
         -- Multiple options available, and no previous selection is known.
         selection_required = selection_required or (#options.entity_names > 1 and not options.pick.selected)
@@ -416,13 +412,6 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         if options.pick.selected ~= "none" then
             toolbox[options.toolbox_name] = options.toolbox_entries[options.pick.selected]
         end
-    end
-
-    if selection_required then
-        player.print("selection_required")
-    end
-    if new_options_available then
-        player.print("new_options_available")
     end
 
     if force_ui or selection_required or new_options_available then
