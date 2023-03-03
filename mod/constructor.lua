@@ -63,12 +63,17 @@ local function get_planned_entities(construction_plan, toolbox)
         
     end)
 
-    return {
+    local result = {
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
-        [toolbox.connector.underground_entity_name] = pipe_tunnels,
-        [toolbox.power_pole.entity_name] = power_poles
+        [toolbox.connector.underground_entity_name] = pipe_tunnels,        
     }
+
+    if toolbox.power_pole ~= nil then
+        result[toolbox.power_pole.entity_name] = power_poles
+    end
+
+    return result
 end
 
 function construct_entities(construction_plan, surface, toolbox)

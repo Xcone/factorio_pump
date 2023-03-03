@@ -87,7 +87,7 @@ function resume_process_selected_area_with_this_mod()
         current_action.failure = plan_plumbing(current_action)
     end
 
-    if not current_action.failure then
+    if not current_action.failure and current_action.toolbox.power_pole ~= nil then
         current_action.failure = plan_power(current_action)
     end
 

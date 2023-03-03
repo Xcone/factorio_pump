@@ -1,8 +1,9 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.1.7
-Date: T.B.D.
+Version: 1.2.0
+Date: 2023-03-03
   Features:
     - Added placing ghosts for electric poles.
+    - Added extra option to skip placing ghosts electric poles, in case manual placement is preferred.
   Changes:
     - Swapped order of change-log (newest on top, consistent with most other mods)
 ---------------------------------------------------------------------------------------------------

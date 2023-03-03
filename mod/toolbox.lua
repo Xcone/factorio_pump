@@ -26,21 +26,39 @@ function add_development_toolbox(target)
         underground_distance_max = 9
     }
 
-    toolbox.power_pole = {
+    local small_pole = {
         entity_name = "not-used-by-visualizer",
-        --// medium-range
+        supply_range = 2.5,
+        wire_range = 7.5,
+        size = 1
+    }
+
+    local medium_pole = {
+        entity_name = "not-used-by-visualizer",
         supply_range = 3.5,
         wire_range = 9,
-
-        --// small-range
-        -- supply_range = 2.5,
-        -- wire_range = 7.5,
-        
-        --// substation
-        -- wire_range = 18,
-        -- supply_range = 9,
-        size = 1,
+        size = 1
     }
+
+    local big_pole = {
+        entity_name = "not-used-by-visualizer",
+        supply_range = 2,
+        wire_range = 30,
+        size = 2
+    }
+
+    local substation = {
+        entity_name = "not-used-by-visualizer",
+        supply_range = 8, -- 9 from the center; but P.U.M.P. calculates from the edge
+        wire_range = 18,
+        size = 2
+    }
+
+    -- toolbox.power_pole = small_pole
+    -- toolbox.power_pole = medium_pole
+    -- toolbox.power_pole = big_pole
+    toolbox.power_pole = substation
+
 
     target.toolbox = toolbox
 end
@@ -184,12 +202,13 @@ local function add_available_power_poles(available_power_poles, player)
         if meets_tech_requirement(pole, player) then            
             local pole_collision_box = math2d.bounding_box.ensure_xy(pole.collision_box)
             local size = math.abs(pole_collision_box.left_top.x) + math.abs(pole_collision_box.right_bottom.x)            
-            if size < 1 then
+            if size < 2 then
+                local size = math.ceil(size)
                 available_power_poles[pole.name] = {
                     entity_name = pole.name,
-                    supply_range = pole.supply_area_distance,
+                    supply_range = pole.supply_area_distance - (size - 1), -- subtract 1 for a 2x2 power-pole
                     wire_range = pole.max_wire_distance,
-                    size = 1,
+                    size = size,
                 }
             else
                 has_big_poles = true
@@ -241,7 +260,9 @@ local function get_power_pole_pick()
 end
 
 local function reset_selection_if_pick_no_longer_available(pick, available)
-    if not table.contains(available, pick.selected) then pick.selected = nil; end
+    if pick.selected ~= "none" then
+        if not table.contains(available, pick.selected) then pick.selected = nil; end
+    end
 end
 
 local function add_pick_options_to_flow(flow, toolbox_options)
@@ -264,9 +285,26 @@ local function add_pick_options_to_flow(flow, toolbox_options)
         }
         button.locked = true
     end
+
+    if toolbox_options.optional then
+        local style = "slot_sized_button"
+
+        pick_name = "none"
+
+        if toolbox_options.pick.selected == "none" then
+            style = "slot_sized_button_pressed"
+        end
+
+        flow.add {            
+            type = "sprite-button",
+            name = toolbox_options.button_prefix .. pick_name,            
+            style = style,
+            sprite = "utility/hand_black"
+        }
+    end
 end
 
-local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries, failure)
+local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries, optional, failure)
     if failure then
         return {failure = failure}
     end
@@ -290,7 +328,9 @@ local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries
         -- Table keyed on entity-names with content made available via toolbox in the planned.
         toolbox_entries = toolbox_entries,
         -- Available entity names, can be used as keys for toolbox_entries
-        entity_names = entity_names
+        entity_names = entity_names,
+        -- Add option to the dialog to not pick anything
+        optional = optional
     }
 end
 
@@ -302,6 +342,7 @@ local function create_toolbox_extractor_options(player, resource_category)
         "extractor",
         get_extractor_pick_for_resource(resource_category),
         toolbox_entries,
+        false,
         failure
     )
 end
@@ -314,6 +355,7 @@ local function create_toolbox_pipe_options(player)
         "connector",
         get_pipe_pick(),
         toolbox_entries,
+        false,
         failure
     )
 end
@@ -326,6 +368,7 @@ local function create_toolbox_power_pole_options(player)
         "power_pole",
         get_power_pole_pick(),
         toolbox_entries,
+        true,
         failure
     )
 end
@@ -344,8 +387,13 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
     local new_options_available = false
 
     for _, options in pairs(all_toolbox_options) do
+
+        player.print(options.pick.selected)
+
         -- A mod might've been removed
         reset_selection_if_pick_no_longer_available(options.pick, options.entity_names)
+
+        player.print(options.pick.selected)
 
         -- Multiple options available, and no previous selection is known.
         selection_required = selection_required or (#options.entity_names > 1 and not options.pick.selected)
@@ -365,7 +413,16 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         -- put selection in toolbox. 
         -- If the UI doesn't open this is what the planner will work with,
         -- If the UI opens, these will be overwritten
-        toolbox[options.toolbox_name] = options.toolbox_entries[options.pick.selected]
+        if options.pick.selected ~= "none" then
+            toolbox[options.toolbox_name] = options.toolbox_entries[options.pick.selected]
+        end
+    end
+
+    if selection_required then
+        player.print("selection_required")
+    end
+    if new_options_available then
+        player.print("new_options_available")
     end
 
     if force_ui or selection_required or new_options_available then
@@ -450,20 +507,36 @@ function handle_gui_element_click(element_name, player)
     if frame then
         local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
         for _, options in pairs(all_toolbox_options) do
-            for _, entity_name in pairs(options.entity_names) do
+
+            local pick_name = ""
+
+            if (options.button_prefix .. "none") == element_name then
+                pick_name = "none"
+            end
+
+            for _, entity_name in pairs(options.entity_names) do                
+
                 local element_name_for_entity = options.button_prefix .. entity_name
                 if element_name == element_name_for_entity then
-
-                    -- Store selection
-                    options.pick.selected = entity_name
-
-                    -- Update selection option in the UI
-                    add_pick_options_to_flow(frame[options.flow_name], options)
-
-                    -- Update toolbox content for the planner
-                    current_action.toolbox[options.toolbox_name] = options.toolbox_entries[entity_name]
+                    pick_name = entity_name
+                    break
                 end
-            end        
+            end
+
+            if pick_name ~= "" then                
+                -- Store selection
+                options.pick.selected = pick_name
+
+                -- Update selection option in the UI
+                add_pick_options_to_flow(frame[options.flow_name], options)
+
+                -- Update toolbox content for the planner            
+                if pick_name == "none" then
+                    current_action.toolbox[options.toolbox_name] = nil
+                else
+                    current_action.toolbox[options.toolbox_name] = options.toolbox_entries[pick_name]
+                end
+            end
         end
     end
 end

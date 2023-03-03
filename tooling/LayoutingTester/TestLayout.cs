@@ -255,8 +255,8 @@ namespace LayoutingTester
             }
             else if (name == "power_pole")
             {
-                var group = (long)plannedEntity["group"];
-                EntityToConstruct = group.ToString();
+                var placementOrder = (long)plannedEntity["placement_order"];
+                EntityToConstruct = placementOrder.ToString();
                 Content = "power_pole";
             }
 
