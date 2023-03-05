@@ -299,7 +299,8 @@ local function add_pick_options_to_flow(flow, toolbox_options)
             type = "sprite-button",
             name = toolbox_options.button_prefix .. pick_name,            
             style = style,
-            sprite = "utility/hand_black"
+            sprite = "utility/hand_black",
+            tooltip = {"pump-toolpicker.exclude-option-tooltip"}
         }
     end
 end
@@ -381,6 +382,11 @@ local function create_all_toolbox_options(player, resource_category)
     return all_toolbox_options
 end
 
+local function should_show_always(player)
+    local mod_setting_always_show = player.mod_settings["pump-always-show"]
+    return mod_setting_always_show.value
+end
+
 local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
 
     local selection_required = false
@@ -414,18 +420,20 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         end
     end
 
-    if force_ui or selection_required or new_options_available then
+    if force_ui or selection_required or new_options_available or should_show_always(player) then
 
-        local frame = player.gui.center.add {
+        local frame = player.gui.screen.add {
             type = "frame",
             name = "pump_tool_picker_frame",
+            direction = "vertical",
             caption = {"pump-toolpicker.title"},
-            direction = "vertical"
         }
+        frame.auto_center = true
+        player.opened = frame
 
         local caption = {"pump-toolpicker.choose-extractor-generic"}
 
-        if not force_ui then
+        if not (force_ui or should_show_always(player)) then
             if selection_required then
                 caption = {"pump-toolpicker.choose-extractor-unknown-selection"}
             else
@@ -433,10 +441,24 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
             end
         end
 
-        frame.add {type = "label", caption = caption}
+        local label = frame.add {
+            type = "label",
+            caption = caption,            
+        }
+
+        label.style.maximal_width = 300
+        label.style.single_line = false
+
+        local innerFrame = frame.add {
+            type = "frame",
+            name = "all_toolbox_options",
+            direction = "vertical",
+            style="inside_shallow_frame",
+        }
 
         function create_flow(options) 
-            local flow = frame.add {
+            innerFrame.add {type = "line", style="frame_division_fake_horizontal_line"}
+            local flow = innerFrame.add {
                 type = "flow",
                 direction = "horizontal",
                 name = options.flow_name
@@ -449,6 +471,33 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         end
 
         frame.add {
+            type = "checkbox",
+            name = "pump_tool_picker_always_show",
+            caption = {"pump-toolpicker.always-show"},
+            state = should_show_always(player),
+            tooltip = {"mod-setting-description.pump-always-show"},
+        }
+
+        local bottom_flow = frame.add {
+            type = "flow",
+            direction = "horizontal",
+        }
+
+        bottom_flow.style.top_padding = 4
+        bottom_flow.add {
+            type = "button",
+            name = "pump_tool_picker_cancel_button",
+            caption = {"pump-toolpicker.cancel"},
+            style = "back_button"
+        }        
+        local filler = bottom_flow.add{
+            type = "empty-widget",
+            style = "draggable_space",
+            ignored_by_interaction = true,
+        }
+        filler.style.height = 32
+        filler.style.horizontally_stretchable = true
+        bottom_flow.add {
             type = "button",
             name = "pump_tool_picker_confirm_button",
             caption = {"pump-toolpicker.confirm"},
@@ -459,12 +508,10 @@ end
 
 local function add_module_config(toolbox, player)
 
-    local setting =
-        player.mod_settings["pump-interface-with-module-inserter-mod"]
+    local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
 
     if setting and setting.value and remote.interfaces["mi"] then
-        toolbox.module_config = remote.call("mi", "get_module_config",
-                                            player.index)
+        toolbox.module_config = remote.call("mi", "get_module_config", player.index)
     end
 
     if not toolbox.module_config then toolbox.module_config = {} end
@@ -484,16 +531,22 @@ function add_toolbox(current_action, player, force_ui)
     current_action.toolbox = toolbox
 end
 
-function confirm_tool_picker_ui(player)
-    local frame = player.gui.center.pump_tool_picker_frame
-    if frame then frame.destroy() end
+function close_tool_picker_ui(player, confirmed)
+    local frame = player.gui.screen.pump_tool_picker_frame
+
+    if frame then 
+        if confirmed then
+            player.mod_settings["pump-always-show"] = { value = frame.pump_tool_picker_always_show.state }
+        end
+        frame.destroy()
+    end
 end
 
 function handle_gui_element_click(element_name, player)
-    local frame = player.gui.center.pump_tool_picker_frame
+    local frame = player.gui.screen.pump_tool_picker_frame
     local current_action = global.current_action
 
-    if frame then
+    if frame then    
         local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
         for _, options in pairs(all_toolbox_options) do
 
@@ -517,7 +570,7 @@ function handle_gui_element_click(element_name, player)
                 options.pick.selected = pick_name
 
                 -- Update selection option in the UI
-                add_pick_options_to_flow(frame[options.flow_name], options)
+                add_pick_options_to_flow(frame.all_toolbox_options[options.flow_name], options)
 
                 -- Update toolbox content for the planner            
                 if pick_name == "none" then
@@ -531,7 +584,7 @@ function handle_gui_element_click(element_name, player)
 end
 
 function is_ui_open(player)
-    if player.gui.center.pump_tool_picker_frame then
+    if player.gui.screen.pump_tool_picker_frame then
         return true
     else
         return false

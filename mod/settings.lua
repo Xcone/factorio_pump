@@ -16,5 +16,11 @@ data:extend({
         name = "pump-ignore-research",
         setting_type = "runtime-per-user",
         default_value = false
+    },
+    {
+        type = "bool-setting",
+        name = "pump-always-show",
+        setting_type = "runtime-per-user",
+        default_value = true
     }
 })

@@ -20,13 +20,23 @@ script.on_event(defines.events.on_gui_click, function(event)
     local name = event.element.name
     local player = game.players[event.player_index]
     if name == "pump_tool_picker_confirm_button" then
-        confirm_tool_picker_ui(player)
+        close_tool_picker_ui(player, true)
         resume_process_selected_area_with_this_mod()
+    elseif name == "pump_tool_picker_cancel_button" then
+        close_tool_picker_ui(player, false)
     else
         local button_prefix = "pump_toolbox_picker_button_"
         if string.find(name, button_prefix) == 1 then
             handle_gui_element_click(name, player)
         end
+    end
+end)
+
+script.on_event(defines.events.on_gui_closed, function(event)
+    local player = game.players[event.player_index]
+
+    if is_ui_open(player) then
+        close_tool_picker_ui(player, false)
     end
 end)
 
