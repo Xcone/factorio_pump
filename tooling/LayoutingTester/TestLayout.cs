@@ -114,8 +114,8 @@ namespace LayoutingTester
 
                 var plumberFunction = lua["plan_plumbing"] as LuaFunction;
                 var electricianFunction = lua["plan_power"] as LuaFunction;
-                var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault();
-                var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault();
+                var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
+                var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
 
                 stopWatch.Stop();
                 Print($"'add_construction_plan' took {stopWatch.ElapsedMilliseconds}ms");

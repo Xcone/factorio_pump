@@ -98,7 +98,8 @@ function resume_process_selected_area_with_this_mod()
     end
 
     if not current_action.failure and current_action.toolbox.power_pole ~= nil then
-        current_action.failure = plan_power(current_action)
+        -- current_action.failure may be set directly by plan_power
+        plan_power(current_action)
     end
 
     dump_to_file(current_action, "construction_plan")

@@ -159,7 +159,7 @@ local function find_pole_position_nearby(mod_context, position, planned_poles, u
     end
 
     if best_pole_position == nil then
-        error("Unable to resolve nearby power pole position.")
+        mod_context.failure = {"failure.too-many-power-poles"}
     end
 
     return best_pole_position
@@ -254,6 +254,9 @@ function plan_power(mod_context)
 
     local first_consumer = xy.nearest(unplanned_consumer_positions, math2d.bounding_box.get_centre(mod_context.area_bounds))
     local first_pole_position = find_pole_position_nearby(mod_context, first_consumer.position, planned_poles, unplanned_consumer_positions)
+    if mod_context.failure then 
+        return 
+    end
     commit_pole(mod_context, first_pole_position, planned_poles, unplanned_consumer_positions)
 
     local iteration_count = 0
@@ -261,14 +264,16 @@ function plan_power(mod_context)
     while(xy.any(unplanned_consumer_positions)) do
         iteration_count = iteration_count + 1
         if iteration_count > 100 then
-            pump_log("Planning failure")
-            break
+            mod_context.failure = {"failure.too-many-power-poles"}
+            return
         end
 
         local pole_and_consumer = find_nearby_pole_and_consumer(planned_poles, unplanned_consumer_positions)
         local next_pole_search_position = get_next_pole_search_position(mod_context, pole_and_consumer)
         local next_pole_position = find_pole_position_nearby(mod_context, next_pole_search_position, planned_poles, unplanned_consumer_positions)
-        
+        if mod_context.failure then
+            return 
+        end
         commit_pole(mod_context, next_pole_position, planned_poles, unplanned_consumer_positions)
     end
 
