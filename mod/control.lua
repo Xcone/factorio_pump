@@ -157,12 +157,12 @@ function trim_selected_area(current_action, entities)
 
     local extractor_bounds = current_action.toolbox.extractor.relative_bounds;
 
-    area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - 1
-    area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - 1
+    area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - 2
+    area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - 2
     area.right_bottom.x =
-        (area.right_bottom.x + extractor_bounds.right_bottom.x) + 1
+        (area.right_bottom.x + extractor_bounds.right_bottom.x) + 2
     area.right_bottom.y =
-        (area.right_bottom.y + extractor_bounds.right_bottom.y) + 1
+        (area.right_bottom.y + extractor_bounds.right_bottom.y) + 2
 end
 
 function dump_to_file(table_to_write, description)
