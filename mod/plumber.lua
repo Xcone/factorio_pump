@@ -206,6 +206,18 @@ local function take_series_of_pipes(construct_entities, start_joint_position,
     }
 end
 
+local function find_oilwells(segment)
+    local oilwells = {}
+
+    helpers.bounding_box.each_grid_position(segment.area_bounds, function (position)
+        if xy.get(segment.area, position) == "oil-well" then
+            table.insert(oilwells, { position = position })
+        end
+    end)
+
+    return oilwells
+end
+
 local function verify_all_extractors_connected(segment)
     if segment.split_direction == "none" then
         if segment.construct_entities ~= nil then
@@ -515,18 +527,6 @@ local function construct_pipes_on_splits(segment, construct_entities)
 
     construct_pipes_on_splits(segment.sub_segment_1, construct_entities)
     construct_pipes_on_splits(segment.sub_segment_2, construct_entities)
-end
-
-local function find_oilwells(segment)
-    local oilwells = {}
-
-    helpers.bounding_box.each_grid_position(segment.area_bounds, function (position)
-        if xy.get(segment.area, position) == "oil-well" then
-            table.insert(oilwells, { position = position })
-        end
-    end)
-
-    return oilwells
 end
 
 local function try_connect_extractors(segment)

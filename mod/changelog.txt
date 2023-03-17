@@ -4,6 +4,7 @@ Date: T.B.D.
   Fixes:
     - Fixed total game freeze, adding a limit to how far the search area for the next power-pole can grow. Raise error instead.
     - Fixed being unable to place a 2x2 power-pole (substation) in a very small selection.
+    - Fixed error about being unable to find a find a local function.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 2023-03-05  
