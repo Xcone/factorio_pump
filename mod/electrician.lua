@@ -148,9 +148,18 @@ local function find_pole_position_nearby(mod_context, position, planned_poles, u
     end
 
     helpers.bounding_box.each_grid_position(search_area, test_position)
-    while(best_pole_position == nil) do
+
+    local grow_limit = mod_context.toolbox.power_pole.wire_range * 2
+    while(best_pole_position == nil and grow_limit > 0) do
+
         helpers.bounding_box.each_edge_position(search_area, test_position)
         helpers.bounding_box.grow(search_area, 1)
+        
+        grow_limit = grow_limit - 1;
+    end
+
+    if best_pole_position == nil then
+        error("Unable to resolve nearby power pole position.")
     end
 
     return best_pole_position
