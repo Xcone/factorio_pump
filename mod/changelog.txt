@@ -1,13 +1,18 @@
+---------------------------------------------------------------------------------------------------
 Version: 1.3.3
 Date: 07 Aug 2023
-  Feautures:
-	- Added hotkey support.
-  Credits: _codegreen
-	- https://discord.com/channels/139677590393716737/306402592265732098/1138225784092381284
-	- Item prototype flag "only-in-cursor"
-  Credits: sharparam
-	- https://discord.com/channels/139677590393716737/306402592265732098/1138278375396474890
-	- Localization heading [x] for unknownkey=x.y
+  Features:
+    - Added hotkey support.
+  Credits:
+    - _codegreen
+    - https://discord.com/channels/139677590393716737/306402592265732098/1138225784092381284
+    - Item prototype flag "only-in-cursor"
+    - sharparam
+    - https://discord.com/channels/139677590393716737/306402592265732098/1138278375396474890
+    - Localization heading [x] for unknownkey=x.y
+    - fgardt
+    - https://discord.com/channels/139677590393716737/306402592265732098/1138291188563198043
+    - https://wiki.factorio.com/Tutorial:Mod_changelog_format
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.2
 Date: 2023-03-17
