@@ -66,7 +66,7 @@ data:extend{pumpSelectionTool, pumpShortcut}
 data:extend{
     {
         type = "custom-input",
-        name = "pump-selection-tool-keybind",
+        name = "pump-selection-tool-toggle",
         key_sequence = "CONTROL + SHIFT + P",
     },
 }

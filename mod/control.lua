@@ -40,6 +40,21 @@ script.on_event(defines.events.on_gui_closed, function(event)
     end
 end)
 
+script.on_event("pump-selection-tool-toggle", function(event)
+    local player = game.players[event.player_index]
+
+    -- Check if the player already has the "pump-selection-tool" in the cursor
+    if player.cursor_stack and player.cursor_stack.valid_for_read and player.cursor_stack.name == "pump-selection-tool" then
+        -- If the player has the tool in the cursor, clear the cursor
+        player.cursor_stack.clear()
+    else
+        -- If the player doesn't have the tool in the cursor, place it in the cursor
+        local pumpSelectionTool = "pump-selection-tool" -- Make sure this matches the item name defined in your data.lua
+        player.cursor_stack.set_stack({name = pumpSelectionTool, count = 1})
+    end
+end
+)
+
 function process_selected_area_with_this_mod(event, force_ui)
     local player = game.get_player(event.player_index)
 
@@ -170,19 +185,3 @@ function dump_to_file(table_to_write, description)
     local planner_input_as_json = game.table_to_json(table_to_write)
     game.write_file("pump_" .. description .. ".json", planner_input_as_json)
 end
-
--- Register the custom input event
-script.on_event("pump-selection-tool-keybind", function(event)
-    local player = game.players[event.player_index]
-
-    -- Check if the player already has the "pump-selection-tool" in the cursor
-    if player.cursor_stack and player.cursor_stack.valid_for_read and player.cursor_stack.name == "pump-selection-tool" then
-        -- If the player has the tool in the cursor, clear the cursor
-        player.cursor_stack.clear()
-    else
-        -- If the player doesn't have the tool in the cursor, place it in the cursor
-        local pumpSelectionTool = "pump-selection-tool" -- Make sure this matches the item name defined in your data.lua
-        player.cursor_stack.set_stack({name = pumpSelectionTool, count = 1})
-    end
-end
-)
