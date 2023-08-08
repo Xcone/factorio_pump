@@ -121,7 +121,7 @@ function resume_process_selected_area_with_this_mod()
 
     if not current_action.failure then
         current_action.failure = construct_entities(
-                                     current_action.construction_plan, surface,
+                                     current_action.construction_plan, player,
                                      current_action.toolbox)
     end
 
