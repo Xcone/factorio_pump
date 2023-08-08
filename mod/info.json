@@ -1,14 +1,15 @@
 {
-  "name": "pump",
-  "version": "<%version%>",
-  "title": "P.U.M.P.",
-  "author": "Xcone",
-  "contact": "",
-  "homepage": "",
+  "name": "pumpwithhotkey",
+  "version": "1.3.4",
+  "title": "P.U.M.P. with H.O.T.K.E.Y.",
+  "author": "Xcone, sicksicksix",
+  "contact": "iamtimsson#2912",
+  "homepage": "https://github.com/iamtimsson/factorio_pump_with_hotkey",
   "factorio_version": "1.1",
   "dependencies": [
     "base >= 1.1",
-    "? ModuleInserter >= 5.2.0"
+    "? ModuleInserter >= 5.2.0",
+    "! pump"
   ],
-  "description": "P.U.M.P. (Prevent Unwanted Manual Pump-placement) adds a selection-tool with which you can select oil wells, and then plans the layout of pumpjacks and pipes for you."
+  "description": "P.U.M.P. with H.O.T.K.E.Y. (Prevent Unwanted Manual Pump-placement, Hold On - That Kills Efficiency, Yo!) adds a hotkeyed selection-tool for oil wells to plan the layout of pumpjacks and pipes without having to doitchaself or *shudder* click a ui button."
 }
