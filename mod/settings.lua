@@ -23,10 +23,4 @@ data:extend({
         setting_type = "runtime-per-user",
         default_value = true
     },
-    {
-        type = "string-setting",
-        name = "pump-selection-tool-keybind",
-        setting_type = "runtime-per-user",
-        default_value = "CONTROL + SHIFT+ P"
-    },
 })

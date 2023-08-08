@@ -1,8 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.3.4
+Date: 08 Aug 2023
+  Fixes:
+    - Pruned superfluous per-user setting
+---------------------------------------------------------------------------------------------------
 Version: 1.3.3
 Date: 07 Aug 2023
   Features:
-    - Added hotkey support.
+    - Added hotkey support
   Credits:
     - _codegreen
     - https://discord.com/channels/139677590393716737/306402592265732098/1138225784092381284

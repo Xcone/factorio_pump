@@ -8,7 +8,8 @@
   "factorio_version": "1.1",
   "dependencies": [
     "base >= 1.1",
-    "? ModuleInserter >= 5.2.0"
+    "? ModuleInserter >= 5.2.0",
+    "! pump"
   ],
   "description": "P.U.M.P. with H.O.T.K.E.Y. (Prevent Unwanted Manual Pump-placement, Hold On - That Kills Efficiency, Yo!) adds a hotkeyed selection-tool for oil wells to plan the layout of pumpjacks and pipes without having to doitchaself or *shudder* click a ui button."
 }
