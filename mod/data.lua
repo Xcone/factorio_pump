@@ -8,10 +8,11 @@ pumpSelectionTool.icon_size = 32
 pumpSelectionTool.icon_mipmaps = 0
 pumpSelectionTool.selection_mode = {"any-entity"}
 pumpSelectionTool.selection_cursor_box_type = "entity"
-pumpSelectionTool.flags = {"only-in-cursor", "spawnable"}
+pumpSelectionTool.flags = {"only-in-cursor", "spawnable", "not-stackable"}
 pumpSelectionTool.subgroup = "tool"
 pumpSelectionTool.order = "c[automated-construction]-d[pump-selection-tool]"
 pumpSelectionTool.entity_filters = {"crude-oil"}
+pumpSelectionTool.stack_size = 1
 
 -- no different ALT-behavior. Just copy it from the regular behavior
 pumpSelectionTool.alt_selection_color = pumpSelectionTool.selection_color
@@ -29,7 +30,7 @@ local pumpShortcut = table.deepcopy(data.raw["shortcut"]["give-blueprint"])
 pumpShortcut.name = "pump-shortcut"
 pumpShortcut.technology_to_unlock = nil
 pumpShortcut.localised_name = nil
-pumpShortcut.associated_control_input = nil
+pumpShortcut.associated_control_input = "pump-selection-tool-toggle"
 pumpShortcut.item_to_spawn = "pump-selection-tool"
 pumpShortcut.style = "default"
 pumpShortcut.icon = {
