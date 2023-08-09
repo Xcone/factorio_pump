@@ -8,6 +8,7 @@ Version: 1.3.3
 Date: 2023-08-08
   Features:
     - Added hotkey support, kindly provided by https://github.com/iamtimsson
+    - H.O.T.K.E.Y. (Hold On - That Kills Efficiency, Yo!)
   Credits:
     - To _codegreen, sharparam and fgardt on the factorio Discord, for assisting iamtimsson.
 ---------------------------------------------------------------------------------------------------
