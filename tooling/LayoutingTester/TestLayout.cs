@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using KeraLua;
-using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using NLua;
 using NLua.Exceptions;
@@ -77,24 +76,61 @@ namespace LayoutingTester
             try
             {
                 // Arrange
-                
-                string solutionRoot = Environment.CurrentDirectory + "\\..\\..\\..\\..\\..\\";
-                string factorioDir = $"{solutionRoot}..\\factorio-data\\";
+                string solutionRoot = Environment.CurrentDirectory;
+                while (solutionRoot is not null)
+                {
+                    if (Directory.EnumerateFiles(solutionRoot, "LICENSE").Any())
+                    {
+                        break;
+                    }
+
+                    solutionRoot = Path.GetDirectoryName(solutionRoot);
+                }
+
+                if (solutionRoot is null)
+                {
+                    throw new InvalidOperationException("The solution root could not be found.");
+                }
+
+                string[] factorioDirs = new[]
+                {
+                    Path.Combine(solutionRoot, "..", "factorio-data"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam", "steamapps", "common", "Factorio", "data"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Factorio"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Steam", "steamapps", "common", "Factorio", "data"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Factorio"),
+                };
+
+                string factorioDir = null;
+                foreach (var candidate in factorioDirs)
+                {
+                    if (Directory.Exists(candidate))
+                    {
+                        factorioDir = Path.GetFullPath(candidate);
+                        break;
+                    }
+                }
+
+                if (factorioDir is null)
+                {
+                    throw new InvalidOperationException("The Factorio data directory could not be found.");
+                }
+
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
 
                 var existingPath = lua["package.path"];
-                existingPath += $";{solutionRoot}mod\\?.lua";
-                existingPath += $";{factorioDir}base\\?.lua";
-                existingPath += $";{factorioDir}core\\?.lua";
-                existingPath += $";{factorioDir}core\\lualib\\?.lua";
+                existingPath += $";{solutionRoot}\\mod\\?.lua";
+                existingPath += $";{factorioDir}\\base\\?.lua";
+                existingPath += $";{factorioDir}\\core\\?.lua";
+                existingPath += $";{factorioDir}\\core\\lualib\\?.lua";
                 lua["package.path"] = existingPath;
+
+                lua.NewTable("defines");
+                lua.DoString("defines['direction'] = {north=0, northeast=1, east=2, southeast=3, south=4, southwest=5, west=6, northwest=7}");
 
                 lua.DoString("require 'util'");
                 lua.DoString("require 'math2d'");
-
-                lua.NewTable("defines");
-                lua.DoString("defines['direction'] = {north=0, east=2, south=4, west=6}");
 
                 lua.DoString("require 'helpers'");
                 lua.DoString("require 'toolbox'");
