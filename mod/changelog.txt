@@ -1,8 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.4
-Date: ???
+Date: 2024-02-04
   Changes:
-    - Include the player-argument when placing ghosts.
+    - Take the actual player force into account, instead of using the default force "player".
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.3
 Date: 2023-08-08

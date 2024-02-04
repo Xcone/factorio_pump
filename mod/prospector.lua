@@ -1,4 +1,4 @@
-function add_area_information(current_action, entities, surface)
+function add_area_information(current_action, entities, surface, player)
     current_action.area = {}
 
     local area_bounds = current_action.area_bounds
@@ -15,7 +15,7 @@ function add_area_information(current_action, entities, surface)
     for i, entity in pairs(entities) do
         local direction = defines.direction.east
         if can_place_extractor(surface, entity.position, direction,
-                               current_action.toolbox) then
+                               current_action.toolbox, player) then
 
             local relative_bounds = current_action.toolbox.extractor
                                         .relative_bounds
@@ -38,7 +38,7 @@ function add_area_information(current_action, entities, surface)
     for x, reservations in pairs(current_action.area) do
         for y, reservation in pairs(reservations) do
             if reservation == "undefined" then
-                if can_place_pipe(surface, {x = x, y = y}) then
+                if can_place_pipe(surface, {x = x, y = y}, player) then
                     current_action.area[x][y] = "can-build"
                 else
                     current_action.area[x][y] = "can-not-build"
@@ -74,23 +74,23 @@ function pipes_present_in_area(surface, area)
     end
 end
 
-function can_place_extractor(surface, position, direction, toolbox)
+function can_place_extractor(surface, position, direction, toolbox, player)
     return surface.can_place_entity({
         name = toolbox.extractor.entity_name,
         position = position,
         direction = direction,
-        force = "player",
+        force = player.force,
         build_check_type = defines.build_check_type.manual_ghost,
         forced = true
     })
 end
 
-function can_place_pipe(surface, position)
+function can_place_pipe(surface, position, player)
     return surface.can_place_entity({
         name = "pipe",
         position = position,
         direction = defines.direction.north,
-        force = "player",
+        force = player.force,
         build_check_type = defines.build_check_type.manual_ghost,
         forced = true
     })

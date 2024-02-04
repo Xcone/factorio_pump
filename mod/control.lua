@@ -103,7 +103,7 @@ function resume_process_selected_area_with_this_mod()
 
     if not current_action.failure then
         current_action.failure = add_area_information(current_action, entities,
-                                                      surface)
+                                                      surface, player)
     end
 
     dump_to_file(current_action, "planner_input")

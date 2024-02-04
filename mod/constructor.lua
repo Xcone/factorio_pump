@@ -78,14 +78,13 @@ end
 
 function construct_entities(construction_plan, player, toolbox)
     local planned_entities = get_planned_entities(construction_plan, toolbox)
-    local player_force = "player"
 
     for _, entities_to_place in pairs(planned_entities) do
         for i, parameters in pairs(entities_to_place) do
             local entities_to_remove = player.surface.find_entities(
                                            parameters.deconstruct_area);
             for i, entity in pairs(entities_to_remove) do
-                entity.order_deconstruction(player_force)
+                entity.order_deconstruction(player.force)
             end
         end
     end
