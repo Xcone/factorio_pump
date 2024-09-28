@@ -5,8 +5,8 @@ function pump_log(object_to_log)
     if pumpdebug then pumpdebug.log(object_to_log) end
 end
 
-local helpers = {}
-helpers.directions = {
+local plib = {}
+plib.directions = {
     [defines.direction.north] = {
         vector = {x = 0, y = -1},
         next = defines.direction.east,
@@ -60,7 +60,7 @@ helpers.directions = {
     }
 }
 
-helpers.bounding_box = {
+plib.bounding_box = {
     -- flattens the bounding_box in the given directon. 
     --  input:  #  north:  #  south:   #  west:   #  east:
     --  ______  #  ______  #  .      . #  _     . # .     _
@@ -68,15 +68,15 @@ helpers.bounding_box = {
     -- |      | #          #   ______  # | |      #      | |
     -- |______| # .      . #  |______| # |_|    . # .    |_|
     squash = function(bounds, direction)
-        helpers.directions[direction].squash_bounding_box(bounds)
+        plib.directions[direction].squash_bounding_box(bounds)
     end,
 
     get_cross_section_size = function(bounds, direction)
-        local squashed_box = helpers.bounding_box.copy(bounds)
-        local sideways = helpers.directions[direction].next
-        helpers.bounding_box.squash(squashed_box, sideways)
+        local squashed_box = plib.bounding_box.copy(bounds)
+        local sideways = plib.directions[direction].next
+        plib.bounding_box.squash(squashed_box, sideways)
 
-        return helpers.bounding_box.get_size(squashed_box)
+        return plib.bounding_box.get_size(squashed_box)
     end,
 
     get_size = function(bounds)
@@ -88,9 +88,9 @@ helpers.bounding_box = {
     end,
 
     translate = function(bounds, direction, amount)
-        local offset = helpers.directions[direction].vector
+        local offset = plib.directions[direction].vector
         offset = math2d.position.multiply_scalar(offset, amount)
-        helpers.bounding_box.offset(bounds, offset)
+        plib.bounding_box.offset(bounds, offset)
     end,
 
     offset = function(bounds, offset)
@@ -114,8 +114,8 @@ helpers.bounding_box = {
             error("Slice should be within the bounds and be 1-dimensional")
         end
 
-        local sub_bounds_1 = helpers.bounding_box.copy(bounds)
-        local sub_bounds_2 = helpers.bounding_box.copy(bounds)
+        local sub_bounds_1 = plib.bounding_box.copy(bounds)
+        local sub_bounds_2 = plib.bounding_box.copy(bounds)
 
         if slice.left_top.x == slice.right_bottom.x then
             -- slice vertical
@@ -146,7 +146,7 @@ helpers.bounding_box = {
     end,
 
     position_to_edge = function(bounds, position, direction)
-        return helpers.directions[direction].to_edge(bounds, position)
+        return plib.directions[direction].to_edge(bounds, position)
     end,
 
     contains = function(outer, inner)
@@ -188,7 +188,7 @@ helpers.bounding_box = {
     end
 }
 
-helpers.xy = {
+plib.xy = {
     first = function(xy_table, action)
         for x, subtable in pairs(xy_table) do
             for y, subject in pairs(subtable) do
@@ -210,9 +210,9 @@ helpers.xy = {
 
     where = function(xy_table, comparer)
         local result = {}
-        helpers.xy.each(xy_table, function(subject, position)
+        plib.xy.each(xy_table, function(subject, position)
             if comparer(subject, position) then
-                helpers.xy.set(result, position, subject)
+                plib.xy.set(result, position, subject)
             end
         end)
         return result
@@ -252,7 +252,7 @@ helpers.xy = {
         local nearest_position = nil
         local nearest_value = nil
 
-        helpers.xy.each(xy_table, function(value, entry_position)
+        plib.xy.each(xy_table, function(value, entry_position)
             local d = math2d.position.distance(search_position, entry_position)
             if d < nearest_distance then
                 nearest_distance = d
@@ -265,5 +265,5 @@ helpers.xy = {
     end
 }
 
-return helpers
+return plib
 

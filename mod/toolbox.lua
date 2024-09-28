@@ -1,6 +1,6 @@
 require 'util'
 local math2d = require 'math2d'
-local helpers = require 'helpers'
+local plib = require 'plib'
 
 -- Simplified non-dynamic variation of the toolbox used by the C# WPF application to test planner.lua without mimicing all of factorio
 function add_development_toolbox(target)
@@ -72,7 +72,7 @@ local function meets_tech_requirement(entity, player)
     if ignore_resaearch then
         entity_is_unlocked = true
     else
-        local recipies_for_entity = game.get_filtered_recipe_prototypes {
+        local recipies_for_entity = prototypes.get_recipe_filtered {
             {
                 filter = "has-product-item",
                 elem_filters = {{filter = "name", name = entity.name}}
@@ -91,7 +91,7 @@ end
 
 local function has_matching_pipe_to_ground(pipe_name)
     local matching_pipe_to_ground_result =
-        game.get_filtered_entity_prototypes(
+        prototypes.get_entity_filtered(
             {
                 {filter = "type", type = "pipe-to-ground"},
                 {
@@ -105,7 +105,7 @@ local function has_matching_pipe_to_ground(pipe_name)
 end
 
 local function add_available_pipes(available_pipes, player)
-    local all_pipes = game.get_filtered_entity_prototypes(
+    local all_pipes = prototypes.get_entity_filtered(
                           {{filter = "type", type = "pipe"}})
 
     for _, pipe in pairs(all_pipes) do
@@ -132,6 +132,7 @@ local function get_output_fluidbox(extractor)
     local output_fluid_boxes = {}
     for _, fluidbox in pairs(extractor.fluidbox_prototypes) do
         if fluidbox and fluidbox.production_type == "output" then
+            
             table.insert(output_fluid_boxes, fluidbox);
         end
     end
@@ -139,7 +140,7 @@ local function get_output_fluidbox(extractor)
 end
 
 local function add_available_extractors(available_extractors, resource_category, player)
-    local all_extractors = game.get_filtered_entity_prototypes(
+    local all_extractors = prototypes.get_entity_filtered(
                                {{filter = "type", type = "mining-drill"}})
 
     local suitable_extractors = {}
@@ -158,10 +159,10 @@ local function add_available_extractors(available_extractors, resource_category,
         local cardinal_output_positions = get_output_fluidbox(extractor).pipe_connections[1].positions
 
         local output_offsets = {
-            [defines.direction.north] = cardinal_output_positions[1],
-            [defines.direction.east] = cardinal_output_positions[2],
-            [defines.direction.south] = cardinal_output_positions[3],
-            [defines.direction.west] = cardinal_output_positions[4]
+            [defines.direction.north] = math2d.position.add(plib.directions[defines.direction.north].vector, cardinal_output_positions[1]),
+            [defines.direction.east] = math2d.position.add(plib.directions[defines.direction.east].vector, cardinal_output_positions[2]),
+            [defines.direction.south] = math2d.position.add(plib.directions[defines.direction.south].vector, cardinal_output_positions[3]),
+            [defines.direction.west] = math2d.position.add(plib.directions[defines.direction.west].vector, cardinal_output_positions[4])
         }
 
         local relative_bounds = {
@@ -195,7 +196,7 @@ local function add_available_extractors(available_extractors, resource_category,
 end
 
 local function add_available_power_poles(available_power_poles, player)
-    local all_poles = game.get_filtered_entity_prototypes({{filter = "type", type = "electric-pole"}})
+    local all_poles = prototypes.get_entity_filtered({{filter = "type", type = "electric-pole"}})
     local has_big_poles = false
 
     for _, pole in pairs(all_poles) do
@@ -206,8 +207,8 @@ local function add_available_power_poles(available_power_poles, player)
                 local size = math.ceil(size)
                 available_power_poles[pole.name] = {
                     entity_name = pole.name,
-                    supply_range = pole.supply_area_distance - (size - 1), -- subtract 1 for a 2x2 power-pole
-                    wire_range = pole.max_wire_distance,
+                    supply_range = pole.get_supply_area_distance() - (size - 1), -- subtract 1 for a 2x2 power-pole
+                    wire_range = pole.get_max_wire_distance(),
                     size = size,
                 }
             else
@@ -225,38 +226,38 @@ local function add_available_power_poles(available_power_poles, player)
 end
 
 local function get_extractor_pick_for_resource(resource_category)
-    if not global.toolpicker_config then global.toolpicker_config = {} end
+    if not storage.toolpicker_config then storage.toolpicker_config = {} end
 
-    if not global.toolpicker_config.extractor_pick then
-        global.toolpicker_config.extractor_pick = {}
+    if not storage.toolpicker_config.extractor_pick then
+        storage.toolpicker_config.extractor_pick = {}
     end
 
-    if not global.toolpicker_config.extractor_pick[resource_category] then
-        global.toolpicker_config.extractor_pick[resource_category] =
+    if not storage.toolpicker_config.extractor_pick[resource_category] then
+        storage.toolpicker_config.extractor_pick[resource_category] =
             {selected = nil, available = {}}
     end
 
-    return global.toolpicker_config.extractor_pick[resource_category]
+    return storage.toolpicker_config.extractor_pick[resource_category]
 end
 
 local function get_pipe_pick()
-    if not global.toolpicker_config then global.toolpicker_config = {} end
+    if not storage.toolpicker_config then storage.toolpicker_config = {} end
 
-    if not global.toolpicker_config.pipe_pick then
-        global.toolpicker_config.pipe_pick = {selected = nil, available = {}}
+    if not storage.toolpicker_config.pipe_pick then
+        storage.toolpicker_config.pipe_pick = {selected = nil, available = {}}
     end
 
-    return global.toolpicker_config.pipe_pick
+    return storage.toolpicker_config.pipe_pick
 end
 
 local function get_power_pole_pick()
-    if not global.toolpicker_config then global.toolpicker_config = {} end
+    if not storage.toolpicker_config then storage.toolpicker_config = {} end
 
-    if not global.toolpicker_config.power_pole_pick then
-        global.toolpicker_config.power_pole_pick = {selected = nil, available = {}}
+    if not storage.toolpicker_config.power_pole_pick then
+        storage.toolpicker_config.power_pole_pick = {selected = nil, available = {}}
     end
 
-    return global.toolpicker_config.power_pole_pick
+    return storage.toolpicker_config.power_pole_pick
 end
 
 local function reset_selection_if_pick_no_longer_available(pick, available)
@@ -457,7 +458,7 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         }
 
         function create_flow(options) 
-            innerFrame.add {type = "line", style="frame_division_fake_horizontal_line"}
+            innerFrame.add {type = "line", style="inside_shallow_frame_with_padding_line"}
             local flow = innerFrame.add {
                 type = "flow",
                 direction = "horizontal",
@@ -544,7 +545,7 @@ end
 
 function handle_gui_element_click(element_name, player)
     local frame = player.gui.screen.pump_tool_picker_frame
-    local current_action = global.current_action
+    local current_action = storage.current_action
 
     if frame then    
         local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)

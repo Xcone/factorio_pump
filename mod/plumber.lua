@@ -1,7 +1,7 @@
 require 'util'
 local math2d = require 'math2d'
-local helpers = require 'helpers'
-local xy = helpers.xy
+local plib = require 'plib'
+local xy = plib.xy
 
 local function area_contains_obstruction(area, bounds)
     for x = bounds.left_top.x, bounds.right_bottom.x, 1 do
@@ -15,8 +15,8 @@ end
 
 local function get_distance_to_edge(segment, position, direction)
 
-    local toolbox_direction = helpers.directions[direction]
-    local vector_inwards = helpers.directions[toolbox_direction.opposite].vector
+    local toolbox_direction = plib.directions[direction]
+    local vector_inwards = plib.directions[toolbox_direction.opposite].vector
 
     local is_in_segment = math2d.bounding_box.contains_point(
                               segment.area_bounds, position)
@@ -24,11 +24,11 @@ local function get_distance_to_edge(segment, position, direction)
     if is_in_segment and segment.connectable_edges[direction] then
         local edge_position = toolbox_direction.to_edge(segment.area_bounds,
                                                         position)
-        local line_to_edge = helpers.bounding_box
+        local line_to_edge = plib.bounding_box
                                  .create(position, edge_position)
 
         if not area_contains_obstruction(segment.area, line_to_edge) then
-            return helpers.bounding_box.get_size(line_to_edge)
+            return plib.bounding_box.get_size(line_to_edge)
         end
     else
         local position_offset_inwards = math2d.position.add(position,
@@ -187,7 +187,7 @@ local function take_series_of_pipes(construct_entities, start_joint_position,
 
     repeat
         probe_location = math2d.position.add(probe_location,
-                                             helpers.directions[direction]
+                                             plib.directions[direction]
                                                  .vector)
         is_pipe = false
         construct_entity_at_position =
@@ -209,7 +209,7 @@ end
 local function find_oilwells(segment)
     local oilwells = {}
 
-    helpers.bounding_box.each_grid_position(segment.area_bounds, function (position)
+    plib.bounding_box.each_grid_position(segment.area_bounds, function (position)
         if xy.get(segment.area, position) == "oil-well" then
             table.insert(oilwells, { position = position })
         end
@@ -251,7 +251,7 @@ local function get_best_pipe_placement_to_edge(segment, pipe_start_position)
     local acceptable_distance = segment.toolbox.connector
                                     .underground_distance_max + 2
 
-    for direction, _ in pairs(helpers.directions) do
+    for direction, _ in pairs(plib.directions) do
         distances[direction] = get_distance_to_edge(segment,
                                                     pipe_start_position,
                                                     direction)
@@ -308,9 +308,9 @@ local function convert_outputs_to_joints_when_flanked(construct_entities, toolbo
                                                         "output")
 
     xy.each(output_positions, function(output, position)
-        local flank_direction = helpers.directions[output.direction].next
+        local flank_direction = plib.directions[output.direction].next
         local flank_position = math2d.position.add(position,
-                                                   helpers.directions[flank_direction]
+                                                   plib.directions[flank_direction]
                                                        .vector)
 
         local entity_on_flank = nil
@@ -319,9 +319,9 @@ local function convert_outputs_to_joints_when_flanked(construct_entities, toolbo
                 construct_entities[flank_position.x][flank_position.y]
 
             if entity_on_flank == nil then
-                flank_direction = helpers.directions[output.direction].previous
+                flank_direction = plib.directions[output.direction].previous
                 flank_position = math2d.position.add(position,
-                                                     helpers.directions[flank_direction]
+                                                     plib.directions[flank_direction]
                                                          .vector)
 
                 if construct_entities[flank_position.x] ~= nil then
@@ -345,7 +345,7 @@ local function optimize_construct_entities(construct_entities, toolbox)
 
     -- Replace straight pipes between joints/joints or joints/outputs with tunnels                                                            
     xy.each(pipe_joint_positions, function(pipe_joint, position)
-        for direction, toolbox_direction in pairs(helpers.directions) do
+        for direction, toolbox_direction in pairs(plib.directions) do
             local result = take_series_of_pipes(construct_entities, position,
                                                 direction)
             if result.last_hit == nil then
@@ -366,7 +366,7 @@ local function optimize_construct_entities(construct_entities, toolbox)
 
     -- Remove dead ends
     xy.each(pipe_joint_positions, function(pipe_joint, position)
-        for direction, toolbox_direction in pairs(helpers.directions) do
+        for direction, toolbox_direction in pairs(plib.directions) do
             local result = take_series_of_pipes(construct_entities, position,
                                                 direction)
             if result.last_hit == nil then
@@ -394,24 +394,24 @@ end
 
 -- Look left to right, to find an all-clear from top to bottom
 local function find_split(segment, direction)
-    local sideways = helpers.directions[direction].next
+    local sideways = plib.directions[direction].next
 
     -- Get a 1-wide slice of the area on the side of the area
-    local slice = helpers.bounding_box.copy(segment.area_bounds)
-    helpers.bounding_box.squash(slice, sideways)
+    local slice = plib.bounding_box.copy(segment.area_bounds)
+    plib.bounding_box.squash(slice, sideways)
 
     -- Prepare 2 slices to scan for obstructions. Start in the middle, and work outwards. 1 slice in each direction
-    local number_of_slices = helpers.bounding_box.get_cross_section_size(
+    local number_of_slices = plib.bounding_box.get_cross_section_size(
                                  segment.area_bounds, sideways)
 
     local middle = math.ceil(number_of_slices / 2)
-    helpers.bounding_box.translate(slice, sideways, -middle)
-    local opposite_slice = helpers.bounding_box.copy(slice)
+    plib.bounding_box.translate(slice, sideways, -middle)
+    local opposite_slice = plib.bounding_box.copy(slice)
 
     local is_even_number_of_slices = number_of_slices % 2 == 0
     if is_even_number_of_slices then
         -- if number_of_slices is 8, both slices are now at 5. Translate opposite_slice 1 more to be at 4
-        helpers.bounding_box.translate(opposite_slice, sideways, -1)
+        plib.bounding_box.translate(opposite_slice, sideways, -1)
     end
 
     -- Both slices are in the correct position now. Move slices outwards and look for obstructions.    
@@ -425,12 +425,12 @@ local function find_split(segment, direction)
     local count = 0
     while count <= middle do
         -- If the segment has a even-size, there's no exact middle. Check if the slice passed the bounds of the segmenent.
-        if helpers.bounding_box.contains(segment.area_bounds, slice) then
+        if plib.bounding_box.contains(segment.area_bounds, slice) then
             if area_contains_obstruction(segment.area, slice) then
                 slice_result.found_obstruction = true
             else
                 slice_result.unobstructed_slice =
-                    helpers.bounding_box.copy(slice)
+                    plib.bounding_box.copy(slice)
             end
 
             if slice_result.unobstructed_slice and
@@ -440,12 +440,12 @@ local function find_split(segment, direction)
         end
 
         -- If the segment has a even-size, there's no exact middle. Check if the slice passed the bounds of the segmenent.
-        if helpers.bounding_box.contains(segment.area_bounds, opposite_slice) then
+        if plib.bounding_box.contains(segment.area_bounds, opposite_slice) then
             if area_contains_obstruction(segment.area, opposite_slice) then
                 opposite_slice_result.found_obstruction = true
             else
                 opposite_slice_result.unobstructed_slice =
-                    helpers.bounding_box.copy(opposite_slice)
+                    plib.bounding_box.copy(opposite_slice)
             end
 
             if opposite_slice_result.unobstructed_slice and
@@ -454,8 +454,8 @@ local function find_split(segment, direction)
             end
         end
 
-        helpers.bounding_box.translate(slice, sideways, 1)
-        helpers.bounding_box.translate(opposite_slice, sideways, -1)
+        plib.bounding_box.translate(slice, sideways, 1)
+        plib.bounding_box.translate(opposite_slice, sideways, -1)
         count = count + 1
     end
 
@@ -561,7 +561,7 @@ local function try_connect_extractors(segment)
                           best_option.pump_direction)
 
             for pipe_index = 0, best_option.edge_distance do
-                local vector = helpers.directions[best_option.edge_direction]
+                local vector = plib.directions[best_option.edge_direction]
                                    .vector
 
                 vector = math2d.position.multiply_scalar(vector, pipe_index)
@@ -617,7 +617,7 @@ local function segmentate(segment, previous_split)
     if next_split == "split_horizontal" then
         local split_result = find_split(segment, defines.direction.east)
         if split_result.unobstructed_slice then
-            local split = helpers.bounding_box.split(segment.area_bounds,
+            local split = plib.bounding_box.split(segment.area_bounds,
                                                      split_result.unobstructed_slice)
             split_segment(segment, split.sub_bounds_1, split.sub_bounds_2,
                           next_split)
@@ -625,7 +625,7 @@ local function segmentate(segment, previous_split)
     elseif next_split == "split_vertical" then
         local split_result = find_split(segment, defines.direction.south)
         if split_result.unobstructed_slice then
-            local split = helpers.bounding_box.split(segment.area_bounds,
+            local split = plib.bounding_box.split(segment.area_bounds,
                                                      split_result.unobstructed_slice)
 
             split_segment(segment, split.sub_bounds_1, split.sub_bounds_2,

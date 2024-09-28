@@ -1,7 +1,7 @@
 require 'util'
 local math2d = require 'math2d'
-local helpers = require 'helpers'
-local xy = helpers.xy
+local plib = require 'plib'
+local xy = plib.xy
 
 -- Heuristics
 local score_adjacent_extractor = 0.45
@@ -22,13 +22,13 @@ local function calculate_initial_search_radius(mod_context)
 end
 
 local function get_consumer_bounds(consumer_position)
-    local bounds = helpers.bounding_box.create(consumer_position, consumer_position) --1x1
-    helpers.bounding_box.grow(bounds, 1) --3x3
+    local bounds = plib.bounding_box.create(consumer_position, consumer_position) --1x1
+    plib.bounding_box.grow(bounds, 1) --3x3
     return bounds
 end
 
 local function get_power_pole_bounds(mod_context, power_pole_position)
-    local bounds = helpers.bounding_box.create(power_pole_position, power_pole_position)
+    local bounds = plib.bounding_box.create(power_pole_position, power_pole_position)
     if mod_context.toolbox.power_pole.size > 1 then
         bounds.right_bottom.x = bounds.right_bottom.x + 1
         bounds.right_bottom.y = bounds.right_bottom.y + 1
@@ -79,7 +79,7 @@ local function score_adjacent_cells(mod_context, score, position)
     score.adjacent_extractors = 0
     score.adjacent_pipes = 0
 
-    for _, direction in pairs(helpers.directions) do
+    for _, direction in pairs(plib.directions) do
         local offset_position = math2d.position.add(position, direction.vector)
         local neighbour_cell = xy.get(mod_context.area, offset_position)
         
@@ -122,7 +122,7 @@ local function can_build_pole(mod_context, pole_position)
     local result = true
 
     box = get_power_pole_bounds(mod_context, pole_position)
-    helpers.bounding_box.each_grid_position(box, function(position)
+    plib.bounding_box.each_grid_position(box, function(position)
         if xy.get(mod_context.area, position) ~= "can-build" then
             result = false
         end
@@ -131,8 +131,8 @@ local function can_build_pole(mod_context, pole_position)
 end
 
 local function find_pole_position_nearby(mod_context, position, planned_poles, unplanned_consumer_positions)
-    local search_area = helpers.bounding_box.create(position, position)
-    helpers.bounding_box.grow(search_area, initial_search_radius)
+    local search_area = plib.bounding_box.create(position, position)
+    plib.bounding_box.grow(search_area, initial_search_radius)
     
     local best_pole_score = {total = -1000};
     local best_pole_position = nil
@@ -147,13 +147,13 @@ local function find_pole_position_nearby(mod_context, position, planned_poles, u
         end
     end
 
-    helpers.bounding_box.each_grid_position(search_area, test_position)
+    plib.bounding_box.each_grid_position(search_area, test_position)
 
     local grow_limit = mod_context.toolbox.power_pole.wire_range * 2
     while(best_pole_position == nil and grow_limit > 0) do
 
-        helpers.bounding_box.each_edge_position(search_area, test_position)
-        helpers.bounding_box.grow(search_area, 1)
+        plib.bounding_box.each_edge_position(search_area, test_position)
+        plib.bounding_box.grow(search_area, 1)
         
         grow_limit = grow_limit - 1;
     end
@@ -236,7 +236,7 @@ function plan_power(mod_context)
         if (planned_entity.name == "extractor") then
             local pole_in_range_bounds = get_consumer_bounds(position)
 
-            helpers.bounding_box.grow(pole_in_range_bounds, mod_context.toolbox.power_pole.supply_range)
+            plib.bounding_box.grow(pole_in_range_bounds, mod_context.toolbox.power_pole.supply_range)
             if mod_context.toolbox.power_pole.size > 1 then
                 pole_in_range_bounds.left_top.x = pole_in_range_bounds.left_top.x - 1
                 pole_in_range_bounds.left_top.y = pole_in_range_bounds.left_top.y - 1

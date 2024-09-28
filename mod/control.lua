@@ -62,8 +62,8 @@ function process_selected_area_with_this_mod(event, force_ui)
     if is_ui_open(player) then return end
 
     -- Store required input in global, so it can resume after the ui is potentially shown.
-    global.current_action = {failure = nil}
-    local current_action = global.current_action
+    storage.current_action = {failure = nil}
+    local current_action = storage.current_action
 
     current_action.player_index = event.player_index
     current_action.area_bounds = event.area
@@ -84,7 +84,7 @@ function process_selected_area_with_this_mod(event, force_ui)
 end
 
 function resume_process_selected_area_with_this_mod()
-    local current_action = global.current_action
+    local current_action = storage.current_action
     local surface = game.get_surface(current_action.surface_index)
     local player = game.get_player(current_action.player_index)
     local entities = surface.find_entities_filtered {
@@ -182,6 +182,6 @@ function trim_selected_area(current_action, entities)
 end
 
 function dump_to_file(table_to_write, description)
-    local planner_input_as_json = game.table_to_json(table_to_write)
-    game.write_file("pump_" .. description .. ".json", planner_input_as_json)
+    local planner_input_as_json = helpers.table_to_json(table_to_write)
+    helpers.write_file("pump_" .. description .. ".json", planner_input_as_json)
 end

@@ -132,7 +132,7 @@ namespace LayoutingTester
                 lua.DoString("require 'util'");
                 lua.DoString("require 'math2d'");
 
-                lua.DoString("require 'helpers'");
+                lua.DoString("require 'plib'");
                 lua.DoString("require 'toolbox'");
                 lua.DoString("require 'plumber'");
                 lua.DoString("require 'electrician'");

@@ -5,7 +5,7 @@
   "author": "Xcone",
   "contact": "",
   "homepage": "",
-  "factorio_version": "1.1",
+  "factorio_version": "1.2",
   "dependencies": [
     "base >= 1.1",
     "? ModuleInserter >= 5.2.0"

@@ -1,4 +1,4 @@
-local helpers = require 'helpers'
+local plib = require 'plib'
 
 local function expand_box(box, amount)
     box.left_top.x = box.left_top.x - amount
@@ -13,7 +13,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local pipe_tunnels = {}
     local power_poles = {}
 
-    helpers.xy.each(construction_plan, function(planned_entity, position)
+    plib.xy.each(construction_plan, function(planned_entity, position)
 
         local planned_entity_name = planned_entity.name
         local placement = {
