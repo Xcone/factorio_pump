@@ -195,7 +195,7 @@ local function add_available_extractors(available_extractors, resource_category,
     end
 end
 
-local function add_available_power_poles(available_power_poles, player)
+local function add_available_power_poles(available_power_poles, player, quality_name)
     local all_poles = prototypes.get_entity_filtered({{filter = "type", type = "electric-pole"}})
     local has_big_poles = false
 
@@ -207,8 +207,8 @@ local function add_available_power_poles(available_power_poles, player)
                 local size = math.ceil(size)
                 available_power_poles[pole.name] = {
                     entity_name = pole.name,
-                    supply_range = pole.get_supply_area_distance() - (size - 1), -- subtract 1 for a 2x2 power-pole
-                    wire_range = pole.get_max_wire_distance(),
+                    supply_range = pole.get_supply_area_distance(quality_name) - (size - 1), -- subtract 1 for a 2x2 power-pole
+                    wire_range = pole.get_max_wire_distance(quality_name),
                     size = size,
                 }
             else
@@ -234,7 +234,7 @@ local function get_extractor_pick_for_resource(resource_category)
 
     if not storage.toolpicker_config.extractor_pick[resource_category] then
         storage.toolpicker_config.extractor_pick[resource_category] =
-            {selected = nil, available = {}}
+            {selected = nil, available = {}, quality_name = nil}
     end
 
     return storage.toolpicker_config.extractor_pick[resource_category]
@@ -244,7 +244,7 @@ local function get_pipe_pick()
     if not storage.toolpicker_config then storage.toolpicker_config = {} end
 
     if not storage.toolpicker_config.pipe_pick then
-        storage.toolpicker_config.pipe_pick = {selected = nil, available = {}}
+        storage.toolpicker_config.pipe_pick = {selected = nil, available = {}, quality_name = nil}
     end
 
     return storage.toolpicker_config.pipe_pick
@@ -254,7 +254,7 @@ local function get_power_pole_pick()
     if not storage.toolpicker_config then storage.toolpicker_config = {} end
 
     if not storage.toolpicker_config.power_pole_pick then
-        storage.toolpicker_config.power_pole_pick = {selected = nil, available = {}}
+        storage.toolpicker_config.power_pole_pick = {selected = nil, available = {}, quality_name = nil}
     end
 
     return storage.toolpicker_config.power_pole_pick
@@ -266,8 +266,55 @@ local function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
+local function get_visible_qualities()
+    local qualities = {}
+
+    for _, quality in pairs(prototypes.quality) do
+        if not quality.hidden then
+            table.insert(qualities, quality)
+        end
+    end
+
+    return qualities
+end
+
+local function get_quality_index(quality_name)
+    for index, quality in pairs(get_visible_qualities()) do
+        if quality_name == quality.name then
+            return index;
+        end
+    end
+
+    return 0;
+end
+
 local function add_pick_options_to_flow(flow, toolbox_options)
-    flow.clear()
+    flow.clear()    
+
+    local qualities = get_visible_qualities()
+    if #qualities > 1 then
+        local quality_index = 1;
+        local quality_texts = {}
+
+        for index, quality in pairs(qualities) do               
+            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
+            if toolbox_options.pick.quality_name == quality.name then
+                quality_index = index
+            end
+        end
+
+        local dropdown = flow.add {            
+            type = "drop-down",
+            name = toolbox_options.quality_dropdown_name,
+            items = quality_texts,
+            selected_index = quality_index,
+            style = "circuit_condition_comparator_dropdown"
+        }
+
+        dropdown.style.margin = {1, 4};
+        dropdown.style.height = 38;
+        dropdown.style.width = 58;
+    end
 
     for _, pick_name in pairs(toolbox_options.pick.available) do
         local style = "slot_sized_button"
@@ -322,12 +369,14 @@ local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries
         pick = pick,
         -- Prefix to uniquely name the buttons in the UI
         button_prefix = "pump_toolbox_picker_button_" .. toolbox_name .. "__",
+        -- Prefix to uniquely name the quality dropdown in the UI
+        quality_dropdown_name = "pump_toolbox_quality_dropdown__" .. toolbox_name,
         -- Name of the flow containing the button in the UI
         flow_name = "pump_toolbox_picker_flow_" .. toolbox_name,
         
         -- Used in the planner as mod_context.toolbox.<INSERT-toolbox_name-HERE>
         toolbox_name = toolbox_name,
-        -- Table keyed on entity-names with content made available via toolbox in the planned.
+        -- Table keyed on entity-names with content made available via toolbox in the planner.
         toolbox_entries = toolbox_entries,
         -- Available entity names, can be used as keys for toolbox_entries
         entity_names = entity_names,
@@ -364,11 +413,12 @@ end
 
 local function create_toolbox_power_pole_options(player)
     local toolbox_entries = {}
-    local failure = add_available_power_poles(toolbox_entries, player)
+    local pick = get_power_pole_pick()
+    local failure = add_available_power_poles(toolbox_entries, player, pick.quality_name)
 
     return create_toolbox_entity_options(
         "power_pole",
-        get_power_pole_pick(),
+        pick,
         toolbox_entries,
         true,
         failure
@@ -388,8 +438,25 @@ local function should_show_always(player)
     return mod_setting_always_show.value
 end
 
-local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
+local function update_toolbox_after_changed_options(current_action, player, toolbox_name)
+    -- Refresh the options. The quality could've changed which would impact things like the wire-range
+    local refreshed_all_options = create_all_toolbox_options(player, current_action.resource_category)
 
+    for _, refreshed_option in pairs(refreshed_all_options) do
+        if refreshed_option.toolbox_name == toolbox_name then
+            if refreshed_option.pick.selected == "none" then
+                -- Remove the (optional) selection
+                current_action.toolbox[toolbox_name] = nil
+            else
+                -- Reassign the selected extractor, wire or power pole to the toolbox
+                current_action.toolbox[toolbox_name] = refreshed_option.toolbox_entries[refreshed_option.pick.selected]
+                current_action.toolbox[toolbox_name].quality_name = refreshed_option.pick.quality_name
+            end            
+        end
+    end   
+end
+
+local function pick_tools(current_action, player, all_toolbox_options, force_ui)
     local selection_required = false
     local new_options_available = false
 
@@ -397,6 +464,11 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
 
         -- A mod might've been removed
         reset_selection_if_pick_no_longer_available(options.pick, options.entity_names)
+
+        -- Quality might've changed
+        if get_quality_index(options.quality_name) == 0 then
+            options.quality_name = nil
+        end
 
         -- Multiple options available, and no previous selection is known.
         selection_required = selection_required or (#options.entity_names > 1 and not options.pick.selected)
@@ -413,12 +485,10 @@ local function pick_tools(player, toolbox, all_toolbox_options, force_ui)
         -- ensure a default selection
         if not options.pick.selected then options.pick.selected = options.entity_names[1] end
 
-        -- put selection in toolbox. 
+        -- Put the picked options in toolbox. 
         -- If the UI doesn't open this is what the planner will work with,
-        -- If the UI opens, these will be overwritten
-        if options.pick.selected ~= "none" then
-            toolbox[options.toolbox_name] = options.toolbox_entries[options.pick.selected]
-        end
+        -- If the UI opens, these will be overwritten when the player changes the selected options
+        update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
     end
 
     if force_ui or selection_required or new_options_available or should_show_always(player) then
@@ -520,6 +590,8 @@ end
 
 function add_toolbox(current_action, player, force_ui)
     local toolbox = {}
+    current_action.toolbox = toolbox
+
     add_module_config(toolbox, player)
 
     local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
@@ -527,9 +599,8 @@ function add_toolbox(current_action, player, force_ui)
         if options.failure then return options.failure end
     end
 
-    pick_tools(player, toolbox, all_toolbox_options, force_ui)
+    pick_tools(current_action, player, all_toolbox_options, force_ui)
 
-    current_action.toolbox = toolbox
 end
 
 function close_tool_picker_ui(player, confirmed)
@@ -557,7 +628,7 @@ function handle_gui_element_click(element_name, player)
                 pick_name = "none"
             end
 
-            for _, entity_name in pairs(options.entity_names) do                
+            for _, entity_name in pairs(options.entity_names) do
 
                 local element_name_for_entity = options.button_prefix .. entity_name
                 if element_name == element_name_for_entity then
@@ -566,19 +637,37 @@ function handle_gui_element_click(element_name, player)
                 end
             end
 
-            if pick_name ~= "" then                
-                -- Store selection
+            if pick_name ~= "" then
+                -- Store selection (by-ref into global-storage)
                 options.pick.selected = pick_name
 
                 -- Update selection option in the UI
                 add_pick_options_to_flow(frame.all_toolbox_options[options.flow_name], options)
 
-                -- Update toolbox content for the planner            
-                if pick_name == "none" then
-                    current_action.toolbox[options.toolbox_name] = nil
+                update_toolbox_after_changed_options(current_action, player, options.toolbox_name)                
+            end
+        end
+    end
+end
+
+function handle_gui_element_quality_selection_change(dropdown_gui_element, player)
+    local frame = player.gui.screen.pump_tool_picker_frame
+    local current_action = storage.current_action
+
+    if frame then    
+        local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
+        for _, options in pairs(all_toolbox_options) do
+
+            if options.quality_dropdown_name == dropdown_gui_element.name then
+                options.pick.quality_name = nil
+                if dropdown_gui_element.selected_index > 1 then
+                    local qualities = get_visible_qualities()
+                    options.pick.quality_name = qualities[dropdown_gui_element.selected_index].name
                 else
-                    current_action.toolbox[options.toolbox_name] = options.toolbox_entries[pick_name]
+                    options.pick.quality_name = nil
                 end
+
+                update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
             end
         end
     end

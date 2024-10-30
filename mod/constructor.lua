@@ -38,26 +38,32 @@ local function get_planned_entities(construction_plan, toolbox)
                         y = position.y + extractor_bounds.right_bottom.y + 1
                     }
                 }
+            placement.quality_name = toolbox.extractor.quality_name
             table.insert(extractors, placement)
         end
 
         if planned_entity_name == "output" then
+            placement.quality_name = toolbox.connector.quality_name
             table.insert(pipes, placement)
         end
 
         if planned_entity_name == "pipe" then
+            placement.quality_name = toolbox.connector.quality_name
             table.insert(pipes, placement)
         end
 
         if planned_entity_name == "pipe_joint" then
+            placement.quality_name = toolbox.connector.quality_name
             table.insert(pipes, placement)
         end
 
         if planned_entity_name == "pipe_tunnel" then
+            placement.quality_name = toolbox.connector.quality_name
             table.insert(pipe_tunnels, placement)
         end
 
         if planned_entity_name == "power_pole" then
+            placement.quality_name = toolbox.power_pole.quality_name
             table.insert(power_poles, placement)
         end
         
@@ -66,7 +72,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local result = {
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
-        [toolbox.connector.underground_entity_name] = pipe_tunnels,        
+        [toolbox.connector.underground_entity_name] = pipe_tunnels,
     }
 
     if toolbox.power_pole ~= nil then
@@ -98,7 +104,8 @@ function construct_entities(construction_plan, player, toolbox)
                 position = parameters.position,
                 direction = parameters.direction,
                 force = player.force,
-                player = player
+                player = player,
+                quality = parameters.quality_name
             }
 
             if modules then ghost.item_requests = modules end

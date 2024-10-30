@@ -32,6 +32,16 @@ script.on_event(defines.events.on_gui_click, function(event)
     end
 end)
 
+script.on_event(defines.events.on_gui_selection_state_changed, function(event)
+    local name = event.element.name
+    local player = game.players[event.player_index]
+
+    local dropdown_prefix = "pump_toolbox_quality_dropdown"
+    if string.find(name, dropdown_prefix) == 1 then
+        handle_gui_element_quality_selection_change(event.element, player)
+    end
+end)
+
 script.on_event(defines.events.on_gui_closed, function(event)
     local player = game.players[event.player_index]
 

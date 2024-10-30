@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.0
+Date: 2024-10-31
+  Features:
+    - Added drop-down to select in which quality to build the pumps, pipes and power-poles. 
+    - Planning of power-poles takes the increased ranges of higher-quality power poles into account.
+    - Russian localisation file updated; kindly provided by https://github.com/Astorin     
+---------------------------------------------------------------------------------------------------
 Version: 2.0.1
 Date: 2024-10-11
   Features:
