@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.1
+Date: 2024-11-12
+  Features:
+    - Build positions are tested if a default_cover_tile applies. If so, the tile is planned as well. This means landfill on water, foundation on lava, and ice-platform on ammonia.
+    - Build positions are tested if they're meltable. If so, "concrete" is planned as well. ("concrete" is currently hardcoded, and might not work well together with some serious overhaul mods.)
+  Fixes:
+    - Undo now also includes the (planned) deconstructed entities. 
+---------------------------------------------------------------------------------------------------
 Version: 2.1.0
 Date: 2024-10-31
   Features:
