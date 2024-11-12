@@ -1,3 +1,4 @@
+local math2d = require 'math2d'
 local plib = require 'plib'
 
 local function expand_box(box, amount)
@@ -22,7 +23,8 @@ local function get_planned_entities(construction_plan, toolbox)
             deconstruct_area = {
                 left_top = {x = position.x - 1, y = position.y - 1},
                 right_bottom = {x = position.x + 1, y = position.y + 1}
-            }
+            },
+            cover_area = plib.bounding_box.create(position, position)
         }
 
         if planned_entity_name == "extractor" then
@@ -37,7 +39,9 @@ local function get_planned_entities(construction_plan, toolbox)
                         x = position.x + extractor_bounds.right_bottom.x + 1,
                         y = position.y + extractor_bounds.right_bottom.y + 1
                     }
-                }
+                }                
+            placement.cover_area = plib.bounding_box.copy(extractor_bounds)
+            plib.bounding_box.offset(placement.cover_area, position)
             placement.quality_name = toolbox.extractor.quality_name
             table.insert(extractors, placement)
         end
@@ -62,8 +66,13 @@ local function get_planned_entities(construction_plan, toolbox)
             table.insert(pipe_tunnels, placement)
         end
 
-        if planned_entity_name == "power_pole" then
+        if planned_entity_name == "power_pole" then            
             placement.quality_name = toolbox.power_pole.quality_name
+            local size = toolbox.power_pole.size
+            if (size == 2) then
+                placement.cover_area = plib.bounding_box.create(position, math2d.position.add(position, {x=1, y=1}))
+            end       
+            
             table.insert(power_poles, placement)
         end
         
@@ -82,8 +91,36 @@ local function get_planned_entities(construction_plan, toolbox)
     return result
 end
 
+local function cover(player, cover_area, tile_name_when_cover_is_meltable)
+    plib.bounding_box.each_grid_position(cover_area, function(tile_position) 
+        local tile_prototype = player.surface.get_tile(tile_position.x, tile_position.y).prototype;
+        local foundation_prototype = tile_prototype.default_cover_tile
+        if foundation_prototype ~= nil then        
+            player.surface.create_entity {
+                name = "tile-ghost",
+                inner_name = foundation_prototype.name,
+                position = tile_position,
+                force = player.force,
+                player = player           
+            }
+    
+            tile_prototype = foundation_prototype
+        end
+
+        if tile_prototype.collision_mask.layers.meltable and tile_name_when_cover_is_meltable then            
+            player.surface.create_entity {
+                name = "tile-ghost",
+                inner_name = tile_name_when_cover_is_meltable,
+                position = tile_position,
+                force = player.force,
+                player = player           
+            }           
+        end          
+    end )    
+end
+
 function construct_entities(construction_plan, player, toolbox)
-    local planned_entities = get_planned_entities(construction_plan, toolbox)
+    local planned_entities = get_planned_entities(construction_plan, toolbox)    
 
     for _, entities_to_place in pairs(planned_entities) do
         for i, parameters in pairs(entities_to_place) do
@@ -95,9 +132,18 @@ function construct_entities(construction_plan, player, toolbox)
         end
     end
 
+    local tile_name_when_cover_is_meltable = nil
+
+    if player.surface.planet and player.surface.planet.prototype.entities_require_heating then            
+        -- TODO: Resolve "concrete" dynamically if possible
+        tile_name_when_cover_is_meltable = "concrete"
+    end  
+
     for entity_name, entities_to_place in pairs(planned_entities) do
         local modules = toolbox.module_config[entity_name]
         for i, parameters in pairs(entities_to_place) do
+            cover(player, parameters.cover_area, tile_name_when_cover_is_meltable)
+
             local ghost = player.surface.create_entity {
                 name = "entity-ghost",
                 inner_name = entity_name,
