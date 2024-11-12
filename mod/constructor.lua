@@ -127,7 +127,7 @@ function construct_entities(construction_plan, player, toolbox)
             local entities_to_remove = player.surface.find_entities(
                                            parameters.deconstruct_area);
             for i, entity in pairs(entities_to_remove) do
-                entity.order_deconstruction(player.force)
+                entity.order_deconstruction(player.force, player)
             end
         end
     end
