@@ -119,6 +119,14 @@ namespace LayoutingTester
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
 
+                lua.NewTable("defines");
+                lua.DoString(@"defines['direction'] = 
+{
+  north=0, northeast=1, east=2, southeast=3, south=4, southwest=5, west=6, northwest=7,
+  northnortheast=8, eastnortheast=9, eastsoutheast=10, southsoutheast=11, southsouthwest=12, westsouthwest=13, westnorthwest=14, northnorthwest=15
+}
+");
+
                 var existingPath = lua["package.path"];
                 existingPath += $";{solutionRoot}\\mod\\?.lua";
                 existingPath += $";{factorioDir}\\base\\?.lua";
@@ -126,8 +134,7 @@ namespace LayoutingTester
                 existingPath += $";{factorioDir}\\core\\lualib\\?.lua";
                 lua["package.path"] = existingPath;
 
-                lua.NewTable("defines");
-                lua.DoString("defines['direction'] = {north=0, northeast=1, east=2, southeast=3, south=4, southwest=5, west=6, northwest=7}");
+                
 
                 lua.DoString("require 'util'");
                 lua.DoString("require 'math2d'");
