@@ -40,6 +40,10 @@ script.on_event(defines.events.on_gui_selection_state_changed, function(event)
     if string.find(name, dropdown_prefix) == 1 then
         handle_gui_element_quality_selection_change(event.element, player)
     end
+
+    if string.find(name, "pump_tool_picker_pipe_bury_distance") == 1 then
+        handle_pipe_bury_preference_change(event.element, player)
+    end
 end)
 
 script.on_event(defines.events.on_gui_closed, function(event)

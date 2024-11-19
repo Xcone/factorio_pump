@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.2
-Date: 2024-??-??
+Date: 2024-11-19
+  Features:
+    - Added dropdown to pick how long a stretch of straight pipes need to be before it's being buried.
   Fixes:
     - Higher res icons the fix blur (needed after Factorio update 2.0.18 increased the button sizes).
 ---------------------------------------------------------------------------------------------------

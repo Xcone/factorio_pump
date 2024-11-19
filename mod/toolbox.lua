@@ -260,6 +260,31 @@ local function get_power_pole_pick()
     return storage.toolpicker_config.power_pole_pick
 end
 
+local function get_pipe_bury_option()
+    if not storage.toolpicker_config then storage.toolpicker_config = {} end
+
+    if not storage.toolpicker_config.pipe_bury_option then
+        storage.toolpicker_config.pipe_bury_option = 1
+    end
+
+    return storage.toolpicker_config.pipe_bury_option
+end
+
+local function convert_pipe_bury_option_to_distance(option)
+    if option == 1 then
+        return 2
+    end
+    if option == 2 then
+        return 4
+    end
+    if option == 3 then
+        return 6
+    end
+    if option == 4 then
+        return 99
+    end
+end
+
 local function reset_selection_if_pick_no_longer_available(pick, available)
     if pick.selected ~= "none" then
         if not table.contains(available, pick.selected) then pick.selected = nil; end
@@ -454,6 +479,8 @@ local function update_toolbox_after_changed_options(current_action, player, tool
             end            
         end
     end   
+
+    current_action.toolbox.pipe_bury_distance_preference = convert_pipe_bury_option_to_distance(get_pipe_bury_option())
 end
 
 local function pick_tools(current_action, player, all_toolbox_options, force_ui)
@@ -502,6 +529,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         frame.auto_center = true
         player.opened = frame
 
+        -- Title
         local caption = {"pump-toolpicker.choose-extractor-generic"}
 
         if not (force_ui or should_show_always(player)) then
@@ -519,6 +547,8 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
 
         label.style.maximal_width = 300
         label.style.single_line = false
+
+        -- Picks
 
         local innerFrame = frame.add {
             type = "frame",
@@ -542,13 +572,34 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         end
 
         frame.add {
+            type = "label",
+            caption = {"pump-toolpicker.pipe-bury-label"},
+            tooltip = {"pump-toolpicker.pipe-bury-tooltip"},
+        }
+
+        local pipe_bury_options = {}
+
+        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-no-minimum"})
+        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-short"})
+        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-long"})
+        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-skip"})
+
+        frame.add { 
+            type = "drop-down",
+            name = "pump_tool_picker_pipe_bury_distance",                        
+            items = pipe_bury_options,
+            selected_index = get_pipe_bury_option()
+        }
+
+        frame.add {
             type = "checkbox",
             name = "pump_tool_picker_always_show",
             caption = {"pump-toolpicker.always-show"},
             state = should_show_always(player),
             tooltip = {"mod-setting-description.pump-always-show"},
-        }
-
+        }        
+        
+        -- Footer
         local bottom_flow = frame.add {
             type = "flow",
             direction = "horizontal",
@@ -560,7 +611,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
             name = "pump_tool_picker_cancel_button",
             caption = {"pump-toolpicker.cancel"},
             style = "back_button"
-        }        
+        }
         local filler = bottom_flow.add{
             type = "empty-widget",
             style = "draggable_space",
@@ -671,6 +722,13 @@ function handle_gui_element_quality_selection_change(dropdown_gui_element, playe
             end
         end
     end
+end
+
+function handle_pipe_bury_preference_change(dropdown_gui_element, player)
+    local current_action = storage.current_action
+    storage.toolpicker_config.pipe_bury_option = dropdown_gui_element.selected_index   
+
+    update_toolbox_after_changed_options(current_action, player, nil)
 end
 
 function is_ui_open(player)

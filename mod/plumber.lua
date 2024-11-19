@@ -126,11 +126,13 @@ local function remove_pipes(construct_entities, pipe_positions)
     end
 end
 
-local function try_replace_pipes_with_tunnels(construct_entities, pipe_positions,
-                                        toolbox)
-
+local function try_replace_pipes_with_tunnels(construct_entities, pipe_positions, toolbox)
     local tunnel_length_min = toolbox.connector.underground_distance_min + 2
     local tunnel_length_max = toolbox.connector.underground_distance_max + 1
+
+    if toolbox.pipe_bury_distance_preference > tunnel_length_min then
+        tunnel_length_min = toolbox.pipe_bury_distance_preference
+    end
 
     while #pipe_positions >= tunnel_length_min do
         local pipe_positions_this_batch = {}
