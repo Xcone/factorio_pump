@@ -2,8 +2,8 @@
 local pumpSelectionTool = table.deepcopy(data.raw["selection-tool"]["selection-tool"])
 
 pumpSelectionTool.name = "pump-selection-tool"
-pumpSelectionTool.icon = "__pump__/graphics/icons/pump_icon_32.png"
-pumpSelectionTool.icon_size = 32
+pumpSelectionTool.icon = "__pump__/graphics/icons/pump_icon_64.png"
+pumpSelectionTool.icon_size = 64
 pumpSelectionTool.flags = {"only-in-cursor", "spawnable", "not-stackable"}
 pumpSelectionTool.subgroup = "tool"
 pumpSelectionTool.order = "c[automated-construction]-d[pump-selection-tool]"
@@ -22,10 +22,8 @@ pumpShortcut.localised_name = nil
 pumpShortcut.associated_control_input = "pump-selection-tool-toggle"
 pumpShortcut.item_to_spawn = "pump-selection-tool"
 pumpShortcut.style = "default"
-pumpShortcut.icon = "__pump__/graphics/icons/pump_icon_32.png"
-pumpShortcut.icon_size = 32
-pumpShortcut.icon = "__pump__/graphics/icons/pump_icon_24.png"
-pumpShortcut.icon_size = 24
+pumpShortcut.icon = "__pump__/graphics/icons/pump_icon_56.png"
+pumpShortcut.icon_size = 56
 
 data:extend{pumpSelectionTool, pumpShortcut}
 
