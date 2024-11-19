@@ -5,10 +5,22 @@ function pump_log(object_to_log)
     if pumpdebug then pumpdebug.log(object_to_log) end
 end
 
+function pump_lap(message)
+    if pumpdebug then pumpdebug.lap(message) end
+end
+
+function pump_sample_start()
+   if pumpdebug then return pumpdebug.sample_start() end    
+end
+
+function pump_sample_finish(key, start)
+   if pumpdebug then pumpdebug.sample_finish(key, start) end    
+end
+
 local plib = {}
 plib.directions = {
     [defines.direction.north] = {
-        vector = {x = 0, y = -1},
+        vector = { x = 0, y = -1 },
         next = defines.direction.east,
         previous = defines.direction.west,
         opposite = defines.direction.south,
@@ -16,12 +28,12 @@ plib.directions = {
             bounds.right_bottom.y = bounds.left_top.y
         end,
         to_edge = function(bounds, position)
-            return {x = position.x, y = bounds.left_top.y}
+            return { x = position.x, y = bounds.left_top.y }
         end
     },
 
     [defines.direction.east] = {
-        vector = {x = 1, y = 0},
+        vector = { x = 1, y = 0 },
         next = defines.direction.south,
         previous = defines.direction.north,
         opposite = defines.direction.west,
@@ -29,12 +41,12 @@ plib.directions = {
             bounds.left_top.x = bounds.right_bottom.x
         end,
         to_edge = function(bounds, position)
-            return {x = bounds.right_bottom.x, y = position.y}
+            return { x = bounds.right_bottom.x, y = position.y }
         end
     },
 
     [defines.direction.south] = {
-        vector = {x = 0, y = 1},
+        vector = { x = 0, y = 1 },
         next = defines.direction.west,
         previous = defines.direction.east,
         opposite = defines.direction.north,
@@ -42,12 +54,12 @@ plib.directions = {
             bounds.left_top.y = bounds.right_bottom.y
         end,
         to_edge = function(bounds, position)
-            return {x = position.x, y = bounds.right_bottom.y}
+            return { x = position.x, y = bounds.right_bottom.y }
         end
     },
 
     [defines.direction.west] = {
-        vector = {x = -1, y = 0},
+        vector = { x = -1, y = 0 },
         next = defines.direction.north,
         previous = defines.direction.south,
         opposite = defines.direction.east,
@@ -55,13 +67,73 @@ plib.directions = {
             bounds.right_bottom.x = bounds.left_top.x
         end,
         to_edge = function(bounds, position)
-            return {x = bounds.left_top.x, y = position.y}
-        end
+            return { x = bounds.left_top.x, y = position.y }
+        end,
     }
 }
 
+plib.line = {
+    -- Calls 'action' for each position along a line, either until action returns true, or the count is reached
+    trace = function(start_position, direction, count, action)
+        local position = start_position
+        local vector = plib.directions[direction].vector
+
+        for i = 1, count do            
+            if action(position) then
+                break
+            end
+            position = math2d.position.add(position, vector)
+        end
+    end,
+
+    end_position = function(start_position, direction, distance)
+        local offset = math2d.position.multiply_scalar(plib.directions[direction].vector, distance)
+        return math2d.position.add(start_position, offset)
+    end,
+
+    -- Start-tile inclusive. So it returns 1 if the start and end are the same
+    count_tiles = function(start_position, end_position) 
+        if start_position.x == end_position.x then
+            return math.abs(end_position.y - start_position.y) + 1
+        end
+
+        return math.abs(end_position.x - start_position.x) + 1
+    end,
+
+    -- Math taken from: https://2dengine.com/doc/intersections.html#Segment_vs_segment
+    intersects = function(line1_start, line1_end, line2_start, line2_end)
+        local x1 = line1_start.x
+        local x2 = line1_end.x
+        local x3 = line2_start.x
+        local x4 = line2_end.x
+
+        local y1 = line1_start.y
+        local y2 = line1_end.y
+        local y3 = line2_start.y
+        local y4 = line2_end.y
+
+        local dx1, dy1 = x2 - x1, y2 - y1
+        local dx2, dy2 = x4 - x3, y4 - y3
+        local dx3, dy3 = x1 - x3, y1 - y3
+        local d = dx1 * dy2 - dy1 * dx2
+        if d == 0 then
+            return false
+        end
+        local t1 = (dx2 * dy3 - dy2 * dx3) / d
+        if t1 < 0 or t1 > 1 then
+            return false
+        end
+        local t2 = (dx1 * dy3 - dy1 * dx3) / d
+        if t2 < 0 or t2 > 1 then
+            return false
+        end
+        -- point of intersection
+        return true, { x = x1 + t1 * dx1, y = y1 + t1 * dy1 }
+    end
+}
+
 plib.bounding_box = {
-    -- flattens the bounding_box in the given directon. 
+    -- flattens the bounding_box in the given directon.
     --  input:  #  north:  #  south:   #  west:   #  east:
     --  ______  #  ______  #  .      . #  _     . # .     _
     -- |      | # |______| #           # | |      #      | |
@@ -80,7 +152,7 @@ plib.bounding_box = {
     end,
 
     get_size = function(bounds)
-        -- Add 1, because it's zero inclusive ( x=0 to x=3 is a size of 4)        
+        -- Add 1, because it's zero inclusive ( x=0 to x=3 is a size of 4)
         local x_diff = (bounds.right_bottom.x - bounds.left_top.x) + 1
         local y_diff = (bounds.right_bottom.y - bounds.left_top.y) + 1
 
@@ -107,7 +179,6 @@ plib.bounding_box = {
     end,
 
     split = function(bounds, slice)
-
         if slice.left_top.x < bounds.left_top.x or slice.right_bottom.x >
             bounds.right_bottom.x or slice.left_top.y < bounds.left_top.y or
             slice.right_bottom.y > bounds.right_bottom.y then
@@ -119,17 +190,41 @@ plib.bounding_box = {
 
         if slice.left_top.x == slice.right_bottom.x then
             -- slice vertical
+
+            -- west
             sub_bounds_1.right_bottom.x = slice.left_top.x - 1
+
+            -- east
             sub_bounds_2.left_top.x = slice.right_bottom.x + 1
         elseif (slice.left_top.y == slice.right_bottom.y) then
             -- slice horizontal
+
+            -- north
             sub_bounds_1.right_bottom.y = slice.left_top.y - 1
+
+            -- south
             sub_bounds_2.left_top.y = slice.right_bottom.y + 1
         else
             error("Slice should be within the bounds and be 1-dimensional")
         end
 
-        return {sub_bounds_1 = sub_bounds_1, sub_bounds_2 = sub_bounds_2}
+        return { sub_bounds_1 = sub_bounds_1, sub_bounds_2 = sub_bounds_2 }
+    end,
+
+    directional_split = function(bounds, slice, direction)
+        local split_result = plib.bounding_box.split(bounds, slice)
+
+        -- west or north
+        local left = split_result.sub_bounds_1
+        -- east or south
+        local right = split_result.sub_bounds_2
+
+        if direction == defines.direction.south or direction == defines.direction.west then
+            left = split_result.sub_bounds_2
+            right = split_result.sub_bounds_1
+        end
+
+        return { left = left, right = right }
     end,
 
     create = function(pos_a, pos_b)
@@ -151,15 +246,15 @@ plib.bounding_box = {
 
     contains = function(outer, inner)
         return outer.left_top.x <= inner.left_top.x and outer.left_top.y <=
-                   inner.left_top.y and outer.right_bottom.x >=
-                   inner.right_bottom.x and outer.right_bottom.y >=
-                   inner.right_bottom.y
+            inner.left_top.y and outer.right_bottom.x >=
+            inner.right_bottom.x and outer.right_bottom.y >=
+            inner.right_bottom.y
     end,
 
     each_grid_position = function(bounds, action)
         for x = bounds.left_top.x, bounds.right_bottom.x do
             for y = bounds.left_top.y, bounds.right_bottom.y do
-                local position = {x = x, y = y}
+                local position = { x = x, y = y }
                 action(position)
             end
         end
@@ -168,13 +263,13 @@ plib.bounding_box = {
     each_edge_position = function(bounds, action)
         for x = bounds.left_top.x, bounds.right_bottom.x do
             if x == bounds.left_top.x or bounds.right_bottom.x then
-                for y = bounds.left_top.y, bounds.right_bottom.y do                    
-                    action({x = x, y = y})
+                for y = bounds.left_top.y, bounds.right_bottom.y do
+                    action({ x = x, y = y })
                 end
-            else                
-                action({x = x, y = bounds.left_top.y})            
+            else
+                action({ x = x, y = bounds.left_top.y })
                 if bounds.left_top.y ~= bounds.right_bottom.y then
-                    action({x = x, y = bounds.right_bottom.y})
+                    action({ x = x, y = bounds.right_bottom.y })
                 end
             end
         end
@@ -192,7 +287,7 @@ plib.xy = {
     first = function(xy_table, action)
         for x, subtable in pairs(xy_table) do
             for y, subject in pairs(subtable) do
-                local position = {x = x, y = y}
+                local position = { x = x, y = y }
                 action(subject, position)
                 return
             end
@@ -202,7 +297,7 @@ plib.xy = {
     each = function(xy_table, action)
         for x, subtable in pairs(xy_table) do
             for y, subject in pairs(subtable) do
-                local position = {x = x, y = y}
+                local position = { x = x, y = y }
                 action(subject, position)
             end
         end
@@ -233,7 +328,7 @@ plib.xy = {
         return subtable[position.y]
     end,
 
-    any = function(xy_table) 
+    any = function(xy_table)
         return next(xy_table) ~= nil
     end,
 
@@ -247,7 +342,7 @@ plib.xy = {
         end
     end,
 
-    nearest = function (xy_table, search_position)
+    nearest = function(xy_table, search_position)
         local nearest_distance = 99999
         local nearest_position = nil
         local nearest_value = nil
@@ -261,9 +356,22 @@ plib.xy = {
             end
         end)
 
-        return {position = nearest_position, distance = nearest_distance, value = nearest_value}
+        return { position = nearest_position, distance = nearest_distance, value = nearest_value }
+    end
+}
+
+plib.position = {
+    add = function(posA, posB) 
+        return {x = posA.x + posB.x, y = posA.y + posB.y}
+    end,
+
+    subtract = function(posA, posB) 
+        return {x = posA.x - posB.x, y = posA.y - posB.y}
+    end,
+
+    to_key = function(position)        
+        return math.floor(position.x) .. "," .. math.floor(position.y)
     end
 }
 
 return plib
-

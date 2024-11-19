@@ -22,5 +22,11 @@ data:extend({
         name = "pump-always-show",
         setting_type = "runtime-per-user",
         default_value = true
-    }
+    },
+    {
+        type = "bool-setting",
+        name = "pump-use-plumber-pro",
+        setting_type = "runtime-per-user",
+        default_value = false
+    },
 })

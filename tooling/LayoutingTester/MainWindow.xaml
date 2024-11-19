@@ -5,15 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LayoutingTester"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <DockPanel>
-        <ListView DockPanel.Dock="Left" Name="TestLayouts" SelectionChanged="TestLayouts_OnSelectionChanged">
-            <ListView.ItemTemplate>
-                <DataTemplate DataType="local:TestLayoutInput">
-                    <TextBlock Text="{Binding Name}"></TextBlock>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-        <local:TestLayoutRunner x:Name="TestLayoutRunner"/>
+        Title="MainWindow" Height="900" Width="1920">
+    <DockPanel>        
+        <DockPanel DockPanel.Dock="Left" Width="300">
+            <CheckBox Name="ProMode" DockPanel.Dock="Top" HorizontalContentAlignment="Stretch" Click="ProMode_Checked" IsChecked="true">Pro mode</CheckBox>
+            <ListView Name="TestLayouts" DockPanel.Dock="Bottom" SelectionChanged="TestLayouts_OnSelectionChanged" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="local:TestLayoutInput">
+                        <TextBlock Text="{Binding Name}"></TextBlock>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            </DockPanel>
+        <local:TestLayoutRunner x:Name="TestLayoutRunner" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
     </DockPanel>
 </Window>

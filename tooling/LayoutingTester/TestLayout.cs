@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -21,19 +22,27 @@ namespace LayoutingTester
         public StringBuilder textOutputBuilder = new StringBuilder();
         public string TextualFeedback => textOutputBuilder.ToString();
 
-        public TestLayout(string plannerInputAsJson)
+        public bool ProMode { get; }
+
+        public DateTime startTime = DateTime.UtcNow;
+        public Stopwatch stopwatch;
+
+        public TestLayout(string plannerInputAsJson, bool proMode)
         {
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
             Columns = PlannerInput.ToColumns();
-            
+            ProMode = proMode;
+
             RunLua();
-            
             Print(DateTime.Now);
-        }        
+
+        }
 
         public void Print(object message)
         {
-            if (message is LuaTable t)
+            if (message == null)
+                textOutputBuilder.AppendLine("null");
+            else if (message is LuaTable t)
             {
                 textOutputBuilder.AppendLine("---");
                 PrintTable(t);
@@ -47,6 +56,26 @@ namespace LayoutingTester
                     textOutputBuilder.AppendLine(lua.GetDebugTraceback());
                 }
             }
+        }
+
+        public void Lap(object message)
+        {
+            Print($"{stopwatch.ElapsedMilliseconds}ms -- {message}");
+        }
+
+        public long SampleStart()
+        {
+            return stopwatch.ElapsedTicks;
+        }
+
+        Dictionary<string, (long ticks, long count)> Samples = new();
+
+        public void SampleFinish(string key, long start)
+        {
+            var accumulation = Samples.GetValueOrDefault(key, (0, 0));
+            accumulation.count++;
+            accumulation.ticks += stopwatch.ElapsedTicks - start;
+            Samples[key] = accumulation;
         }
 
         public void PrintTable(LuaTable table, string prefix = "")
@@ -69,7 +98,7 @@ namespace LayoutingTester
         public void RunLua()
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            
+
             lua = new Lua();
             //lua.SetDebugHook(LuaHookMask.Line, 1);
             lua.DebugHook += Lua_DebugHook;
@@ -118,6 +147,9 @@ namespace LayoutingTester
 
                 lua.NewTable("pumpdebug");
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
+                lua.RegisterFunction("pumpdebug.lap", this, GetType().GetMethod(nameof(Lap)));
+                lua.RegisterFunction("pumpdebug.sample_start", this, GetType().GetMethod(nameof(SampleStart)));
+                lua.RegisterFunction("pumpdebug.sample_finish", this, GetType().GetMethod(nameof(SampleFinish)));
 
                 lua.NewTable("defines");
                 lua.DoString(@"defines['direction'] = 
@@ -134,7 +166,7 @@ namespace LayoutingTester
                 existingPath += $";{factorioDir}\\core\\lualib\\?.lua";
                 lua["package.path"] = existingPath;
 
-                
+
 
                 lua.DoString("require 'util'");
                 lua.DoString("require 'math2d'");
@@ -142,6 +174,7 @@ namespace LayoutingTester
                 lua.DoString("require 'plib'");
                 lua.DoString("require 'toolbox'");
                 lua.DoString("require 'plumber'");
+                lua.DoString("require 'plumber-pro'");
                 lua.DoString("require 'electrician'");
 
 
@@ -153,15 +186,23 @@ namespace LayoutingTester
                 toolboxFunction.Call(plannerInput);
 
                 // Act
-                var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+                stopwatch = Stopwatch.StartNew();
 
-                var plumberFunction = lua["plan_plumbing"] as LuaFunction;
+                var plumberFunction = ProMode
+                    ? lua["plan_plumbing_pro"] as LuaFunction
+                    : lua["plan_plumbing"] as LuaFunction;
+
                 var electricianFunction = lua["plan_power"] as LuaFunction;
                 var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
                 var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
 
-                stopWatch.Stop();
-                Print($"'add_construction_plan' took {stopWatch.ElapsedMilliseconds}ms");
+                stopwatch.Stop();
+                Print($"'add_construction_plan' took {stopwatch.ElapsedMilliseconds}ms");
+
+                foreach (var kv in Samples)
+                {
+                    Print($"'{kv.Key}' took {TimeSpan.FromTicks(kv.Value.ticks).TotalMilliseconds}ms with {kv.Value.count} samples");
+                }
 
 
                 // Extract result
@@ -169,10 +210,11 @@ namespace LayoutingTester
                 {
                     Print(plumberFailure);
                 }
+                /*
                 if (electricianFailure != null)
                 {
                     Print(electricianFailure);
-                }
+                }*/
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 AddConstructEntities(constructEntities);
@@ -181,7 +223,7 @@ namespace LayoutingTester
                 Print("Result");
                 Print("---------------");
                 Print(constructEntities != null ? constructEntities : "Nothing ... ");
-                
+
             }
             catch (LuaScriptException e)
             {
@@ -213,6 +255,11 @@ namespace LayoutingTester
             {
                 lastStack = lua.GetDebugTraceback();
             }
+
+            if ((DateTime.UtcNow - startTime).TotalSeconds > 5)
+            {
+                // ((Lua)sender).State.Error("Cancelled after 5 sec");
+            }
         }
 
         private void AddConstructEntities(LuaTable constructionParameters)
@@ -226,9 +273,9 @@ namespace LayoutingTester
                 foreach (var yKey in tableY.Keys)
                 {
                     var plannedEntity = (LuaTable)tableY[yKey];
-                    var x = (double) xKey;
-                    var y = (double) yKey;
-                    var name = (string)plannedEntity["name"];                    
+                    var x = (double)xKey;
+                    var y = (double)yKey;
+                    var name = (string)plannedEntity["name"];
 
                     Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
                 }
@@ -255,7 +302,7 @@ namespace LayoutingTester
 
     public class TestLayoutCell
     {
-        public string Content { get; private set;}
+        public string Content { get; private set; }
         public float X { get; }
         public float Y { get; }
 

@@ -25,7 +25,18 @@ namespace LayoutingTester
 
         private void TestLayouts_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            RefreshLayout();
+        }
+
+        private void ProMode_Checked(object sender, RoutedEventArgs e)
+        {
+            RefreshLayout();
+        }
+
+        private void RefreshLayout()
+        {
             this.TestLayoutRunner.TestLayoutInput = TestLayouts.SelectedItem as TestLayoutInput;
+            this.TestLayoutRunner.ProMode = ProMode.IsChecked ?? false;
         }
     }
 }

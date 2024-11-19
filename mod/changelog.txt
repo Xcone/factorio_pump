@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.4
+Date: 2024-??-??
+  Features:
+    - Experimental new pipe-planner. It's rewritten to be able to plan underground pipes up-front, and thus being better suited for planning larger/dense fields where the original planning would fail.
+    - Added setting to enable the new planner (disabled by default, until its better tested)
+---------------------------------------------------------------------------------------------------
 Version: 2.1.3
 Date: 2024-11-23
   Features:
