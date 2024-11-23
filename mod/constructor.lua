@@ -120,12 +120,15 @@ local function cover(player, cover_area, tile_name_when_cover_is_meltable)
 end
 
 function construct_entities(construction_plan, player, toolbox)
-    local planned_entities = get_planned_entities(construction_plan, toolbox)    
+    local planned_entities = get_planned_entities(construction_plan, toolbox)
 
-    for _, entities_to_place in pairs(planned_entities) do
+    for entity_name, entities_to_place in pairs(planned_entities) do
+        local mask = prototypes.entity[entity_name].collision_mask.layers
         for i, parameters in pairs(entities_to_place) do
-            local entities_to_remove = player.surface.find_entities(
-                                           parameters.deconstruct_area);
+            local entities_to_remove = player.surface.find_entities_filtered({
+                area = parameters.deconstruct_area, 
+                collision_mask = mask
+            });
             for i, entity in pairs(entities_to_remove) do
                 entity.order_deconstruction(player.force, player)
             end
