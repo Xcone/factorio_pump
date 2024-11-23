@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.3
-Date: 2024-??-??
+Date: 2024-11-23
   Features:
+    - Entities are only deconstructed if they collide with the structures being placed. This makes it less likely to unnecessarily deconstruct entities from other mods; kindly provided by https://github.com/randomflyingtaco
     - Russian localisation file updated; kindly provided by https://github.com/Astorin     
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.2
