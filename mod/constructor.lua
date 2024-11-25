@@ -1,5 +1,7 @@
 local math2d = require 'math2d'
 local plib = require 'plib'
+local assistant = require 'planner-assistant'
+
 
 local function expand_box(box, amount)
     box.left_top.x = box.left_top.x - amount
@@ -137,9 +139,8 @@ function construct_entities(construction_plan, player, toolbox)
 
     local tile_name_when_cover_is_meltable = nil
 
-    if player.surface.planet and player.surface.planet.prototype.entities_require_heating then            
-        -- TODO: Resolve "concrete" dynamically if possible
-        tile_name_when_cover_is_meltable = "concrete"
+    if assistant.surface_has_meltable_tiles(player) then                    
+        tile_name_when_cover_is_meltable = prototypes.item[toolbox.meltable_tile_cover.item_name].place_as_tile_result.result.name
     end  
 
     for entity_name, entities_to_place in pairs(planned_entities) do

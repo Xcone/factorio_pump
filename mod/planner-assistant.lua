@@ -209,4 +209,8 @@ assistant.create_tunnels_between_joints = function(construction_plan, toolbox)
     end)
 end
 
+assistant.surface_has_meltable_tiles = function(player)
+    return player.surface.planet and player.surface.planet.prototype.entities_require_heating
+end
+
 return assistant

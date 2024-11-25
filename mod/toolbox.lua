@@ -1,6 +1,7 @@
 require 'util'
 local math2d = require 'math2d'
 local plib = require 'plib'
+local assistant = require 'planner-assistant'
 
 -- Simplified non-dynamic variation of the toolbox used by the C# WPF application to test planner.lua without mimicing all of factorio
 function add_development_toolbox(target)
@@ -226,9 +227,18 @@ local function add_available_power_poles(available_power_poles, player, quality_
     end
 end
 
-local function get_extractor_pick_for_resource(resource_category)
-    if not storage.toolpicker_config then storage.toolpicker_config = {} end
+local function add_meltable_tile_covers(meltable_tile_covers)
+    local placable_tile_items = prototypes.get_item_filtered{{filter = "place-as-tile", comparison = ">", value = 1}}    
+    for _, item in pairs(placable_tile_items) do
+        -- Not sure why, but if a tile has a frozen variant, it counts as meltable-protection.
+        -- Maybe it actually means something else, but it does give the expected result.
+        if item.place_as_tile_result.result.frozen_variant ~= nil then
+            meltable_tile_covers[item.name] = { item_name = item.name }
+        end
+    end
+end
 
+local function get_extractor_pick_for_resource(resource_category)
     if not storage.toolpicker_config.extractor_pick then
         storage.toolpicker_config.extractor_pick = {}
     end
@@ -242,8 +252,6 @@ local function get_extractor_pick_for_resource(resource_category)
 end
 
 local function get_pipe_pick()
-    if not storage.toolpicker_config then storage.toolpicker_config = {} end
-
     if not storage.toolpicker_config.pipe_pick then
         storage.toolpicker_config.pipe_pick = {selected = nil, available = {}, quality_name = nil}
     end
@@ -252,8 +260,6 @@ local function get_pipe_pick()
 end
 
 local function get_power_pole_pick()
-    if not storage.toolpicker_config then storage.toolpicker_config = {} end
-
     if not storage.toolpicker_config.power_pole_pick then
         storage.toolpicker_config.power_pole_pick = {selected = nil, available = {}, quality_name = nil}
     end
@@ -261,9 +267,15 @@ local function get_power_pole_pick()
     return storage.toolpicker_config.power_pole_pick
 end
 
-local function get_pipe_bury_option()
-    if not storage.toolpicker_config then storage.toolpicker_config = {} end
+local function get_meltable_tile_cover_pick()
+    if not storage.toolpicker_config.meltable_tile_cover_pick then
+        storage.toolpicker_config.meltable_tile_cover_pick = {selected = nil, available = {}}
+    end
 
+    return storage.toolpicker_config.meltable_tile_cover_pick
+end
+
+local function get_pipe_bury_option()
     if not storage.toolpicker_config.pipe_bury_option then
         storage.toolpicker_config.pipe_bury_option = 1
     end
@@ -347,17 +359,17 @@ local function add_pick_options_to_flow(flow, toolbox_options)
 
         if pick_name == toolbox_options.pick.selected then
             style = "slot_sized_button_pressed"
-        end
+        end 
 
         local button = flow.add {
             type = "choose-elem-button",
             name = toolbox_options.button_prefix .. pick_name,
-            elem_type = "entity",
-            elem_filters = {{filter = "name", name = toolbox_options.pick.available}},
-            entity = pick_name,
-            style = style
+            elem_type = toolbox_options.type,
+            elem_filters = {{filter = "name", name = {pick_name}}},            
+            style = style,
+            [toolbox_options.type] = pick_name,
         }
-        button.locked = true
+        button.locked = true 
     end
 
     if toolbox_options.optional then
@@ -379,17 +391,19 @@ local function add_pick_options_to_flow(flow, toolbox_options)
     end
 end
 
-local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries, optional, failure)
+local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure)
     if failure then
         return {failure = failure}
     end
 
-    local entity_names = {}
+    local names = {}
     for name, _ in pairs(toolbox_entries) do
-        table.insert(entity_names, name)
+        table.insert(names, name)
     end
 
     return {
+        -- "entity", "item", "tile", etc. use for setting up the choose-elem-buttom
+        type = type,
         -- The last selection persisted storage. Contains the entity name as well as a list of all available entity names at the time
         -- The list of names is then used to determine of new options are available and the UI should show again 
         pick = pick,
@@ -404,8 +418,8 @@ local function create_toolbox_entity_options(toolbox_name, pick, toolbox_entries
         toolbox_name = toolbox_name,
         -- Table keyed on entity-names with content made available via toolbox in the planner.
         toolbox_entries = toolbox_entries,
-        -- Available entity names, can be used as keys for toolbox_entries
-        entity_names = entity_names,
+        -- Available names, can be used as keys for toolbox_entries
+        names = names,
         -- Add option to the dialog to not pick anything
         optional = optional
     }
@@ -415,8 +429,9 @@ local function create_toolbox_extractor_options(player, resource_category)
     local toolbox_entries = {}
     local failure = add_available_extractors(toolbox_entries, resource_category, player)
 
-    return create_toolbox_entity_options(
+    return create_toolbox_options(
         "extractor",
+        "entity",
         get_extractor_pick_for_resource(resource_category),
         toolbox_entries,
         false,
@@ -428,8 +443,9 @@ local function create_toolbox_pipe_options(player)
     local toolbox_entries = {}
     local failure = add_available_pipes(toolbox_entries, player)
 
-    return create_toolbox_entity_options(
+    return create_toolbox_options(
         "connector",
+        "entity",
         get_pipe_pick(),
         toolbox_entries,
         false,
@@ -442,8 +458,9 @@ local function create_toolbox_power_pole_options(player)
     local pick = get_power_pole_pick()
     local failure = add_available_power_poles(toolbox_entries, player, pick.quality_name)
 
-    return create_toolbox_entity_options(
+    return create_toolbox_options(
         "power_pole",
+        "entity",
         pick,
         toolbox_entries,
         true,
@@ -451,11 +468,33 @@ local function create_toolbox_power_pole_options(player)
     )
 end
 
+local function create_toolbox_meltable_tile_cover_options(player)
+    local toolbox_entries = {}
+    local pick = get_meltable_tile_cover_pick()
+    local failure = add_meltable_tile_covers(toolbox_entries)
+
+    return create_toolbox_options(
+        "meltable_tile_cover",
+        "item",
+        pick,
+        toolbox_entries,
+        false,
+        failure
+    )
+end
+
 local function create_all_toolbox_options(player, resource_category)
-    local all_toolbox_options = {}
+    local all_toolbox_options = {}    
+    if not storage.toolpicker_config then storage.toolpicker_config = {} end
+
     table.insert(all_toolbox_options, create_toolbox_extractor_options(player, resource_category))
     table.insert(all_toolbox_options, create_toolbox_pipe_options(player))
     table.insert(all_toolbox_options, create_toolbox_power_pole_options(player))
+
+    if assistant.surface_has_meltable_tiles(player) then
+        table.insert(all_toolbox_options, create_toolbox_meltable_tile_cover_options(player))
+    end
+
     return all_toolbox_options
 end
 
@@ -476,7 +515,9 @@ local function update_toolbox_after_changed_options(current_action, player, tool
             else
                 -- Reassign the selected extractor, wire or power pole to the toolbox
                 current_action.toolbox[toolbox_name] = refreshed_option.toolbox_entries[refreshed_option.pick.selected]
-                current_action.toolbox[toolbox_name].quality_name = refreshed_option.pick.quality_name
+                if current_action.toolbox[toolbox_name] then
+                    current_action.toolbox[toolbox_name].quality_name = refreshed_option.pick.quality_name
+                end
             end            
         end
     end   
@@ -491,7 +532,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
     for _, options in pairs(all_toolbox_options) do
 
         -- A mod might've been removed
-        reset_selection_if_pick_no_longer_available(options.pick, options.entity_names)
+        reset_selection_if_pick_no_longer_available(options.pick, options.names)
 
         -- Quality might've changed
         if get_quality_index(options.quality_name) == 0 then
@@ -499,19 +540,19 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         end
 
         -- Multiple options available, and no previous selection is known.
-        selection_required = selection_required or (#options.entity_names > 1 and not options.pick.selected)
+        selection_required = selection_required or (#options.names > 1 and not options.pick.selected)
 
         -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
         new_options_available = new_options_available or (
             options.pick.selected and 
-            #options.entity_names > 1 and
-            not table.compare(options.pick.available, options.entity_names))
+            #options.names > 1 and
+            not table.compare(options.pick.available, options.names))
 
         -- persist the available entities for next time, in order to check when new options have been added in the meantime.
-        options.pick.available = options.entity_names
+        options.pick.available = options.names
 
         -- ensure a default selection
-        if not options.pick.selected then options.pick.selected = options.entity_names[1] end
+        if not options.pick.selected then options.pick.selected = options.names[1] end
 
         -- Put the picked options in toolbox. 
         -- If the UI doesn't open this is what the planner will work with,
@@ -543,7 +584,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
 
         local label = frame.add {
             type = "label",
-            caption = caption,            
+            caption = caption,                        
         }
 
         label.style.maximal_width = 300
@@ -553,7 +594,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
 
         local innerFrame = frame.add {
             type = "frame",
-            name = "all_toolbox_options",
+            name = "all_entity_options",
             direction = "vertical",
             style="inside_shallow_frame",
         }
@@ -569,7 +610,26 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         end
 
         for _, options in pairs(all_toolbox_options) do
-            create_flow(options)
+            if options.type == "entity" then                
+                create_flow(options)
+            end
+        end        
+
+        for _, options in pairs(all_toolbox_options) do
+            if options.type == "item" and options.toolbox_name == "meltable_tile_cover" then         
+                local label = frame.add {
+                    type = "label",
+                    caption = {"pump-toolpicker.meltable-tile-cover"},                        
+                }                
+
+                innerFrame = frame.add {
+                    type = "frame",
+                    name = "all_item_options",
+                    direction = "vertical",
+                    style="inside_shallow_frame",
+                }
+                create_flow(options)
+            end
         end
 
         frame.add {
@@ -598,7 +658,7 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
             caption = {"pump-toolpicker.always-show"},
             state = should_show_always(player),
             tooltip = {"mod-setting-description.pump-always-show"},
-        }        
+        }                
         
         -- Footer
         local bottom_flow = frame.add {
@@ -680,7 +740,7 @@ function handle_gui_element_click(element_name, player)
                 pick_name = "none"
             end
 
-            for _, entity_name in pairs(options.entity_names) do
+            for _, entity_name in pairs(options.names) do
 
                 local element_name_for_entity = options.button_prefix .. entity_name
                 if element_name == element_name_for_entity then
@@ -694,7 +754,7 @@ function handle_gui_element_click(element_name, player)
                 options.pick.selected = pick_name
 
                 -- Update selection option in the UI
-                add_pick_options_to_flow(frame.all_toolbox_options[options.flow_name], options)
+                add_pick_options_to_flow(frame["all_" .. options.type .. "_options"][options.flow_name], options)
 
                 update_toolbox_after_changed_options(current_action, player, options.toolbox_name)                
             end
