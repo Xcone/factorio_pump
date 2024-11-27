@@ -5,14 +5,18 @@ function pump_log(object_to_log)
     if pumpdebug then pumpdebug.log(object_to_log) end
 end
 
+-- log the current elapsed time with the C# LayoutTester-tool
 function pump_lap(message)
     if pumpdebug then pumpdebug.lap(message) end
 end
 
+-- get the current tick-count with the C# LayoutTester-tool; used in conjunction with sample_finish
 function pump_sample_start()
    if pumpdebug then return pumpdebug.sample_start() end    
 end
 
+-- aggregate tick counts to a key in the # LayoutTester-tool
+-- Get a sense how much time a function takes in the grand scheme, basically a cheap-mans profiler.
 function pump_sample_finish(key, start)
    if pumpdebug then pumpdebug.sample_finish(key, start) end    
 end
@@ -280,7 +284,14 @@ plib.bounding_box = {
         bounds.left_top.y = bounds.left_top.y - amount
         bounds.right_bottom.x = bounds.right_bottom.x + amount
         bounds.right_bottom.y = bounds.right_bottom.y + amount
-    end
+    end,
+
+    clamp = function(bounds, other_bounds)
+        bounds.left_top.x = math.max(bounds.left_top.x, other_bounds.left_top.x)
+        bounds.left_top.y = math.max(bounds.left_top.y, other_bounds.left_top.y)
+        bounds.right_bottom.x = math.min(bounds.right_bottom.x, other_bounds.right_bottom.x)
+        bounds.right_bottom.y = math.min(bounds.right_bottom.y, other_bounds.right_bottom.y)
+    end,
 }
 
 plib.xy = {

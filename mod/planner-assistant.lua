@@ -5,6 +5,10 @@ local xy = plib.xy
 
 local assistant = {}
 
+assistant.is_position_blocked = function(blocked_positions, position)
+    return xy.get(blocked_positions, position)
+end
+
 assistant.find_in_construction_plan = function(construction_plan, search_for_name)
     return xy.where(construction_plan, function(candidate)
         return candidate.name == search_for_name

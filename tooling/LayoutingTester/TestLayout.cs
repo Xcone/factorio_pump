@@ -194,10 +194,16 @@ namespace LayoutingTester
 
                 var electricianFunction = lua["plan_power"] as LuaFunction;
                 var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
+                var plumberDuration = stopwatch.ElapsedMilliseconds;
+                
                 var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
 
                 stopwatch.Stop();
-                Print($"'add_construction_plan' took {stopwatch.ElapsedMilliseconds}ms");
+                Print("---");
+                Print($"'plumbing' took {plumberDuration}ms");
+                Print($"'electricity' took {stopwatch.ElapsedMilliseconds - plumberDuration}ms");
+                Print($"total {stopwatch.ElapsedMilliseconds}ms");
+                Print("---");
 
                 foreach (var kv in Samples)
                 {
@@ -210,11 +216,10 @@ namespace LayoutingTester
                 {
                     Print(plumberFailure);
                 }
-                /*
                 if (electricianFailure != null)
                 {
                     Print(electricianFailure);
-                }*/
+                }
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 AddConstructEntities(constructEntities);
