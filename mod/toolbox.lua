@@ -59,7 +59,7 @@ function add_development_toolbox(target)
     -- toolbox.power_pole = medium_pole
     -- toolbox.power_pole = big_pole
     toolbox.power_pole = substation
-    toolbox.pipe_bury_distance_preference = 0
+    toolbox.pipe_bury_distance_preference = 999
 
 
     target.toolbox = toolbox
