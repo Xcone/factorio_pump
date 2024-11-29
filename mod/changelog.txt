@@ -4,7 +4,14 @@ Date: 2024-??-??
   Changes:
     - Improved desicion-making for the new planner for where to put the branches
     - Improved decision-making how extractors connect to branches
-    - Added A* fallback routine in case an extractor cannot neatly connect to a branch    
+    - Added A* fallback routine in case an extractor cannot neatly connect to a branch  
+    - TODO: check non-prio planner output. Something's changed .. which it shouldn't have
+    - TODO: wrong joint-marking in baseline on the left-most extractor connection to branch  
+    - TODO: quick-win neighbour of output needs marking as joint
+    - TODO: bury A* pipes
+    - TODO: branch-area shrink does not work well with optimize pipes (it doesn't really connect)
+    - TODO: quick-win neighbour check needs to prioritize on-top-of-branch over next-to-branch
+    - TODO: take into account you tunneling under lava is not allowed      
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
 Date: 2024-11-26
