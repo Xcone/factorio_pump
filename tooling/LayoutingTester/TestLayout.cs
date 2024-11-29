@@ -205,9 +205,9 @@ namespace LayoutingTester
                 Print($"total {stopwatch.ElapsedMilliseconds}ms");
                 Print("---");
 
-                foreach (var kv in Samples)
+                foreach (var kv in Samples.Select(x=>x).OrderByDescending(x => x.Value.ticks))
                 {
-                    Print($"'{kv.Key}' took {TimeSpan.FromTicks(kv.Value.ticks).TotalMilliseconds}ms with {kv.Value.count} samples");
+                    Print($"{TimeSpan.FromTicks(kv.Value.ticks).TotalMilliseconds}ms | {kv.Value.count} samples | {kv.Key}");
                 }
 
 
@@ -270,6 +270,7 @@ namespace LayoutingTester
         private void AddConstructEntities(LuaTable constructionParameters)
         {
             if (constructionParameters == null) return;
+            var totalPlannedEntities = 0;
 
             foreach (var xKey in constructionParameters.Keys)
             {
@@ -283,8 +284,11 @@ namespace LayoutingTester
                     var name = (string)plannedEntity["name"];
 
                     Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
+                    totalPlannedEntities++;
                 }
             }
+
+            Print($"Planned entities: {totalPlannedEntities}");
         }
     }
 
