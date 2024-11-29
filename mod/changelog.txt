@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.5
+Date: 2024-??-??
+  Changes:
+    - Improved desicion-making for the new planner for where to put the branches
+    - Improved decision-making how extractors connect to branches
+    - Added A* fallback routine in case an extractor cannot neatly connect to a branch    
+---------------------------------------------------------------------------------------------------
 Version: 2.1.4
 Date: 2024-11-26
   Features:

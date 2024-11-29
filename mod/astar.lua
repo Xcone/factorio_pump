@@ -57,11 +57,14 @@ local function positions_to_nodes(positions)
   return nodes
 end
 
-function astar(start_positions, goal_positions, search_bounds, blocked_xy, heuristic_score)
+function astar(start_positions, goal_positions, search_bounds, blocked_xy, heuristic_score, max_length)
     local start_nodes = positions_to_nodes(start_positions)
     local goal_nodes = positions_to_nodes(goal_positions)
     local search_queue = PriorityQueue()
     local count = 0
+    if not max_length then
+        max_length = 999
+    end
 
     local all_nodes_map = start_nodes
 
@@ -80,8 +83,7 @@ function astar(start_positions, goal_positions, search_bounds, blocked_xy, heuri
 
         for _, node in ipairs(make_neighbors(best)) do
             if math2d.bounding_box.contains_point(search_bounds, node.position) then
-                if not assistant.is_position_blocked(blocked_xy, node.position) then
-
+                if node.g_score <= max_length and not assistant.is_position_blocked(blocked_xy, node.position) then
                     local o = all_nodes_map[node.key]
                     if o == nil or node.g_score < o.g_score then
                         local h = heuristic_score(goal_nodes, node)
