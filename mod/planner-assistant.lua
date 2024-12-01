@@ -195,8 +195,8 @@ end
 assistant.create_tunnels_between_joints = function(construction_plan, toolbox)
     convert_outputs_to_joints_when_flanked(construction_plan)
     local pipe_joint_positions = assistant.find_in_construction_plan(construction_plan, "pipe_joint")
-
-    xy.each(pipe_joint_positions, function(pipe_joint, position)
+    
+    xy.each(pipe_joint_positions, function(pipe_joint, position)                
         for direction, toolbox_direction in pairs(plib.directions) do
             local result = assistant.take_series_of_pipes(construction_plan, position, direction)
             if result.last_hit == nil then

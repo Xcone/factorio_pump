@@ -190,7 +190,6 @@ local function get_extractors_in_reach_of_branch(extractors_lookup, branch)
             table.insert(extractors_in_reach, extractor)
         end
     end)
-
     return extractors_in_reach
 end
 
@@ -275,8 +274,6 @@ function plan_pipe_line(mod_context, start_position, direction, length)
 end
 
 function create_branch_candidate(mod_context, extractors_lookup, slice, branch_length, branch_direction, parent_branch, extra_penalty)
-    local sample_start = pump_sample_start()
-
     local branch_candidate = {}
     local branch_position = {
         x = slice.left_top.x,
@@ -290,7 +287,9 @@ function create_branch_candidate(mod_context, extractors_lookup, slice, branch_l
     branch_candidate.is_invalid = false
     branch_vector = plib.directions[branch_direction].vector
 
+    local sample_find_extractors_in_reach = pump_sample_start()
     local extractors_in_reach = get_extractors_in_reach_of_branch(extractors_lookup, branch_candidate)
+    pump_sample_finish("find_extractors_in_reach", sample_find_extractors_in_reach)
 
     for i, extractor in pairs(extractors_in_reach) do
         -- Already in reach of another branch, no need to cover it twice
@@ -349,8 +348,6 @@ function create_branch_candidate(mod_context, extractors_lookup, slice, branch_l
     score = score - (branch_length - connector_count)
 
     branch_candidate.score = score - extra_penalty
-
-    pump_sample_finish("create_branch_candidate", sample_start)
 
     return branch_candidate
 end
@@ -424,7 +421,9 @@ function find_best_branch(mod_context, extractors_lookup, search_area, branch_di
         local slice = table.deepcopy(start_slice)
         plib.bounding_box.translate(slice, plib.directions[branch_direction].next, slice_index - 1)
 
+        local sample_create_branch_candidate = pump_sample_start()
         local branch_candidate = create_branch_candidate(mod_context, extractors_lookup, slice, branch_length, branch_direction, parent_branch, score_offset)
+        pump_sample_finish("create_branch_candidate", sample_create_branch_candidate)
 
         if branch_candidate ~= nil and (best_branch == nil or branch_candidate.score > best_branch.score) then
             best_branch = branch_candidate
@@ -446,7 +445,7 @@ function plan_branches(mod_context, extractors_lookup, branch_area, branch_direc
         branch_direction = branch_direction
     })
 
-    local branch_length = plib.bounding_box.get_cross_section_size(branch_area, branch_direction)    
+    local branch_length = plib.bounding_box.get_cross_section_size(branch_area, branch_direction)
     if branch_length < 8 then
         return
     end
@@ -458,20 +457,13 @@ function plan_branches(mod_context, extractors_lookup, branch_area, branch_direc
         local branch_area = pending_branch_area.branch_area
         local branch_direction = pending_branch_area.branch_direction
 
-        -- Make at least one branch.
         local branch = find_best_branch(mod_context, extractors_lookup, pending_branch_area.branch_area, pending_branch_area.branch_direction, parent_branch, commited_branches)
 
         if not branch or not branch.is_connected_to_parent then
             break
         end
 
-        -- Make branches aware of each other. Useful in a later step to interconnect branches when one can't connect to the trunk
         commit_branch(mod_context, extractors_lookup, branch)
-        branch.previous_branch = previous_brach
-        if previous_brach then
-            previous_brach.next_branch = branch
-        end
-        previous_brach = branch
         table.insert(commited_branches, branch)
 
         split_result = plib.bounding_box.directional_split(branch_area, branch.slice, branch.direction)
@@ -500,18 +492,41 @@ end
 local function convert_astar_result_to_pipe(reached_pipe)
     local construction_plan = {}
 
-    -- Mark joint, to keep it above ground when burying pipes
-    assistant.add_connector_joint(construction_plan, reached_pipe.position)
-    local previous_pipe = reached_pipe
-    local pipe = reached_pipe.parent
+    local current_pipe = reached_pipe
+    local next_pipe = reached_pipe.parent
+    local x_dir = 0
+    local y_dir = 0
 
-    while pipe do
-        assistant.add_connector(construction_plan, pipe.position)
-        previous_pipe = pipe
-        pipe = pipe.parent
+    while next_pipe do
+        local next_x_dir = current_pipe.position.x - next_pipe.position.x
+        local next_y_dir = current_pipe.position.y - next_pipe.position.y
+
+        if x_dir ~= next_x_dir or y_dir ~= next_y_dir then
+            -- Mark every bend as joint, in to help later with burying pipes
+            assistant.add_connector_joint(construction_plan, current_pipe.position)        
+        else
+            assistant.add_connector(construction_plan, current_pipe.position)        
+        end
+
+        x_dir = next_x_dir
+        y_dir = next_y_dir
+        current_pipe = next_pipe
+        next_pipe = current_pipe.parent
     end
 
-    return construction_plan, previous_pipe.position
+    return construction_plan, current_pipe.position
+end
+
+local function convert_astar_result_to_extractor_plan(reached_pipe, extractor)
+    local construction_plan, start_position = convert_astar_result_to_pipe(reached_pipe)
+    local direction = resolve_extractor_direction(extractor, start_position)
+    assistant.add_output(construction_plan, start_position, direction)
+
+    return {
+        construction_plan = construction_plan,
+        other_extractor_output_hits = {},
+        output_direction = direction
+    }
 end
 
 local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_lookup, extractor, max_distance_from_extractor)
@@ -523,7 +538,7 @@ local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_loo
     end
 
     -- First search area is the edge around the extractor
-    local search_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)    
+    local search_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)
     plib.bounding_box.offset(search_bounds, extractor.position)
     plib.bounding_box.grow(search_bounds, max_distance_from_extractor * 2)
     plib.bounding_box.clamp(search_bounds, mod_context.area_bounds)
@@ -541,22 +556,15 @@ local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_loo
 
     if nearby_pipe_positions_by_distance:size() > 0 then
         local nearby_pipe_positions = {}
-        
+
         while #nearby_pipe_positions < 10 and nearby_pipe_positions_by_distance:peek() do
             local p = nearby_pipe_positions_by_distance:pop()
             table.insert(nearby_pipe_positions, p)
         end
-        
+
         local reached_pipe = astar(output_positions, nearby_pipe_positions, search_bounds, mod_context.blocked_positions, heuristic_score_taxicab, max_distance_from_extractor * 2)
         if reached_pipe then
-            local construction_plan, start_position = convert_astar_result_to_pipe(reached_pipe)
-            local direction = resolve_extractor_direction(extractor, start_position)
-
-            extractor.scored_plan = {
-                construction_plan = construction_plan,
-                other_extractor_output_hits = {},
-                output_direction = direction
-            }
+            extractor.scored_plan = convert_astar_result_to_extractor_plan(reached_pipe, extractor)
         end
     end
 
@@ -582,14 +590,7 @@ local function try_connect_extractor_to_nearby_extractors(mod_context, extractor
     if next(goal_positions) then
         local reached_pipe = astar(start_positions, goal_positions, mod_context.area_bounds, mod_context.blocked_positions, heuristic_score_taxicab)
         if reached_pipe then
-            local construction_plan, start_position = convert_astar_result_to_pipe(reached_pipe)
-            local direction = resolve_extractor_direction(extractor, start_position)
-
-            extractor.scored_plan = {
-                construction_plan = construction_plan,
-                other_extractor_output_hits = {},
-                output_direction = direction
-            }
+            extractor.scored_plan = convert_astar_result_to_extractor_plan(reached_pipe, extractor)
         end
     else
         error("Nothing to connect to")
@@ -647,16 +648,18 @@ end
 function connect_extractors(mod_context, extractors_lookup, committed_branches)
     local search_range = 15
 
-    -- Find the quick wins. The outputs that are already directly on one of the branches
+    -- Find the quick wins. The outputs that are already directly on an existing pipe
+    local sample_quick_wins = pump_sample_start()
     xy.each(extractors_lookup.xy, function(extractor, position)
         for _, output in pairs(extractor.outputs) do
             local planned_construction = xy.get(mod_context.construction_plan, output.position)
-            local output_touches_existing_pipe = is_pipe_or_pipe_joint(planned_construction) or next(get_pipe_neighbours(mod_context, output.position)) ~= nil
+            local is_quick_win = is_pipe_or_pipe_joint(planned_construction)
 
-            if output_touches_existing_pipe then
+            if is_quick_win then
                 local construction_plan = {}
                 assistant.add_extractor(construction_plan, extractor.position, output.direction)
                 assistant.add_output(construction_plan, output.position, output.direction)
+
                 local scored_plan = {
                     output_direction = output.direction,
                     construction_plan = construction_plan,
@@ -668,9 +671,12 @@ function connect_extractors(mod_context, extractors_lookup, committed_branches)
             end
         end
     end)
+    pump_sample_finish("connect_extractors.quickwins", sample_quick_wins)
 
     -- Find the nearest branches in each direction for each extractor and the individual outputs
+
     xy.each(extractors_lookup.xy, function(extractor, position)
+        local sample_find_nearest_branches = pump_sample_start()
         extractor.distance_to_branch = 999
         for _, branch in pairs(committed_branches) do
             local branch_end = get_end_of_branch(branch)
@@ -710,9 +716,11 @@ function connect_extractors(mod_context, extractors_lookup, committed_branches)
                 end
             end
         end
+        pump_sample_finish("connect_extractors.find_nearest_branches", sample_find_nearest_branches)
     end)
 
     -- Prioritize extractors further away from a branch, to increase the odds of a pipe-line connecting to another output along the way
+    local sample_connect_to_branches = pump_sample_start()
     local extractors_by_branch_distance = PriorityQueue()
     xy.each(extractors_lookup.xy, function(extractor, position)
         extractors_by_branch_distance:put(extractor, 0 - extractor.distance_to_branch)
@@ -737,6 +745,7 @@ function connect_extractors(mod_context, extractors_lookup, committed_branches)
 
         extractor = extractors_by_branch_distance:pop()
     end
+    pump_sample_finish("connect_extractors.sample_connect_to_branches", sample_connect_to_branches)
 end
 
 local function is_pipe_flanked(entity_on_flank, connecting_direction)
@@ -750,7 +759,7 @@ local function is_pipe_flanked(entity_on_flank, connecting_direction)
     return true
 end
 
-local function prune_pipe_dead_end(mod_context, start_position, prune_direction, max_length)
+local function prune_branch_ends(mod_context, start_position, prune_direction, max_length)
     local plan = mod_context.construction_plan
 
     local flank_previous_direction = plib.directions[prune_direction].previous
@@ -799,12 +808,12 @@ local function prune_pipe_dead_end(mod_context, start_position, prune_direction,
     return branch_has_connections
 end
 
-local function optimize_pipes(mod_context, branches)
+local function prune_branches(mod_context, branches)
     local trunk = nil
 
     for _, branch in pairs(branches) do
         if branch.parent_branch then
-            local branch_has_connections = prune_pipe_dead_end(mod_context, get_end_of_branch(branch), plib.directions[branch.direction].opposite, branch.length)
+            local branch_has_connections = prune_branch_ends(mod_context, get_end_of_branch(branch), plib.directions[branch.direction].opposite, branch.length)
             if branch_has_connections and branch.is_connected_to_parent then
                 assistant.add_connector_joint(mod_context.construction_plan, branch.connection_point)
             end
@@ -816,11 +825,23 @@ local function optimize_pipes(mod_context, branches)
     if trunk then
         -- Trunk is pruned last, to allow an unused branch to be removed.
         -- Trunk is also pruned on both ends as it doesnt connect on either side
-        prune_pipe_dead_end(mod_context, trunk.start_position, trunk.direction, trunk.length)
-        prune_pipe_dead_end(mod_context, get_end_of_branch(trunk), plib.directions[trunk.direction].opposite, trunk.length)
+        prune_branch_ends(mod_context, trunk.start_position, trunk.direction, trunk.length)
+        prune_branch_ends(mod_context, get_end_of_branch(trunk), plib.directions[trunk.direction].opposite, trunk.length)
     end
+end
 
+local function bury_pipes(mod_context)
     assistant.create_tunnels_between_joints(mod_context.construction_plan, mod_context.toolbox)
+    local pipe_joint_positions = assistant.find_in_construction_plan(mod_context.construction_plan, "pipe_joint")
+    -- Remove dead ends
+    xy.each(pipe_joint_positions, function(pipe_joint, position)
+        for direction, toolbox_direction in pairs(plib.directions) do
+            local result = assistant.take_series_of_pipes(mod_context.construction_plan, position, direction)
+            if result.last_hit == nil then
+                assistant.remove_pipes(mod_context.construction_plan, result.pipe_positions)
+            end
+        end
+    end)
 end
 
 function plan_plumbing_pro(mod_context)
@@ -850,7 +871,7 @@ function plan_plumbing_pro(mod_context)
     if horizontal_size >= vertical_size then
         trunk_direction = defines.direction.east
         trunk_length = horizontal_size
-    end    
+    end
 
     if use_trunk and trunk_length > 10 then
 
@@ -875,7 +896,7 @@ function plan_plumbing_pro(mod_context)
             pump_lap("extractors connected to branches")
         end
 
-        optimize_pipes(mod_context, committed_branches)
+        prune_branches(mod_context, committed_branches)
     end
 
     local has_connected_extractor = xy.any(xy.where(extractors_lookup.xy, function(extractor, position)
@@ -887,7 +908,7 @@ function plan_plumbing_pro(mod_context)
         xy.first(extractors_lookup.by_output_xy, function(extractor_outputs, position)
             local construction_plan = {}
             local _, extractor_output = next(extractor_outputs)
-            
+
             assistant.add_extractor(construction_plan, extractor_output.extractor.position, extractor_output.output.direction)
             assistant.add_output(construction_plan, position, extractor_output.output.direction)
 
@@ -936,6 +957,8 @@ function plan_plumbing_pro(mod_context)
 
         pending_extractor = pending_extractors:pop()
     end
-
     pump_lap("remaining extractor connections made with fallback")
+
+    bury_pipes(mod_context)
+    pump_lap("buried pipes")
 end
