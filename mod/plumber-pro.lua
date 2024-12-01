@@ -446,6 +446,11 @@ function plan_branches(mod_context, extractors_lookup, branch_area, branch_direc
         branch_direction = branch_direction
     })
 
+    local branch_length = plib.bounding_box.get_cross_section_size(branch_area, branch_direction)    
+    if branch_length < 8 then
+        return
+    end
+
     local previous_brach = nil
 
     while #pending_branch_areas > 0 do
@@ -815,7 +820,7 @@ function plan_plumbing_pro(mod_context)
     mod_context.blocked_positions = {}
 
     -- Settings, maybe? For now just debug purpose.
-    local use_trunk = false
+    local use_trunk = true
     local use_branches = true
 
     xy.each(mod_context.area, function(reservation, pos)
@@ -830,21 +835,16 @@ function plan_plumbing_pro(mod_context)
     local vertical_size = plib.bounding_box.get_cross_section_size(trunk_area, defines.direction.north)
     local horizontal_size = plib.bounding_box.get_cross_section_size(trunk_area, defines.direction.east)
 
-    -- Shrink the branching area to make space for extractors at the tip of branches
-    local trunk_area_margin = plib.bounding_box.get_cross_section_size(mod_context.toolbox.extractor.relative_bounds, defines.direction.north) + 1
-    if vertical_size > trunk_area_margin * 3 and horizontal_size > trunk_area_margin * 3 then
-        -- plib.bounding_box.grow(trunk_area, -trunk_area_margin)
-    else
-        use_trunk = false
-    end
+    -- By default, prefer to keep the trunk short (future setting?)
+    -- Rationale being that branches reach out on both sides. So the length of the trunk and the branches should be slightly more similar.
+    local trunk_direction = defines.direction.south
+    local trunk_length = vertical_size
+    if horizontal_size >= vertical_size then
+        trunk_direction = defines.direction.east
+        trunk_length = horizontal_size
+    end    
 
-    if use_trunk then
-        -- By default, prefer to keep the trunk short (future setting?)
-        -- Rationale being that branches reach out on both sides. So the length of the trunk and the branches should be slightly more similar.
-        local trunk_direction = defines.direction.south
-        if horizontal_size >= vertical_size then
-            trunk_direction = defines.direction.east
-        end
+    if use_trunk and trunk_length > 10 then
 
         local committed_branches = {}
         pump_lap("done initial prep")
