@@ -372,7 +372,7 @@ local function segmentate(segment, previous_split)
     local next_split = "none"
 
     if previous_split == "none" then
-        if size_vertical < size_horizontal then
+        if size_vertical > size_horizontal then
             previous_split = "split_vertical"
         else
             previous_split = "split_horizontal"
