@@ -20,7 +20,9 @@ assistant.find_oilwells = function(segment)
 
     plib.bounding_box.each_grid_position(segment.area_bounds, function(position)
         if xy.get(segment.area, position) == "oil-well" then
-            table.insert(oilwells, { position = position })
+            table.insert(oilwells, {
+                position = position
+            })
         end
     end)
 
@@ -28,27 +30,34 @@ assistant.find_oilwells = function(segment)
 end
 
 assistant.add_extractor = function(construct_entities, position, direction)
-    xy.set(construct_entities, position,
-        { name = "extractor", direction = direction })
+    xy.set(construct_entities, position, {
+        name = "extractor",
+        direction = direction
+    })
 end
 
 assistant.add_connector = function(construct_entities, position)
-    xy.set(construct_entities, position,
-        { name = "pipe", direction = defines.direction.east })
+    xy.set(construct_entities, position, {
+        name = "pipe",
+        direction = defines.direction.east
+    })
 end
 
 assistant.add_connector_joint = function(construct_entities, position)
-    xy.set(construct_entities, position,
-        { name = "pipe_joint", direction = defines.direction.east })
+    xy.set(construct_entities, position, {
+        name = "pipe_joint",
+        direction = defines.direction.east
+    })
 end
 
 assistant.add_output = function(construct_entities, position, direction)
-    xy.set(construct_entities, position,
-        { name = "output", direction = direction })
+    xy.set(construct_entities, position, {
+        name = "output",
+        direction = direction
+    })
 end
 
-assistant.add_pipe_tunnel = function(construct_entities, start_position, end_position,
-                            toolbox)
+assistant.add_pipe_tunnel = function(construct_entities, start_position, end_position, toolbox)
     local start_direction
     local end_direction
     local diff = 100
@@ -94,11 +103,15 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
         error("Underground exit and entrance on same position ")
     end
 
-    xy.set(construct_entities, start_position,
-        { name = "pipe_tunnel", direction = start_direction })
+    xy.set(construct_entities, start_position, {
+        name = "pipe_tunnel",
+        direction = start_direction
+    })
 
-    xy.set(construct_entities, end_position,
-        { name = "pipe_tunnel", direction = end_direction })
+    xy.set(construct_entities, end_position, {
+        name = "pipe_tunnel",
+        direction = end_direction
+    })
 end
 
 assistant.take_series_of_pipes = function(construct_entities, start_joint_position, direction)
@@ -108,17 +121,16 @@ assistant.take_series_of_pipes = function(construct_entities, start_joint_positi
     local construct_entity_at_position = nil
 
     repeat
-        probe_location = math2d.position.add(probe_location,
-            plib.directions[direction]
-            .vector)
+        probe_location = math2d.position.add(probe_location, plib.directions[direction].vector)
         is_pipe = false
-        construct_entity_at_position =
-            xy.get(construct_entities, probe_location)
+        construct_entity_at_position = xy.get(construct_entities, probe_location)
         if construct_entity_at_position then
             is_pipe = construct_entity_at_position.name == "pipe"
         end
 
-        if (is_pipe) then table.insert(pipe_positions, probe_location) end
+        if (is_pipe) then
+            table.insert(pipe_positions, probe_location)
+        end
     until not is_pipe
 
     return {
@@ -143,14 +155,11 @@ local function convert_outputs_to_joints_when_flanked(construction_plan)
 
         local entity_on_flank = nil
         if construction_plan[flank_position.x] ~= nil then
-            entity_on_flank =
-            construction_plan[flank_position.x][flank_position.y]
+            entity_on_flank = construction_plan[flank_position.x][flank_position.y]
 
             if entity_on_flank == nil then
                 flank_direction = plib.directions[output.direction].previous
-                flank_position = math2d.position.add(position,
-                    plib.directions[flank_direction]
-                    .vector)
+                flank_position = math2d.position.add(position, plib.directions[flank_direction].vector)
 
                 if construction_plan[flank_position.x] ~= nil then
                     entity_on_flank = construction_plan[flank_position.x][flank_position.y]
@@ -164,7 +173,6 @@ local function convert_outputs_to_joints_when_flanked(construction_plan)
     end)
 end
 
-
 local try_replace_pipes_with_tunnels = function(construction_plan, pipe_positions, toolbox)
     local tunnel_length_min = toolbox.connector.underground_distance_min + 2
     local tunnel_length_max = toolbox.connector.underground_distance_max + 1
@@ -176,7 +184,9 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     while #pipe_positions >= tunnel_length_min do
         local pipe_positions_this_batch = {}
         local take_until = #pipe_positions - tunnel_length_max
-        if take_until < 1 then take_until = 1 end
+        if take_until < 1 then
+            take_until = 1
+        end
 
         for i = #pipe_positions, take_until, -1 do
             table.insert(pipe_positions_this_batch, pipe_positions[i])
@@ -195,8 +205,8 @@ end
 assistant.create_tunnels_between_joints = function(construction_plan, toolbox)
     convert_outputs_to_joints_when_flanked(construction_plan)
     local pipe_joint_positions = assistant.find_in_construction_plan(construction_plan, "pipe_joint")
-    
-    xy.each(pipe_joint_positions, function(pipe_joint, position)                
+
+    xy.each(pipe_joint_positions, function(pipe_joint, position)
         for direction, toolbox_direction in pairs(plib.directions) do
             local result = assistant.take_series_of_pipes(construction_plan, position, direction)
             if result.last_hit == nil then
