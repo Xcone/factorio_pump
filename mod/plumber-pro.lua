@@ -523,22 +523,30 @@ local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_loo
     end
 
     -- First search area is the edge around the extractor
-    local search_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)
-    local extractor_radius = math.ceil(plib.bounding_box.get_cross_section_size(search_bounds, defines.direction.north) / 2)
+    local search_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)    
     plib.bounding_box.offset(search_bounds, extractor.position)
     plib.bounding_box.grow(search_bounds, max_distance_from_extractor * 2)
     plib.bounding_box.clamp(search_bounds, mod_context.area_bounds)
 
-    local allowed_distance_from_extractor_center = extractor_radius + max_distance_from_extractor
+    local sample_neaby_pipes_start = pump_sample_start();
 
-    local nearby_pipe_positions = {}
+    local nearby_pipe_positions_by_distance = PriorityQueue()
     plib.bounding_box.each_grid_position(search_bounds, function(position)
-        if is_pipe_or_pipe_joint(xy.get(mod_context.construction_plan, position)) and plib.position.taxicab_distance(position, extractor.position) <= allowed_distance_from_extractor_center then
-            table.insert(nearby_pipe_positions, position)
+        if is_pipe_or_pipe_joint(xy.get(mod_context.construction_plan, position)) then
+            nearby_pipe_positions_by_distance:put(position, plib.position.taxicab_distance(position, extractor.position))
         end
     end)
 
-    if next(nearby_pipe_positions) ~= nil then
+    pump_sample_finish("sample_neaby_pipes", sample_neaby_pipes_start);
+
+    if nearby_pipe_positions_by_distance:size() > 0 then
+        local nearby_pipe_positions = {}
+        
+        while #nearby_pipe_positions < 10 and nearby_pipe_positions_by_distance:peek() do
+            local p = nearby_pipe_positions_by_distance:pop()
+            table.insert(nearby_pipe_positions, p)
+        end
+        
         local reached_pipe = astar(output_positions, nearby_pipe_positions, search_bounds, mod_context.blocked_positions, heuristic_score_taxicab, max_distance_from_extractor * 2)
         if reached_pipe then
             local construction_plan, start_position = convert_astar_result_to_pipe(reached_pipe)
