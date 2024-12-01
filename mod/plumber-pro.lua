@@ -815,7 +815,7 @@ function plan_plumbing_pro(mod_context)
     mod_context.blocked_positions = {}
 
     -- Settings, maybe? For now just debug purpose.
-    local use_trunk = true
+    local use_trunk = false
     local use_branches = true
 
     xy.each(mod_context.area, function(reservation, pos)
@@ -878,21 +878,18 @@ function plan_plumbing_pro(mod_context)
         -- Connect to first available output and hope the rest can A* back to it.
         xy.first(extractors_lookup.by_output_xy, function(extractor_outputs, position)
             local construction_plan = {}
-            local extractor_output = next(extractor_outputs)
+            local _, extractor_output = next(extractor_outputs)
+            
+            assistant.add_extractor(construction_plan, extractor_output.extractor.position, extractor_output.output.direction)
+            assistant.add_output(construction_plan, position, extractor_output.output.direction)
 
-            for i, extractor_output in pairs(extractor_outputs) do
-                assistant.add_extractor(construction_plan, extractor_output.extractor.position, extractor_output.output.direction)
-                assistant.add_output(construction_plan, position, extractor_output.output.direction)
+            extractor_output.extractor.scored_plan = {
+                construction_plan = construction_plan,
+                other_extractor_output_hits = {},
+                output_direction = extractor_output.output.direction
+            }
 
-                extractor_output.extractor.scored_plan = {
-                    construction_plan = construction_plan,
-                    other_extractor_output_hits = {},
-                    output_direction = extractor_output.output.direction
-                }
-
-                commit_extractor_plan(mod_context, extractors_lookup, extractor_output.extractor)
-                break
-            end
+            commit_extractor_plan(mod_context, extractors_lookup, extractor_output.extractor)
         end)
     end
 
