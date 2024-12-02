@@ -1,4 +1,4 @@
-if mods["ModuleInserter"] then
+if mods["ModuleInserterEx"] then
 
     data:extend({
         {

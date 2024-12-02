@@ -121,6 +121,14 @@ local function cover(player, cover_area, tile_name_when_cover_is_meltable)
     end )    
 end
 
+local function add_modules(ghosts, player) 
+    local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
+
+    if setting and setting.value and remote.interfaces["ModuleInserterEx"] then
+        remote.call("ModuleInserterEx", "apply_module_config_to_entities", player.index, ghosts)
+    end
+end
+
 function construct_entities(construction_plan, player, toolbox)
     local planned_entities = get_planned_entities(construction_plan, toolbox)
 
@@ -143,6 +151,8 @@ function construct_entities(construction_plan, player, toolbox)
         tile_name_when_cover_is_meltable = prototypes.item[toolbox.meltable_tile_cover.item_name].place_as_tile_result.result.name
     end  
 
+    local entity_ghosts = {}
+
     for entity_name, entities_to_place in pairs(planned_entities) do
         local modules = toolbox.module_config[entity_name]
         for i, parameters in pairs(entities_to_place) do
@@ -158,10 +168,12 @@ function construct_entities(construction_plan, player, toolbox)
                 quality = parameters.quality_name
             }
 
-            if modules then ghost.item_requests = modules end
+            table.insert(entity_ghosts, ghost)
 
             -- raise built event so other mods can detect the new ghost
             script.raise_script_built{entity=ghost}
         end
+
+        add_modules(entity_ghosts, player)
     end
 end

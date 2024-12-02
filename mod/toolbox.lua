@@ -689,22 +689,9 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
     end
 end
 
-local function add_module_config(toolbox, player)
-
-    local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
-
-    if setting and setting.value and remote.interfaces["mi"] then
-        toolbox.module_config = remote.call("mi", "get_module_config", player.index)
-    end
-
-    if not toolbox.module_config then toolbox.module_config = {} end
-end
-
 function add_toolbox(current_action, player, force_ui)
     local toolbox = {}
-    current_action.toolbox = toolbox
-
-    add_module_config(toolbox, player)
+    current_action.toolbox = toolbox    
 
     local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
     for _, options in pairs(all_toolbox_options) do
