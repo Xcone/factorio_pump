@@ -115,28 +115,70 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
 end
 
 assistant.take_series_of_pipes = function(construct_entities, start_joint_position, direction)
-    local probe_location = math2d.position.ensure_xy(start_joint_position)
-    local is_pipe = false
+    local probe_location = math2d.position.ensure_xy(start_joint_position)    
     local pipe_positions = {}
+    local tunnel_positions = {}
     local construct_entity_at_position = nil
+    local is_tunneling = false
+    local tunnel_start_direction = plib.directions[direction].opposite
+    local tunnel_end_direction = direction
+    local vector = plib.directions[direction].vector
+    local keep_searching = true
+
+    local iterations = 0
 
     repeat
-        probe_location = math2d.position.add(probe_location, plib.directions[direction].vector)
-        is_pipe = false
-        construct_entity_at_position = xy.get(construct_entities, probe_location)
-        if construct_entity_at_position then
-            is_pipe = construct_entity_at_position.name == "pipe"
+        probe_location = plib.position.add(probe_location, vector)
+        construct_entity_at_position = xy.get(construct_entities, probe_location)        
+        keep_searching = false        
+        if construct_entity_at_position then                    
+            if construct_entity_at_position.name == "pipe" then
+                table.insert(pipe_positions, probe_location)
+                keep_searching = true
+            else                
+                if construct_entity_at_position.name == "pipe_tunnel" then
+                    if not is_tunneling then
+                        if construct_entity_at_position.direction == tunnel_start_direction then
+                            -- tunnel started
+                            is_tunneling = true                            
+                            keep_searching = true
+                            table.insert(tunnel_positions, { position = probe_location, direction = construct_entity_at_position.direction } )
+                        end
+                    else                                                
+                        if construct_entity_at_position.direction == tunnel_end_direction then
+                            -- tunnel ended
+                            is_tunneling = false
+                            keep_searching = true
+                            table.insert(tunnel_positions, { position = probe_location, direction = construct_entity_at_position.direction })
+                        end
+                    end
+                else
+                    -- Could be reservation for pump?
+                    keep_searching = is_tunneling                    
+                end
+            end
+        else
+            keep_searching = is_tunneling
         end
 
-        if (is_pipe) then
-            table.insert(pipe_positions, probe_location)
-        end
-    until not is_pipe
+        iterations = iterations + 1
+    until (not keep_searching) or iterations > 99
+
+    if #tunnel_positions % 2 > 0 then
+        pump_log("From")
+        pump_log(start_joint_position)
+        pump_log("To")
+        pump_log(probe_location)
+        pump_log(tunnel_positions)
+
+        error("Unexpected uneven number of tunnel pieces")
+    end
 
     return {
         last_hit = construct_entity_at_position,
         last_hit_position = probe_location,
-        pipe_positions = pipe_positions
+        pipe_positions = pipe_positions,
+        tunnel_positions = tunnel_positions
     }
 end
 
@@ -173,7 +215,7 @@ local function convert_outputs_to_joints_when_flanked(construction_plan)
     end)
 end
 
-local try_replace_pipes_with_tunnels = function(construction_plan, pipe_positions, toolbox)
+local try_replace_pipes_with_tunnels = function(construction_plan, pipe_positions, tunnel_positions, toolbox)
     local tunnel_length_min = toolbox.connector.underground_distance_min + 2
     local tunnel_length_max = toolbox.connector.underground_distance_max + 1
 
@@ -181,24 +223,106 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
         tunnel_length_min = toolbox.pipe_bury_distance_preference
     end
 
-    while #pipe_positions >= tunnel_length_min do
-        local pipe_positions_this_batch = {}
-        local take_until = #pipe_positions - tunnel_length_max
-        if take_until < 1 then
-            take_until = 1
-        end
+    local tunnels = {}
+    local tunnel_start = nil
 
-        for i = #pipe_positions, take_until, -1 do
-            table.insert(pipe_positions_this_batch, pipe_positions[i])
-            pipe_positions[i] = nil
-        end
+    -- Merge existing tunnels
+    for i, pipe_tunnel in pairs(tunnel_positions) do
+        if tunnel_start ~= nil then
+            table.insert(tunnels, {down = tunnel_start, up = pipe_tunnel})
+            tunnel_start = nil
+        else 
+            tunnel_start = pipe_tunnel
+        end        
+    end
 
-        assistant.remove_pipes(construction_plan, pipe_positions_this_batch)
+    local previous_tunnel
+    for i, tunnel in pairs(tunnels) do             
+        if not previous_tunnel then
+            previous_tunnel = tunnel
+        else
+            if math2d.position.distance(previous_tunnel.down.position, tunnel.up.position) <= tunnel_length_max then
+                xy.remove(construction_plan, previous_tunnel.up.position)
+                xy.remove(construction_plan, tunnel.down.position)
+                previous_tunnel.up = tunnel.up
+                tunnels[i] = nil                
+            else
+                previous_tunnel = tunnel
+            end
+        end    
+    end
 
-        local first_pipe = pipe_positions_this_batch[1]
-        local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
+    -- Extend existing tunnels
+    local pipe_xy = {}
+    for _, position in pairs(pipe_positions) do
+        xy.set(pipe_xy, position, true)
+    end
 
-        assistant.add_pipe_tunnel(construction_plan, first_pipe, last_pipe, toolbox)
+    local move_tunnel_piece = function(pipe_position, tunnel_piece)
+        xy.remove(pipe_xy, pipe_position)  
+        local planned_tunnel_piece = xy.get(construction_plan, tunnel_piece.position)             
+        xy.set(construction_plan, pipe_position, planned_tunnel_piece)             
+        xy.remove(construction_plan, tunnel_piece.position)
+        tunnel_piece.position = pipe_position
+    end
+
+    for _, tunnel in pairs(tunnels) do        
+        local direction_before_down = tunnel.down.direction
+        local direction_after_up = tunnel.up.direction
+        local vector_before_down = plib.directions[direction_before_down].vector
+        local vector_after_up = plib.directions[direction_after_up].vector
+        local tunnel_length = math2d.position.distance(tunnel.down.position, tunnel.up.position)        
+
+        repeat
+            local took_pipe = false
+            local position_before_tunnel = plib.position.add(tunnel.down.position, vector_before_down)
+            local pipe_before_tunnel = xy.get(pipe_xy, position_before_tunnel)
+
+            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then                
+                took_pipe = true
+                tunnel_length = tunnel_length + 1  
+                move_tunnel_piece(position_before_tunnel, tunnel.down)              
+            end
+        until not took_pipe
+
+        repeat
+            local took_pipe = false
+            local position_after_tunnel = plib.position.add(tunnel.up.position, vector_after_up)
+            local pipe_before_tunnel = xy.get(pipe_xy, position_after_tunnel)
+
+            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then                
+                took_pipe = true
+                tunnel_length = tunnel_length + 1                
+                move_tunnel_piece(position_after_tunnel, tunnel.up)              
+            end
+        until not took_pipe
+    end
+
+    -- TODO:
+    -- Determine stretches of above-ground pipes that remaing after the tunneling was optimized
+    
+    -- If there's remaining pipe-pieces, turn those into tunnels, too
+    if #tunnel_positions == 0 then
+        -- Make tunnels
+        while #pipe_positions >= tunnel_length_min do
+            local pipe_positions_this_batch = {}
+            local take_until = #pipe_positions - tunnel_length_max
+            if take_until < 1 then
+                take_until = 1
+            end
+
+            for i = #pipe_positions, take_until, -1 do
+                table.insert(pipe_positions_this_batch, pipe_positions[i])
+                pipe_positions[i] = nil
+            end
+
+            assistant.remove_pipes(construction_plan, pipe_positions_this_batch)
+
+            local first_pipe = pipe_positions_this_batch[1]
+            local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
+
+            assistant.add_pipe_tunnel(construction_plan, first_pipe, last_pipe, toolbox)
+        end    
     end
 end
 
@@ -215,9 +339,9 @@ assistant.create_tunnels_between_joints = function(construction_plan, toolbox)
                 if result.last_hit.direction == direction or result.last_hit.direction == toolbox_direction.opposite then
                     table.insert(result.pipe_positions, result.last_hit_position)
                 end
-                try_replace_pipes_with_tunnels(construction_plan, result.pipe_positions, toolbox)
+                try_replace_pipes_with_tunnels(construction_plan, result.pipe_positions, result.tunnel_positions, toolbox)
             elseif result.last_hit.name == "pipe_joint" then
-                try_replace_pipes_with_tunnels(construction_plan, result.pipe_positions, toolbox)
+                try_replace_pipes_with_tunnels(construction_plan, result.pipe_positions, result.tunnel_positions, toolbox)
             end
         end
     end)

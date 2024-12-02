@@ -1,10 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.5
-Date: 2024-??-??
+Date: 2024-12-02
   Changes:
-    - Improved desicion-making for the new planner for where to put the branches
-    - Improved decision-making how extractors connect to branches
-    - Added A* fallback routine in case an extractor cannot neatly connect to a branch                      
+    - Improved desicion-making for the new planner for where to put the branches and how extractors connect to them.
+    - Added A* fallback routine to the new planner in case an extractor cannot neatly connect to a branch.
+    - Post-planning pipe bury routine can now bury more of a pipe that has an up-front-planned pipe in it.
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.4
 Date: 2024-11-26

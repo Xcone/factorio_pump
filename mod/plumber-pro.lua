@@ -773,8 +773,7 @@ local function prune_branch_ends(mod_context, start_position, prune_direction, m
     plib.line.trace(start_position, prune_direction, max_length, function(position)
         local planned = xy.get(plan, position)
         local planned_is_tunnel = planned ~= nil and planned.name == "pipe_tunnel"
-        if not planned_is_tunnel then
-
+        if not is_tunneling and not planned_is_tunnel then            
             if planned and (planned.name == "output" or planned.name == "pipe_joint") then
                 branch_has_connections = true
                 return true
@@ -796,7 +795,7 @@ local function prune_branch_ends(mod_context, start_position, prune_direction, m
             end
         end
 
-        if not is_tunneling or planned_is_tunnel then
+        if not is_tunneling or planned_is_tunnel then            
             xy.remove(plan, position)
         end
 
@@ -804,6 +803,10 @@ local function prune_branch_ends(mod_context, start_position, prune_direction, m
             is_tunneling = not is_tunneling
         end
     end)
+
+    if is_tunneling then
+        error("Trace ended while tunneling. Expected end of tunnel before the end of trace.")
+    end
 
     return branch_has_connections
 end
