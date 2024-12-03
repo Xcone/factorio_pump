@@ -154,7 +154,6 @@ function construct_entities(construction_plan, player, toolbox)
     local entity_ghosts = {}
 
     for entity_name, entities_to_place in pairs(planned_entities) do
-        local modules = toolbox.module_config[entity_name]
         for i, parameters in pairs(entities_to_place) do
             cover(player, parameters.cover_area, tile_name_when_cover_is_meltable)
 

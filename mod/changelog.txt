@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.7
+Date: 2024-12-03
+  Fixes:
+    - Fix error caused by partially cleaned up code. (the part that wasn't removed didnt like that another part was removed ... )
+---------------------------------------------------------------------------------------------------
 Version: 2.1.6
 Date: 2024-12-02
   Changes:
