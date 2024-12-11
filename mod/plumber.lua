@@ -465,7 +465,7 @@ end
 function plan_plumbing(mod_context)
     pump_log(mod_context.area_bounds)
     local base_segment = create_base_segment(mod_context)
-    segmentate(base_segment, "none")
+    segmentate(base_segment, "none")    
 
     if not verify_all_extractors_connected(base_segment) then
         return { "failure.obstructed-pipe" }

@@ -77,7 +77,10 @@ function process_selected_area_with_this_mod(event, force_ui)
     if is_ui_open(player) then return end
 
     -- Store required input in global, so it can resume after the ui is potentially shown.
-    storage.current_action = {failure = nil}
+    storage.current_action = {
+        failure = nil,
+        warnings = {}
+    }
     local current_action = storage.current_action
 
     current_action.player_index = event.player_index
@@ -124,11 +127,11 @@ function resume_process_selected_area_with_this_mod()
     dump_to_file(current_action, "planner_input")
 
     if not current_action.failure then
-        local setting = player.mod_settings["pump-use-plumber-pro"] 
+        local setting = player.mod_settings["pump-use-plumber-original"] 
         if setting and setting.value then
-            current_action.failure = plan_plumbing_pro(current_action)
-        else
             current_action.failure = plan_plumbing(current_action)
+        else
+            current_action.failure = plan_plumbing_pro(current_action)            
         end
     end
 
@@ -145,7 +148,11 @@ function resume_process_selected_area_with_this_mod()
                                      current_action.toolbox)
     end
 
-    if current_action.failure then player.print(current_action.failure) end
+    for _, warning in pairs(current_action.warnings) do        
+        local gps_tag = string.format("[gps=%d,%d,%s]", warning.position.x, warning.position.y, player.surface.name)
+        player.print({warning.message, gps_tag})
+    end
+    if current_action.failure then player.print(current_action.failure) end    
 end
 
 function add_resource_category(current_action, entities_in_selection)

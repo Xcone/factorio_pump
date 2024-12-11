@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.8
+Date: 2024-12-03
+  Features:
+    - New pipe-planner is now the default. See notes of 2.1.4 and 2.1.5 for more info how it's different then the original.
+    - Continue with partial pipe-plan if a resource couldn't be connectected (new planner only). Print a warning with coord to the player where the unplanned resource is. 
+    - Added setting to still use the original planner. Note: If you have problems with the new planner, or prefer the layout of the original planner, you can use the original planner for a while. The old planner will be removed at some point, though. So leave a message on the mod-portal so I can improve the new planner before the old one is removed.    
+---------------------------------------------------------------------------------------------------
 Version: 2.1.7
 Date: 2024-12-03
   Fixes:

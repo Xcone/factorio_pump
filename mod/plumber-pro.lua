@@ -955,7 +955,7 @@ function plan_plumbing_pro(mod_context)
         if pending_extractor.scored_plan then
             commit_extractor_plan(mod_context, extractors_lookup, pending_extractor)
         else
-            mod_context.failure = "Not all extractors are connected. "
+            assistant.add_warning(mod_context, pending_extractor.position, "warning.resource-not-planned")
         end
 
         pending_extractor = pending_extractors:pop()

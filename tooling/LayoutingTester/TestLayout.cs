@@ -180,6 +180,7 @@ namespace LayoutingTester
 
                 lua.NewTable("planner_input_stage");
                 var plannerInput = lua["planner_input_stage"] as LuaTable;
+                lua.DoString(@"planner_input_stage.warnings = {}");
                 PlannerInput.AddToTable(lua, plannerInput);
 
                 var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
@@ -220,6 +221,8 @@ namespace LayoutingTester
                 {
                     Print(electricianFailure);
                 }
+
+                Print( lua["planner_input_stage.warnings"] );
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 AddConstructEntities(constructEntities);

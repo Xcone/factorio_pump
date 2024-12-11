@@ -25,7 +25,7 @@ data:extend({
     },
     {
         type = "bool-setting",
-        name = "pump-use-plumber-pro",
+        name = "pump-use-plumber-original",
         setting_type = "runtime-per-user",
         default_value = false
     },

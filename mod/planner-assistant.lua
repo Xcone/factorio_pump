@@ -5,6 +5,13 @@ local xy = plib.xy
 
 local assistant = {}
 
+assistant.add_warning = function(mod_context, position, message)
+    table.insert(mod_context.warnings, {
+        position = position,
+        message = message
+    })
+end
+
 assistant.is_position_blocked = function(blocked_positions, position)
     return xy.get(blocked_positions, position)
 end
@@ -115,7 +122,7 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
 end
 
 assistant.take_series_of_pipes = function(construct_entities, start_joint_position, direction)
-    local probe_location = math2d.position.ensure_xy(start_joint_position)    
+    local probe_location = math2d.position.ensure_xy(start_joint_position)
     local pipe_positions = {}
     local tunnel_positions = {}
     local construct_entity_at_position = nil
@@ -129,32 +136,38 @@ assistant.take_series_of_pipes = function(construct_entities, start_joint_positi
 
     repeat
         probe_location = plib.position.add(probe_location, vector)
-        construct_entity_at_position = xy.get(construct_entities, probe_location)        
-        keep_searching = false        
-        if construct_entity_at_position then                    
+        construct_entity_at_position = xy.get(construct_entities, probe_location)
+        keep_searching = false
+        if construct_entity_at_position then
             if construct_entity_at_position.name == "pipe" then
                 table.insert(pipe_positions, probe_location)
                 keep_searching = true
-            else                
+            else
                 if construct_entity_at_position.name == "pipe_tunnel" then
                     if not is_tunneling then
                         if construct_entity_at_position.direction == tunnel_start_direction then
                             -- tunnel started
-                            is_tunneling = true                            
+                            is_tunneling = true
                             keep_searching = true
-                            table.insert(tunnel_positions, { position = probe_location, direction = construct_entity_at_position.direction } )
+                            table.insert(tunnel_positions, {
+                                position = probe_location,
+                                direction = construct_entity_at_position.direction
+                            })
                         end
-                    else                                                
+                    else
                         if construct_entity_at_position.direction == tunnel_end_direction then
                             -- tunnel ended
                             is_tunneling = false
                             keep_searching = true
-                            table.insert(tunnel_positions, { position = probe_location, direction = construct_entity_at_position.direction })
+                            table.insert(tunnel_positions, {
+                                position = probe_location,
+                                direction = construct_entity_at_position.direction
+                            })
                         end
                     end
                 else
                     -- Could be reservation for pump?
-                    keep_searching = is_tunneling                    
+                    keep_searching = is_tunneling
                 end
             end
         else
@@ -229,15 +242,18 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     -- Merge existing tunnels
     for i, pipe_tunnel in pairs(tunnel_positions) do
         if tunnel_start ~= nil then
-            table.insert(tunnels, {down = tunnel_start, up = pipe_tunnel})
+            table.insert(tunnels, {
+                down = tunnel_start,
+                up = pipe_tunnel
+            })
             tunnel_start = nil
-        else 
+        else
             tunnel_start = pipe_tunnel
-        end        
+        end
     end
 
     local previous_tunnel
-    for i, tunnel in pairs(tunnels) do             
+    for i, tunnel in pairs(tunnels) do
         if not previous_tunnel then
             previous_tunnel = tunnel
         else
@@ -245,11 +261,11 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
                 xy.remove(construction_plan, previous_tunnel.up.position)
                 xy.remove(construction_plan, tunnel.down.position)
                 previous_tunnel.up = tunnel.up
-                tunnels[i] = nil                
+                tunnels[i] = nil
             else
                 previous_tunnel = tunnel
             end
-        end    
+        end
     end
 
     -- Extend existing tunnels
@@ -259,29 +275,29 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     end
 
     local move_tunnel_piece = function(pipe_position, tunnel_piece)
-        xy.remove(pipe_xy, pipe_position)  
-        local planned_tunnel_piece = xy.get(construction_plan, tunnel_piece.position)             
-        xy.set(construction_plan, pipe_position, planned_tunnel_piece)             
+        xy.remove(pipe_xy, pipe_position)
+        local planned_tunnel_piece = xy.get(construction_plan, tunnel_piece.position)
+        xy.set(construction_plan, pipe_position, planned_tunnel_piece)
         xy.remove(construction_plan, tunnel_piece.position)
         tunnel_piece.position = pipe_position
     end
 
-    for _, tunnel in pairs(tunnels) do        
+    for _, tunnel in pairs(tunnels) do
         local direction_before_down = tunnel.down.direction
         local direction_after_up = tunnel.up.direction
         local vector_before_down = plib.directions[direction_before_down].vector
         local vector_after_up = plib.directions[direction_after_up].vector
-        local tunnel_length = math2d.position.distance(tunnel.down.position, tunnel.up.position)        
+        local tunnel_length = math2d.position.distance(tunnel.down.position, tunnel.up.position)
 
         repeat
             local took_pipe = false
             local position_before_tunnel = plib.position.add(tunnel.down.position, vector_before_down)
             local pipe_before_tunnel = xy.get(pipe_xy, position_before_tunnel)
 
-            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then                
+            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then
                 took_pipe = true
-                tunnel_length = tunnel_length + 1  
-                move_tunnel_piece(position_before_tunnel, tunnel.down)              
+                tunnel_length = tunnel_length + 1
+                move_tunnel_piece(position_before_tunnel, tunnel.down)
             end
         until not took_pipe
 
@@ -290,17 +306,17 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
             local position_after_tunnel = plib.position.add(tunnel.up.position, vector_after_up)
             local pipe_before_tunnel = xy.get(pipe_xy, position_after_tunnel)
 
-            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then                
+            if pipe_before_tunnel ~= nil and tunnel_length < tunnel_length_max then
                 took_pipe = true
-                tunnel_length = tunnel_length + 1                
-                move_tunnel_piece(position_after_tunnel, tunnel.up)              
+                tunnel_length = tunnel_length + 1
+                move_tunnel_piece(position_after_tunnel, tunnel.up)
             end
         until not took_pipe
     end
 
     -- TODO:
     -- Determine stretches of above-ground pipes that remaing after the tunneling was optimized
-    
+
     -- If there's remaining pipe-pieces, turn those into tunnels, too
     if #tunnel_positions == 0 then
         -- Make tunnels
@@ -322,7 +338,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
             local last_pipe = pipe_positions_this_batch[#pipe_positions_this_batch]
 
             assistant.add_pipe_tunnel(construction_plan, first_pipe, last_pipe, toolbox)
-        end    
+        end
     end
 end
 
