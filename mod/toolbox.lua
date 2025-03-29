@@ -780,7 +780,7 @@ function handle_pipe_bury_preference_change(dropdown_gui_element, player)
 end
 
 function is_ui_open(player)
-    if player.gui.screen.pump_tool_picker_frame then
+    if player.opened ~= nil and player.gui.screen.pump_tool_picker_frame == player.opened then
         return true
     else
         return false

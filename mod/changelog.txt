@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.9
+Date: 2025-03-29
+  Fixes:
+    - Fix pressing the key 'Confirm window' (bound to 'E' by default) wouldn't continue the planning operation.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.8
 Date: 2024-12-03
   Features:

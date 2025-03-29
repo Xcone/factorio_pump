@@ -70,6 +70,24 @@ script.on_event("pump-selection-tool-toggle", function(event)
 end
 )
 
+script.on_event("pump-selection-tool-confirm", function(event)
+    local player = game.players[event.player_index]
+
+    if is_ui_open(player) then
+        close_tool_picker_ui(player, false)
+        resume_process_selected_area_with_this_mod()
+    end
+end)
+
+-- Override `Escape` on the settings page
+script.on_event("pump-selection-tool-cancel", function(event)
+    local player = game.players[event.player_index]
+    
+    if is_ui_open(player) then
+        close_tool_picker_ui(player, false)
+    end
+end)
+
 function process_selected_area_with_this_mod(event, force_ui)
     local player = game.get_player(event.player_index)
 

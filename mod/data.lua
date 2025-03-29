@@ -33,4 +33,16 @@ data:extend{
         name = "pump-selection-tool-toggle",
         key_sequence = "CONTROL + SHIFT + P",
     },
+    {
+        type = "custom-input",
+        name = "pump-selection-tool-confirm",
+        key_sequence = "",
+        linked_game_control = "confirm-gui"
+    },
+    {
+        type = "custom-input",
+        name = "pump-selection-tool-cancel",
+        key_sequence = "",
+        linked_game_control = "toggle-menu"
+    }
 }
