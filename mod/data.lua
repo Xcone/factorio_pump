@@ -10,7 +10,11 @@ pumpSelectionTool.order = "c[automated-construction]-d[pump-selection-tool]"
 pumpSelectionTool.select.cursor_box_type = "entity"
 pumpSelectionTool.select.mode = "any-entity"
 pumpSelectionTool.select.entity_filter_mode = "whitelist"
-pumpSelectionTool.select.entity_filter = {"crude-oil"}
+pumpSelectionTool.select.entity_filters = {"crude-oil"}
+-- Tile ghosts are entities, and but bypass the entity-filter because they represent tiles.
+-- Set tile filter to a tile that should never appear in game. This makes sure tile-ghosts are excluded from selection.
+pumpSelectionTool.select.tile_filter_mode = "whitelist"
+pumpSelectionTool.select.tile_filters = {"water-wube"}
 
 -- no different ALT-behavior. Just copy it from the regular behavior
 pumpSelectionTool.alt_select = pumpSelectionTool.select
