@@ -16,6 +16,12 @@ assistant.is_position_blocked = function(blocked_positions, position)
     return xy.get(blocked_positions, position)
 end
 
+assistant.is_area_blocked = function(blocked_positions, bounding_box)
+    return plib.bounding_box.any_grid_position(bounding_box, function(position) 
+        return xy.get(blocked_positions, position)
+    end)
+end
+
 assistant.find_in_construction_plan = function(construction_plan, search_for_name)
     return xy.where(construction_plan, function(candidate)
         return candidate.name == search_for_name
@@ -365,6 +371,13 @@ end
 
 assistant.surface_has_meltable_tiles = function(player)
     return player.surface.planet and player.surface.planet.prototype.entities_require_heating
+end
+
+assistant.add_beacon = function(construct_entities, position)
+    xy.set(construct_entities, position, {
+        name = "beacon",
+        direction = defines.direction.north
+    })
 end
 
 return assistant

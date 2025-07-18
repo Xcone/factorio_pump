@@ -15,6 +15,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local pipes = {}
     local pipe_tunnels = {}
     local power_poles = {}
+    local beacons = {}
 
     plib.xy.each(construction_plan, function(planned_entity, position)
 
@@ -42,8 +43,7 @@ local function get_planned_entities(construction_plan, toolbox)
                         y = position.y + extractor_bounds.right_bottom.y + 1
                     }
                 }                
-            placement.cover_area = plib.bounding_box.copy(extractor_bounds)
-            plib.bounding_box.offset(placement.cover_area, position)
+            placement.cover_area = plib.bounding_box.offset(extractor_bounds, position)
             placement.quality_name = toolbox.extractor.quality_name
             table.insert(extractors, placement)
         end
@@ -77,6 +77,12 @@ local function get_planned_entities(construction_plan, toolbox)
             
             table.insert(power_poles, placement)
         end
+
+        if planned_entity_name == "beacon" then
+            placement.quality_name = toolbox.beacon.quality_name
+            placement.cover_area = plib.bounding_box.create(position, {x = position.x + 2, y = position.y + 2})
+            table.insert(beacons, placement)
+        end
         
     end)
 
@@ -84,6 +90,7 @@ local function get_planned_entities(construction_plan, toolbox)
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
         [toolbox.connector.underground_entity_name] = pipe_tunnels,
+        ["beacon"] = beacons,
     }
 
     if toolbox.power_pole ~= nil then

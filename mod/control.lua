@@ -3,6 +3,7 @@ require "prospector"
 require "plumber-pro"
 require "electrician"
 require 'constructor'
+local beaconer = require "beaconer"
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
@@ -147,6 +148,10 @@ function resume_process_selected_area_with_this_mod()
         current_action.failure = plan_plumbing_pro(current_action)
     end
 
+    if not current_action.failure and current_action.toolbox.beacon then
+        beaconer.plan_beacons(current_action)
+    end
+
     if not current_action.failure and current_action.toolbox.power_pole ~= nil then
         -- current_action.failure may be set directly by plan_power
         plan_power(current_action)
@@ -187,6 +192,12 @@ function add_resource_category(current_action, entities_in_selection)
 end
 
 function trim_selected_area(current_action, entities)
+    local function get_increment_from_bounds(bounds)
+        if not bounds then return 1 end
+        local width = bounds.right_bottom.x - bounds.left_top.x + 1
+        local height = bounds.right_bottom.y - bounds.left_top.y + 1
+        return math.max(width, height)
+    end
     local uninitialized = true
     local area = current_action.area_bounds
 
@@ -210,14 +221,18 @@ function trim_selected_area(current_action, entities)
         uninitialized = false
     end
 
-    local extractor_bounds = current_action.toolbox.extractor.relative_bounds;
+    local extractor_bounds = current_action.toolbox.extractor.relative_bounds
+    local power_pole_bounds = current_action.toolbox.power_pole and current_action.toolbox.power_pole.relative_bounds or nil
+    local beacon_bounds = current_action.toolbox.beacon and current_action.toolbox.beacon.relative_bounds or nil
+    local area_increment = math.max(        
+        get_increment_from_bounds(power_pole_bounds),
+        get_increment_from_bounds(beacon_bounds)
+    )
 
-    area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - 2
-    area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - 2
-    area.right_bottom.x =
-        (area.right_bottom.x + extractor_bounds.right_bottom.x) + 2
-    area.right_bottom.y =
-        (area.right_bottom.y + extractor_bounds.right_bottom.y) + 2
+    area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - area_increment
+    area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - area_increment
+    area.right_bottom.x = (area.right_bottom.x + extractor_bounds.right_bottom.x) + area_increment
+    area.right_bottom.y = (area.right_bottom.y + extractor_bounds.right_bottom.y) + area_increment
 end
 
 function dump_to_file(table_to_write, description)

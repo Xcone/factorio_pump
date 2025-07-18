@@ -2,6 +2,7 @@ require 'util'
 local math2d = require 'math2d'
 local plib = require 'plib'
 local xy = plib.xy
+local assistant = require 'planner-assistant'
 
 -- Heuristics
 local score_adjacent_extractor = 0.45
@@ -21,10 +22,9 @@ local function calculate_initial_search_radius(mod_context)
     )
 end
 
-local function get_consumer_bounds(consumer_position)
-    local bounds = plib.bounding_box.create(consumer_position, consumer_position) --1x1
-    plib.bounding_box.grow(bounds, 1) --3x3
-    return bounds
+local function get_consumer_bounds(consumer_position, relative_bounds)
+    -- Calculate the bounding box for the entity using its relative bounds
+    return plib.bounding_box.offset(relative_bounds, consumer_position)
 end
 
 local function get_power_pole_bounds(mod_context, power_pole_position)
@@ -116,18 +116,11 @@ end
 
 local function can_build_pole(mod_context, pole_position)
     if mod_context.toolbox.power_pole.size <= 1 then
-        return xy.get(mod_context.area, pole_position) == "can-build"
+        return not assistant.is_position_blocked(mod_context.blocked_positions, pole_position)
     end
 
-    local result = true
-
-    box = get_power_pole_bounds(mod_context, pole_position)
-    plib.bounding_box.each_grid_position(box, function(position)
-        if xy.get(mod_context.area, position) ~= "can-build" then
-            result = false
-        end
-    end)
-    return result
+    local box = get_power_pole_bounds(mod_context, pole_position)
+    return not assistant.is_area_blocked(mod_context.blocked_positions, box)
 end
 
 local function find_pole_position_nearby(mod_context, position, planned_poles, unplanned_consumer_positions)
@@ -167,6 +160,16 @@ end
 
 local function commit_pole(mod_context, pole_position, planned_poles, unplanned_consumer_positions)
     xy.set(planned_poles, pole_position, {placement_order=pole_count})
+    -- Block the full area covered by the power pole
+    local size = mod_context.toolbox.power_pole.size
+    local area_box = plib.bounding_box.create(pole_position, pole_position)
+    if size > 1 then
+        area_box.right_bottom.x = area_box.right_bottom.x + (size - 1)
+        area_box.right_bottom.y = area_box.right_bottom.y + (size - 1)
+    end
+    plib.bounding_box.each_grid_position(area_box, function(pos)
+        xy.set(mod_context.blocked_positions, pos, true)
+    end)
 
     local consumers_in_range = get_consumers_in_supply_area(mod_context, pole_position, unplanned_consumer_positions)
     for _, consumer_position in pairs(consumers_in_range) do
@@ -231,19 +234,23 @@ function plan_power(mod_context)
     local consumer_positions = {}
     
     xy.each(mod_context.construction_plan, function(planned_entity, position)
-        xy.set(mod_context.area, position, "construct-pipe")
-
-        if (planned_entity.name == "extractor") then
-            local pole_in_range_bounds = get_consumer_bounds(position)
-
+        local relative_bounds = nil
+        if planned_entity.name == "extractor" then
+            relative_bounds = mod_context.toolbox.extractor.relative_bounds
+        elseif planned_entity.name == "beacon" then
+            relative_bounds = mod_context.toolbox.beacon.relative_bounds
+        end
+        if relative_bounds then
+            local bounds = get_consumer_bounds(position, relative_bounds)
+            local pole_in_range_bounds = plib.bounding_box.copy(bounds)
             plib.bounding_box.grow(pole_in_range_bounds, mod_context.toolbox.power_pole.supply_range)
+            plib.bounding_box.clamp(pole_in_range_bounds, mod_context.area_bounds)
             if mod_context.toolbox.power_pole.size > 1 then
                 pole_in_range_bounds.left_top.x = pole_in_range_bounds.left_top.x - 1
                 pole_in_range_bounds.left_top.y = pole_in_range_bounds.left_top.y - 1
             end
-
             xy.set(consumer_positions, position, {
-                bounds = get_consumer_bounds(position),
+                bounds = bounds,
                 pole_in_range_bounds = pole_in_range_bounds
             })
         end

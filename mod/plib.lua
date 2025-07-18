@@ -212,12 +212,20 @@ plib.bounding_box = {
     translate = function(bounds, direction, amount)
         local offset = plib.directions[direction].vector
         offset = math2d.position.multiply_scalar(offset, amount)
-        plib.bounding_box.offset(bounds, offset)
+        plib.bounding_box.translate_xy(bounds, offset)
     end,
 
-    offset = function(bounds, offset)
+    -- offsets the provided box in place.
+    translate_xy = function(bounds, offset)
         bounds.left_top = math2d.position.add(bounds.left_top, offset)
         bounds.right_bottom = math2d.position.add(bounds.right_bottom, offset)
+    end,
+
+    -- Returns a a copy of the box, that's moved by the offset.
+    offset = function(bounds, offset)
+        local box = plib.bounding_box.copy(bounds);
+        plib.bounding_box.translate_xy(box, offset);
+        return box;
     end,
 
     copy = function(bounds)
@@ -356,6 +364,18 @@ plib.bounding_box = {
         bounds.right_bottom.y = math.min(bounds.right_bottom.y, other_bounds.right_bottom.y)
     end
 }
+
+plib.bounding_box.any_grid_position = function(bounds, predicate)
+    for x = bounds.left_top.x, bounds.right_bottom.x do
+        for y = bounds.left_top.y, bounds.right_bottom.y do
+            local position = {x = x, y = y}
+            if predicate(position) then
+                return true
+            end
+        end
+    end
+    return false
+end
 
 plib.xy = {
     first = function(xy_table, action)

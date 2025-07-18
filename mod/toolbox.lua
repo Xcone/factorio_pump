@@ -55,6 +55,11 @@ function add_development_toolbox(target)
         size = 2
     }
 
+    toolbox.beacon = {
+        effect_radius = 4,
+        relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} }
+    }
+
     -- toolbox.power_pole = small_pole
     -- toolbox.power_pole = medium_pole
     -- toolbox.power_pole = big_pole
@@ -238,6 +243,26 @@ local function add_meltable_tile_covers(meltable_tile_covers)
     end
 end
 
+local function add_available_beacons(available_beacons, player, quality_name)
+    local all_beacons = prototypes.get_entity_filtered({{filter = "type", type = "beacon"}})
+    for _, beacon in pairs(all_beacons) do
+        if meets_tech_requirement(beacon, player) then
+            local collision_box = math2d.bounding_box.ensure_xy(beacon.collision_box)
+            local relative_bounds = {
+                left_top = {x = math.ceil(collision_box.left_top.x), y = math.ceil(collision_box.left_top.y)},
+                right_bottom = {x = math.floor(collision_box.right_bottom.x), y = math.floor(collision_box.right_bottom.y)}
+            }
+
+            available_beacons[beacon.name] = {
+                entity_name = beacon.name,
+                effect_radius = beacon.get_supply_area_distance and beacon.get_supply_area_distance(quality_name),
+                relative_bounds = relative_bounds
+            }
+        end
+    end
+    -- No failure if no beacons are available; beacons are optional
+end
+
 local function get_extractor_pick_for_resource(resource_category)
     if not storage.toolpicker_config.extractor_pick then
         storage.toolpicker_config.extractor_pick = {}
@@ -273,6 +298,13 @@ local function get_meltable_tile_cover_pick()
     end
 
     return storage.toolpicker_config.meltable_tile_cover_pick
+end
+
+local function get_beacon_pick()
+    if not storage.toolpicker_config.beacon_pick then
+        storage.toolpicker_config.beacon_pick = {selected = nil, available = {}, quality_name = nil}
+    end
+    return storage.toolpicker_config.beacon_pick
 end
 
 local function get_pipe_bury_option()
@@ -483,6 +515,20 @@ local function create_toolbox_meltable_tile_cover_options(player)
     )
 end
 
+local function create_toolbox_beacon_options(player)
+    local toolbox_entries = {}
+    local pick = get_beacon_pick()
+    local failure = add_available_beacons(toolbox_entries, player, pick.quality_name)
+    return create_toolbox_options(
+        "beacon",
+        "entity",
+        pick,
+        toolbox_entries,
+        true,
+        failure
+    )
+end
+
 local function create_all_toolbox_options(player, resource_category)
     local all_toolbox_options = {}    
     if not storage.toolpicker_config then storage.toolpicker_config = {} end
@@ -490,6 +536,7 @@ local function create_all_toolbox_options(player, resource_category)
     table.insert(all_toolbox_options, create_toolbox_extractor_options(player, resource_category))
     table.insert(all_toolbox_options, create_toolbox_pipe_options(player))
     table.insert(all_toolbox_options, create_toolbox_power_pole_options(player))
+    table.insert(all_toolbox_options, create_toolbox_beacon_options(player))
 
     if assistant.surface_has_meltable_tiles(player) then
         table.insert(all_toolbox_options, create_toolbox_meltable_tile_cover_options(player))
@@ -610,8 +657,12 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         end
 
         for _, options in pairs(all_toolbox_options) do
-            if options.type == "entity" then                
-                create_flow(options)
+            if options.type == "entity" then
+                if #options.pick.available == 0 then
+                    -- Skip adding flow if no options are available
+                else
+                    create_flow(options)
+                end
             end
         end        
 

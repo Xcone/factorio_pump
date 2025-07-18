@@ -41,13 +41,9 @@ local function create_extractors_lookup(mod_context)
     local extractors = assistant.find_oilwells(mod_context)
     local extractors_xy = {}
     for _, extractor in pairs(extractors) do
-        local extractor_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)
-        plib.bounding_box.offset(extractor_bounds, extractor.position)
-        local can_build_extractor = true
-        plib.bounding_box.each_grid_position(extractor_bounds, function(position)
-            if xy.get(mod_context.area, position) == "can-not-build" then
-                can_build_extractor = false
-            end
+        local extractor_bounds = plib.bounding_box.offset(mod_context.toolbox.extractor.relative_bounds, extractor.position)
+        local can_build_extractor = not plib.bounding_box.any_grid_position(extractor_bounds, function(position)
+            return xy.get(mod_context.area, position) == "can-not-build"
         end)
 
         if can_build_extractor then
@@ -538,8 +534,7 @@ local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_loo
     end
 
     -- First search area is the edge around the extractor
-    local search_bounds = table.deepcopy(mod_context.toolbox.extractor.relative_bounds)
-    plib.bounding_box.offset(search_bounds, extractor.position)
+    local search_bounds = plib.bounding_box.offset(mod_context.toolbox.extractor.relative_bounds, extractor.position)
     plib.bounding_box.grow(search_bounds, max_distance_from_extractor * 2)
     plib.bounding_box.clamp(search_bounds, mod_context.area_bounds)
 
@@ -845,21 +840,19 @@ local function bury_pipes(mod_context)
             end
         end
     end)
+    
+    -- Pipes are now buried, so we can mark all positions as blocked
+    xy.each(mod_context.construction_plan, function(_, position)
+        xy.set(mod_context.blocked_positions, position, true)
+    end)
 end
 
 function plan_plumbing_pro(mod_context)
     mod_context.construction_plan = {}
-    mod_context.blocked_positions = {}
 
     -- Settings, maybe? For now just debug purpose.
     local use_trunk = true
     local use_branches = true
-
-    xy.each(mod_context.area, function(reservation, pos)
-        if reservation ~= "can-build" then
-            xy.set(mod_context.blocked_positions, pos, true)
-        end
-    end)
 
     local extractors_lookup = create_extractors_lookup(mod_context)
 
@@ -964,4 +957,5 @@ function plan_plumbing_pro(mod_context)
 
     bury_pipes(mod_context)
     pump_lap("buried pipes")
+
 end

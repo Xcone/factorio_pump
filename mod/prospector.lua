@@ -1,15 +1,16 @@
+local plib = require 'plib'
+local xy = plib.xy
+
 function add_area_information(current_action, entities, surface, player)
     current_action.area = {}
+    current_action.blocked_positions = {}
 
     local area_bounds = current_action.area_bounds
 
     -- fill the map with default data 
-    for x = area_bounds.left_top.x, area_bounds.right_bottom.x, 1 do
-        current_action.area[x] = {}
-        for y = area_bounds.left_top.y, area_bounds.right_bottom.y, 1 do
-            current_action.area[x][y] = "undefined"
-        end
-    end
+    plib.bounding_box.each_grid_position(area_bounds, function(position)
+        xy.set(current_action.area, position, "undefined")
+    end)
 
     -- mark where the pumps will be
     for i, entity in pairs(entities) do
@@ -17,35 +18,28 @@ function add_area_information(current_action, entities, surface, player)
         if can_place_extractor(surface, entity.position, direction,
                                current_action.toolbox, player) then
 
-            local relative_bounds = current_action.toolbox.extractor
-                                        .relative_bounds
+            local extractor_bounds = plib.bounding_box.offset(current_action.toolbox.extractor.relative_bounds, entity.position)
 
-            for x = relative_bounds.left_top.x, relative_bounds.right_bottom.x do
-                for y = relative_bounds.left_top.y, relative_bounds.right_bottom
-                    .y do
-
-                    current_action.area[entity.position.x + x][entity.position.y +
-                        y] = "reserved-for-pump"
-                end
-            end
-            current_action.area[entity.position.x][entity.position.y] =
-                "oil-well"
+            plib.bounding_box.each_grid_position(extractor_bounds, function(position)
+                xy.set(current_action.area, position, "reserved-for-pump")
+                xy.set(current_action.blocked_positions, position, true)
+            end)
+            xy.set(current_action.area, entity.position, "oil-well")
         else
             return {"failure.obstructed-resource"}
         end
     end
 
-    for x, reservations in pairs(current_action.area) do
-        for y, reservation in pairs(reservations) do
-            if reservation == "undefined" then
-                if can_place_pipe(surface, {x = x, y = y}, player) then
-                    current_action.area[x][y] = "can-build"
-                else
-                    current_action.area[x][y] = "can-not-build"
-                end
+    xy.each(current_action.area, function(reservation, position)
+        if reservation == "undefined" then
+            if can_place_pipe(surface, position, player) then
+                xy.set(current_action.area, position, "can-build")
+            else
+                xy.set(current_action.area, position, "can-not-build")
+                xy.set(current_action.blocked_positions, position, true)
             end
         end
-    end
+    end)
 end
 
 function pipes_present_in_area(surface, area)
