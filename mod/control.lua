@@ -4,6 +4,7 @@ require "plumber"
 require "plumber-pro"
 require "electrician"
 require 'constructor'
+local beaconer = require "beaconer"
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
     if event.item == 'pump-selection-tool' then
@@ -151,6 +152,11 @@ function resume_process_selected_area_with_this_mod()
         else
             current_action.failure = plan_plumbing_pro(current_action)            
         end
+    end
+
+    -- Beacon planning: after pumps/pipes, before power
+    if not current_action.failure then
+        beaconer.plan_beacons(current_action, { beacons_per_pump = 1 })
     end
 
     if not current_action.failure and current_action.toolbox.power_pole ~= nil then
