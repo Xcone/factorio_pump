@@ -1,6 +1,5 @@
 require "toolbox"
 require "prospector"
-require "plumber"
 require "plumber-pro"
 require "electrician"
 require 'constructor'
@@ -145,12 +144,7 @@ function resume_process_selected_area_with_this_mod()
     dump_to_file(current_action, "planner_input")
 
     if not current_action.failure then
-        local setting = player.mod_settings["pump-use-plumber-original"] 
-        if setting and setting.value then
-            current_action.failure = plan_plumbing(current_action)
-        else
-            current_action.failure = plan_plumbing_pro(current_action)            
-        end
+        current_action.failure = plan_plumbing_pro(current_action)
     end
 
     if not current_action.failure and current_action.toolbox.power_pole ~= nil then
