@@ -55,6 +55,11 @@ script.on_event(defines.events.on_gui_closed, function(event)
     end
 end)
 
+script.on_event(defines.events.on_gui_elem_changed, function(event)
+    local player = game.players[event.player_index]
+    handle_gui_elem_changed(event.element, player)
+end)
+
 script.on_event("pump-selection-tool-toggle", function(event)
     local player = game.players[event.player_index]
 

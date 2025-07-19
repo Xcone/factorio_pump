@@ -50,7 +50,7 @@ function add_development_toolbox(target)
 
     local substation = {
         entity_name = "not-used-by-visualizer",
-        supply_range = 8, -- 9 from the center; but P.U.M.P. calculates from the edge
+        supply_range = 8, -- 9 from the center; but P.U.M.P.P. calculates from the edge
         wire_range = 18,
         size = 2
     }
@@ -259,8 +259,37 @@ local function add_available_beacons(available_beacons, player, quality_name)
                 relative_bounds = relative_bounds
             }
         end
+    end    
+end
+
+local function get_allowed_modules(prototype)
+    local allowed = {}
+
+    if not prototype.module_inventory_size or prototype.module_inventory_size == 0 then
+        return allowed
     end
-    -- No failure if no beacons are available; beacons are optional
+    for _, module in pairs(prototypes.get_item_filtered({{filter = "type", type = "module"}})) do
+        local module_allowed = true
+        -- Check allowed module categories
+        if prototype.allowed_module_categories and not prototype.allowed_module_categories[module.category] then
+            module_allowed = false
+        end
+        -- Check allowed effects
+        if module.module_effects then
+            for effect_name, effect_value in pairs(module.module_effects) do
+                if effect_value > 0 then
+                    if prototype.allowed_effects and not prototype.allowed_effects[effect_name] then
+                        module_allowed = false
+                        break
+                    end
+                end
+            end
+        end
+        if module_allowed then
+            allowed[module.name] = {item_name = module.name}
+        end
+    end
+    return allowed
 end
 
 local function get_extractor_pick_for_resource(resource_category)
@@ -315,6 +344,16 @@ local function get_pipe_bury_option()
     return storage.toolpicker_config.pipe_bury_option
 end
 
+local function get_module_pick(entity_name)
+    if not storage.toolpicker_config.module_pick then
+        storage.toolpicker_config.module_pick = {}
+    end
+    if not storage.toolpicker_config.module_pick[entity_name] then
+        storage.toolpicker_config.module_pick[entity_name] = {selected = nil, available = {}}
+    end
+    return storage.toolpicker_config.module_pick[entity_name]
+end
+
 local function convert_pipe_bury_option_to_distance(option)
     if option == 1 then
         return 2
@@ -358,71 +397,6 @@ local function get_quality_index(quality_name)
     return 0;
 end
 
-local function add_pick_options_to_flow(flow, toolbox_options)
-    flow.clear()    
-
-    local qualities = get_visible_qualities()
-    if #qualities > 1 then
-        local quality_index = 1;
-        local quality_texts = {}
-
-        for index, quality in pairs(qualities) do               
-            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
-            if toolbox_options.pick.quality_name == quality.name then
-                quality_index = index
-            end
-        end
-
-        local dropdown = flow.add {            
-            type = "drop-down",
-            name = toolbox_options.quality_dropdown_name,
-            items = quality_texts,
-            selected_index = quality_index,
-            style = "circuit_condition_comparator_dropdown"
-        }
-
-        dropdown.style.margin = {1, 4};
-        dropdown.style.height = 38;
-        dropdown.style.width = 58;
-    end
-
-    for _, pick_name in pairs(toolbox_options.pick.available) do
-        local style = "slot_sized_button"
-
-        if pick_name == toolbox_options.pick.selected then
-            style = "slot_sized_button_pressed"
-        end 
-
-        local button = flow.add {
-            type = "choose-elem-button",
-            name = toolbox_options.button_prefix .. pick_name,
-            elem_type = toolbox_options.type,
-            elem_filters = {{filter = "name", name = {pick_name}}},            
-            style = style,
-            [toolbox_options.type] = pick_name,
-        }
-        button.locked = true 
-    end
-
-    if toolbox_options.optional then
-        local style = "slot_sized_button"
-
-        pick_name = "none"
-
-        if toolbox_options.pick.selected == "none" then
-            style = "slot_sized_button_pressed"
-        end
-
-        flow.add {            
-            type = "sprite-button",
-            name = toolbox_options.button_prefix .. pick_name,            
-            style = style,
-            sprite = "utility/hand_black",
-            tooltip = {"pump-toolpicker.exclude-option-tooltip"}
-        }
-    end
-end
-
 local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure)
     if failure then
         return {failure = failure}
@@ -431,6 +405,15 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
     local names = {}
     for name, _ in pairs(toolbox_entries) do
         table.insert(names, name)
+    end
+
+    local modules_pick = nil
+    -- Debug: If this is an entity and a selection is made, print allowed modules for it
+    if type == "entity" and pick.selected and pick.selected ~= "none" then
+        local module_toolbox_entries = {}
+
+        modules_pick = get_module_pick(pick.selected)        
+        modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected])
     end
 
     return {
@@ -453,7 +436,9 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
         -- Available names, can be used as keys for toolbox_entries
         names = names,
         -- Add option to the dialog to not pick anything
-        optional = optional
+        optional = optional,
+        -- If this option allows for modules, this will be a table of module names
+        modules_pick = modules_pick
     }
 end
 
@@ -538,6 +523,8 @@ local function create_all_toolbox_options(player, resource_category)
     table.insert(all_toolbox_options, create_toolbox_power_pole_options(player))
     table.insert(all_toolbox_options, create_toolbox_beacon_options(player))
 
+    dump_to_file(all_toolbox_options, "all_toolbox_options")
+
     if assistant.surface_has_meltable_tiles(player) then
         table.insert(all_toolbox_options, create_toolbox_meltable_tile_cover_options(player))
     end
@@ -570,6 +557,212 @@ local function update_toolbox_after_changed_options(current_action, player, tool
     end   
 
     current_action.toolbox.pipe_bury_distance_preference = convert_pipe_bury_option_to_distance(get_pipe_bury_option())
+end
+
+local function add_pick_options_to_flow(flow, toolbox_options)
+    flow.clear()    
+
+    local qualities = get_visible_qualities()
+    if #qualities > 1 then
+        local quality_index = 1;
+        local quality_texts = {}
+
+        for index, quality in pairs(qualities) do               
+            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
+            if toolbox_options.pick.quality_name == quality.name then
+                quality_index = index
+            end
+        end
+
+        local dropdown = flow.add {            
+            type = "drop-down",
+            name = toolbox_options.quality_dropdown_name,
+            items = quality_texts,
+            selected_index = quality_index,
+            style = "circuit_condition_comparator_dropdown"
+        }
+
+        dropdown.style.margin = {1, 4};
+        dropdown.style.height = 38;
+        dropdown.style.width = 58;
+    end
+
+    for _, pick_name in pairs(toolbox_options.names) do
+        local style = "slot_sized_button"
+
+        if pick_name == toolbox_options.pick.selected then
+            style = "slot_sized_button_pressed"
+        end 
+
+        local button = flow.add {
+            type = "choose-elem-button",
+            name = toolbox_options.button_prefix .. pick_name,
+            elem_type = toolbox_options.type,
+            elem_filters = {{filter = "name", name = {pick_name}}},            
+            style = style,
+            [toolbox_options.type] = pick_name,
+        }
+        button.locked = true 
+    end
+
+    if toolbox_options.optional then
+        local style = "slot_sized_button"
+
+        pick_name = "none"
+
+        if toolbox_options.pick.selected == "none" then
+            style = "slot_sized_button_pressed"
+        end
+
+        flow.add {            
+            type = "sprite-button",
+            name = toolbox_options.button_prefix .. pick_name,            
+            style = style,
+            sprite = "utility/hand_black",
+            tooltip = {"pump-toolpicker.exclude-option-tooltip"}
+        }
+    end
+
+    
+end
+
+local function add_module_options_to_flow(flow, toolbox_options)
+    flow.clear()    
+    local qualities = get_visible_qualities()
+
+    if toolbox_options.modules_pick and next(toolbox_options.modules_pick.available) then
+        local module_names = {}
+        for name, _ in pairs(toolbox_options.modules_pick.available) do
+            table.insert(module_names, name)
+        end
+
+        local quality_index = 1;
+        local quality_texts = {}
+
+        for index, quality in pairs(qualities) do               
+            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
+            if toolbox_options.modules_pick.quality_name == quality.name then
+                quality_index = index
+            end
+        end
+
+        local dropdown = flow.add {            
+            type = "drop-down",
+            name = toolbox_options.quality_dropdown_name .. "module_pick",
+            items = quality_texts,
+            selected_index = quality_index,
+            style = "circuit_condition_comparator_dropdown"
+        }
+
+        dropdown.style.margin = {1, 4};
+        dropdown.style.height = 38;
+        dropdown.style.width = 58;
+
+        local module_elem = flow.add {
+            type = "choose-elem-button",
+            name = toolbox_options.button_prefix .. "module_pick",
+            elem_type = "item",
+            elem_filters = {{filter = "name", name = module_names}},
+            style = "slot_sized_button",
+        }
+        if toolbox_options.modules_pick.selected then
+            module_elem.elem_value = toolbox_options.modules_pick.selected
+        end
+    else
+        -- Reserve space to keep the options between frames aligned
+        local spacer = flow.add {
+            type = "empty-widget",
+            style = "draggable_space",
+            ignored_by_interaction = true,
+        }
+        spacer.style.height = 38
+        spacer.style.vertically_stretchable = true
+    end
+end
+
+local function add_ui_content(options_holder, all_toolbox_options, player)
+    dump_to_file(all_toolbox_options, "all_toolbox_options_on_render")
+
+    -- Create a horizontal flow to hold both frames
+    local main_flow = options_holder.add {
+        type = "flow",
+        name = "main_horizontal_flow",
+        direction = "horizontal"
+    }
+
+    local left_frame = main_flow.add {
+        type = "frame",
+        name = "all_entity_options",
+        direction = "vertical",
+        style = "inside_shallow_frame",
+    }
+    
+    local right_frame = main_flow.add {
+        type = "frame",
+        name = "right_options_frame",
+        direction = "vertical",
+        style = "inside_shallow_frame",
+    }
+
+    function create_flow(options, options_frame, modules_frame)
+        options_frame.add {type = "line", style = "inside_shallow_frame_with_padding_line"}
+        add_pick_options_to_flow(options_frame.add {
+            type = "flow",
+            direction = "horizontal",
+            name = options.flow_name
+        }, options)
+
+        if modules_frame then
+            modules_frame.add {type = "line", style = "inside_shallow_frame_with_padding_line"}
+            add_module_options_to_flow(modules_frame.add {
+                type = "flow",
+                direction = "horizontal",
+                name = options.flow_name
+            }, options)
+        end
+    end
+
+    for _, options in pairs(all_toolbox_options) do
+        if options.type == "entity" and #options.names > 0 then
+            create_flow(options, left_frame, right_frame)
+        end
+    end
+
+    for _, options in pairs(all_toolbox_options) do
+        if options.type == "item" and options.toolbox_name == "meltable_tile_cover" and #options.names > 0 then
+            local label = options_holder.add {
+                type = "label",
+                caption = {"pump-toolpicker.meltable-tile-cover"},
+            }
+
+            local meltable_tile_cover_options_frame = options_holder.add {
+                type = "frame",
+                name = "meltable_tile_cover_options",
+                direction = "vertical",
+                style = "inside_shallow_frame",
+            }
+            create_flow(options, meltable_tile_cover_options_frame)
+        end
+    end
+
+    options_holder.add {
+        type = "label",
+        caption = {"pump-toolpicker.pipe-bury-label"},
+        tooltip = {"pump-toolpicker.pipe-bury-tooltip"},
+    }
+
+    local pipe_bury_options = {}
+    table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-no-minimum"})
+    table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-short"})
+    table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-long"})
+    table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-skip"})
+
+    options_holder.add {
+        type = "drop-down",
+        name = "pump_tool_picker_pipe_bury_distance",
+        items = pipe_bury_options,
+        selected_index = get_pipe_bury_option()
+    }
 end
 
 local function pick_tools(current_action, player, all_toolbox_options, force_ui)
@@ -637,72 +830,13 @@ local function pick_tools(current_action, player, all_toolbox_options, force_ui)
         label.style.maximal_width = 300
         label.style.single_line = false
 
-        -- Picks
-
-        local innerFrame = frame.add {
-            type = "frame",
-            name = "all_entity_options",
-            direction = "vertical",
-            style="inside_shallow_frame",
-        }
-
-        function create_flow(options) 
-            innerFrame.add {type = "line", style="inside_shallow_frame_with_padding_line"}
-            local flow = innerFrame.add {
-                type = "flow",
-                direction = "horizontal",
-                name = options.flow_name
-            }
-            add_pick_options_to_flow(flow, options)
-        end
-
-        for _, options in pairs(all_toolbox_options) do
-            if options.type == "entity" then
-                if #options.pick.available == 0 then
-                    -- Skip adding flow if no options are available
-                else
-                    create_flow(options)
-                end
-            end
-        end        
-
-        for _, options in pairs(all_toolbox_options) do
-            if options.type == "item" and options.toolbox_name == "meltable_tile_cover" then         
-                local label = frame.add {
-                    type = "label",
-                    caption = {"pump-toolpicker.meltable-tile-cover"},                        
-                }                
-
-                innerFrame = frame.add {
-                    type = "frame",
-                    name = "all_item_options",
-                    direction = "vertical",
-                    style="inside_shallow_frame",
-                }
-                create_flow(options)
-            end
-        end
-
-        frame.add {
-            type = "label",
-            caption = {"pump-toolpicker.pipe-bury-label"},
-            tooltip = {"pump-toolpicker.pipe-bury-tooltip"},
-        }
-
-        local pipe_bury_options = {}
-
-        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-no-minimum"})
-        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-short"})
-        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-long"})
-        table.insert(pipe_bury_options, {"pump-toolpicker.pipe-bury-skip"})
-
-        frame.add { 
-            type = "drop-down",
-            name = "pump_tool_picker_pipe_bury_distance",                        
-            items = pipe_bury_options,
-            selected_index = get_pipe_bury_option()
-        }
-
+        local options_holder = frame.options_holder or frame.add {
+            type = "flow",
+            name = "options_holder",
+            direction = "vertical"
+        }        
+        add_ui_content(options_holder, all_toolbox_options, player)              
+        
         frame.add {
             type = "checkbox",
             name = "pump_tool_picker_always_show",
@@ -771,7 +905,6 @@ function handle_gui_element_click(element_name, player)
     if frame then    
         local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
         for _, options in pairs(all_toolbox_options) do
-
             local pick_name = ""
 
             if (options.button_prefix .. "none") == element_name then
@@ -779,7 +912,6 @@ function handle_gui_element_click(element_name, player)
             end
 
             for _, entity_name in pairs(options.names) do
-
                 local element_name_for_entity = options.button_prefix .. entity_name
                 if element_name == element_name_for_entity then
                     pick_name = entity_name
@@ -790,11 +922,16 @@ function handle_gui_element_click(element_name, player)
             if pick_name ~= "" then
                 -- Store selection (by-ref into global-storage)
                 options.pick.selected = pick_name
-
-                -- Update selection option in the UI
-                add_pick_options_to_flow(frame["all_" .. options.type .. "_options"][options.flow_name], options)
-
-                update_toolbox_after_changed_options(current_action, player, options.toolbox_name)                
+                update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
+            end
+        end
+        -- Only refresh options_holder if element_name does NOT contain 'module_pick'
+        if not string.find(element_name, "module_pick", 1, true) then
+            local options_holder = frame["options_holder"]
+            if options_holder then
+                options_holder.clear()
+                all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
+                add_ui_content(options_holder, all_toolbox_options, player)
             end
         end
     end
@@ -806,17 +943,22 @@ function handle_gui_element_quality_selection_change(dropdown_gui_element, playe
 
     if frame then    
         local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
+        local qualities = get_visible_qualities()
         for _, options in pairs(all_toolbox_options) do
-
+            -- Main entity quality dropdown
             if options.quality_dropdown_name == dropdown_gui_element.name then
                 options.pick.quality_name = nil
-                if dropdown_gui_element.selected_index > 1 then
-                    local qualities = get_visible_qualities()
+                if dropdown_gui_element.selected_index > 1 then                    
                     options.pick.quality_name = qualities[dropdown_gui_element.selected_index].name
-                else
-                    options.pick.quality_name = nil
                 end
-
+                update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
+            end
+            -- Module quality dropdown
+            if options.modules_pick and (options.quality_dropdown_name .. "module_pick") == dropdown_gui_element.name then
+                options.modules_pick.quality_name = nil
+                if dropdown_gui_element.selected_index > 1 then
+                    options.modules_pick.quality_name = qualities[dropdown_gui_element.selected_index].name
+                end
                 update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
             end
         end
@@ -828,6 +970,22 @@ function handle_pipe_bury_preference_change(dropdown_gui_element, player)
     storage.toolpicker_config.pipe_bury_option = dropdown_gui_element.selected_index   
 
     update_toolbox_after_changed_options(current_action, player, nil)
+end
+
+function handle_gui_elem_changed(element, player)
+    if element and element.valid then
+        if element.name and string.find(element.name, "module_pick", 1, true) then
+            -- Find the matching toolbox option and update modules_pick.selected
+            local current_action = storage.current_action
+            if not current_action then return end
+            local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
+            for _, options in pairs(all_toolbox_options) do
+                if options.modules_pick and (options.button_prefix .. "module_pick") == element.name then
+                    options.modules_pick.selected = element.elem_value            
+                end
+            end
+        end
+    end
 end
 
 function is_ui_open(player)
