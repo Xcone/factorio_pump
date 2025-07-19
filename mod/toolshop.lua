@@ -153,8 +153,6 @@ local function add_module_options_to_flow(flow, toolbox_options)
 end
 
 local function add_ui_content(options_holder, all_toolbox_options, player)
-    dump_to_file(all_toolbox_options, "all_toolbox_options_on_render")
-
     -- Create a horizontal flow to hold both frames
     local main_flow = options_holder.add {
         type = "flow",

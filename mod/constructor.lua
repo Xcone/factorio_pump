@@ -30,21 +30,20 @@ local function get_planned_entities(construction_plan, toolbox)
             cover_area = plib.bounding_box.create(position, position)
         }
 
+        local function add_areas_to_placement(placement, relative_bounds, position)
+            placement.deconstruct_area = plib.bounding_box.offset(relative_bounds, position);
+            plib.bounding_box.grow(placement.deconstruct_area, 1)
+            placement.cover_area = plib.bounding_box.offset(relative_bounds, position)
+        end
+
         if planned_entity_name == "extractor" then
-            local extractor_bounds = toolbox.extractor.relative_bounds;
-            placement.deconstruct_area =
-                {
-                    left_top = {
-                        x = position.x + extractor_bounds.left_top.x - 1,
-                        y = position.y + extractor_bounds.left_top.y - 1
-                    },
-                    right_bottom = {
-                        x = position.x + extractor_bounds.right_bottom.x + 1,
-                        y = position.y + extractor_bounds.right_bottom.y + 1
-                    }
-                }                
-            placement.cover_area = plib.bounding_box.offset(extractor_bounds, position)
+            add_areas_to_placement(placement, toolbox.extractor.relative_bounds, position)
             placement.quality_name = toolbox.extractor.quality_name
+            if toolbox.extractor.module then
+                placement.module = toolbox.extractor.module
+                placement.module_quality_name = toolbox.extractor.module_quality_name                
+                placement.modules_inventory_define = toolbox.extractor.modules_inventory_define                
+            end
             table.insert(extractors, placement)
         end
 
@@ -79,8 +78,15 @@ local function get_planned_entities(construction_plan, toolbox)
         end
 
         if planned_entity_name == "beacon" then
+            add_areas_to_placement(placement, toolbox.beacon.relative_bounds, position)
+
             placement.quality_name = toolbox.beacon.quality_name
-            placement.cover_area = plib.bounding_box.create(position, {x = position.x + 2, y = position.y + 2})
+            if toolbox.beacon.module then
+                placement.module = toolbox.beacon.module
+                placement.module_quality_name = toolbox.beacon.module_quality_name
+                placement.modules_inventory_define = toolbox.beacon.modules_inventory_define
+            end
+
             table.insert(beacons, placement)
         end
         
@@ -173,6 +179,26 @@ function construct_entities(construction_plan, player, toolbox)
                 player = player,
                 quality = parameters.quality_name
             }
+
+            -- Add module request to the ghost if module is specified
+            if parameters.module then
+                local module_count = ghost.ghost_prototype.module_inventory_size
+                local insert_plan = ghost.insert_plan
+                for i = 1, module_count do
+                    table.insert(insert_plan, {
+                        id = { name= parameters.module, quality = parameters.module_quality_name },
+                        items = {
+                            in_inventory = {{
+                                inventory = parameters.modules_inventory_define,
+                                stack = i - 1,
+                                count = 1,
+                            }}
+                        }
+                    })
+                end
+                
+                ghost.insert_plan = insert_plan
+            end
 
             table.insert(entity_ghosts, ghost)
 

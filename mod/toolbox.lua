@@ -264,7 +264,6 @@ end
 
 local function get_allowed_modules(prototype)
     local allowed = {}
-
     if not prototype.module_inventory_size or prototype.module_inventory_size == 0 then
         return allowed
     end
@@ -286,7 +285,7 @@ local function get_allowed_modules(prototype)
             end
         end
         if module_allowed then
-            allowed[module.name] = {item_name = module.name}
+            table.insert(allowed, module.name)
         end
     end
     return allowed
@@ -375,7 +374,7 @@ function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
-local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure)
+local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure, modules_inventory_define)
     if failure then
         return {failure = failure}
     end
@@ -385,10 +384,8 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
         table.insert(names, name)
     end
 
-    local modules_pick = nil
-    -- Debug: If this is an entity and a selection is made, print allowed modules for it
-    if type == "entity" and pick.selected and pick.selected ~= "none" then
-        local module_toolbox_entries = {}
+    local modules_pick = nil    
+    if type == "entity" and pick.selected and pick.selected ~= "none" then        
 
         modules_pick = get_module_pick(pick.selected)        
         modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected])
@@ -416,7 +413,9 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
         -- Add option to the dialog to not pick anything
         optional = optional,
         -- If this option allows for modules, this will be a table of module names
-        modules_pick = modules_pick
+        modules_pick = modules_pick,
+        -- The inventory to add modules to
+        modules_inventory_define = modules_inventory_define
     }
 end
 
@@ -429,8 +428,9 @@ local function create_toolbox_extractor_options(player, resource_category)
         "entity",
         get_extractor_pick_for_resource(resource_category),
         toolbox_entries,
-        false,
-        failure
+        false,  
+        failure,
+        defines.inventory.mining_drill_modules
     )
 end
 
@@ -488,7 +488,8 @@ local function create_toolbox_beacon_options(player)
         pick,
         toolbox_entries,
         true,
-        failure
+        failure,
+        defines.inventory.beacon_modules
     )
 end
 
@@ -524,6 +525,12 @@ function update_toolbox_after_changed_options(current_action, player, toolbox_na
                 current_action.toolbox[toolbox_name] = refreshed_option.toolbox_entries[refreshed_option.pick.selected]
                 if current_action.toolbox[toolbox_name] then
                     current_action.toolbox[toolbox_name].quality_name = refreshed_option.pick.quality_name
+                    -- Add module selection if present
+                    if refreshed_option.modules_pick and refreshed_option.modules_pick.selected then
+                        current_action.toolbox[toolbox_name].module = refreshed_option.modules_pick.selected
+                        current_action.toolbox[toolbox_name].module_quality_name = refreshed_option.modules_pick.quality_name                        
+                        current_action.toolbox[toolbox_name].modules_inventory_define = refreshed_option.modules_inventory_define
+                    end
                 end
             end            
         end
