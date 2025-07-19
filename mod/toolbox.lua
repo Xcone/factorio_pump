@@ -262,19 +262,23 @@ local function add_available_beacons(available_beacons, player, quality_name)
     end    
 end
 
-local function get_allowed_modules(prototype)
+local function get_allowed_modules(prototype, player)
     local allowed = {}
     if not prototype.module_inventory_size or prototype.module_inventory_size == 0 then
         return allowed
     end
     for _, module in pairs(prototypes.get_item_filtered({{filter = "type", type = "module"}})) do
         local module_allowed = true
+        -- Check research requirements
+        if not meets_tech_requirement(module, player) then
+            module_allowed = false
+        end
         -- Check allowed module categories
-        if prototype.allowed_module_categories and not prototype.allowed_module_categories[module.category] then
+        if module_allowed and prototype.allowed_module_categories and not prototype.allowed_module_categories[module.category] then
             module_allowed = false
         end
         -- Check allowed effects
-        if module.module_effects then
+        if module_allowed and module.module_effects then
             for effect_name, effect_value in pairs(module.module_effects) do
                 if effect_value > 0 then
                     if prototype.allowed_effects and not prototype.allowed_effects[effect_name] then
@@ -388,7 +392,7 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
     if type == "entity" and pick.selected and pick.selected ~= "none" and not assistant.use_module_inserter_ex(player) then        
 
         modules_pick = get_module_pick(pick.selected)        
-        modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected])
+        modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected], player)
     end
 
     return {

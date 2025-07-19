@@ -94,8 +94,6 @@ local function add_pick_options_to_flow(flow, toolbox_options)
             tooltip = {"pump-toolpicker.exclude-option-tooltip"}
         }
     end
-
-    
 end
 
 local function add_module_options_to_flow(flow, toolbox_options)
@@ -464,7 +462,9 @@ function handle_gui_elem_changed(element, player)
             local all_toolbox_options = create_all_toolbox_options(player, current_action.resource_category)
             for _, options in pairs(all_toolbox_options) do
                 if options.modules_pick and (options.button_prefix .. "module_pick") == element.name then
-                    options.modules_pick.selected = element.elem_value            
+                    options.modules_pick.selected = element.elem_value
+                    update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
+                    break
                 end
             end
         end
