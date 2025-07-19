@@ -1,4 +1,5 @@
 require "toolbox"
+require "toolshop"
 require "prospector"
 require "plumber-pro"
 require "electrician"
