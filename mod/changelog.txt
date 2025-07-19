@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.11
+Date: 2025-07-19
+  Features:
+    - Add planner for beacons. The planner will attempt to provide each pump with at least 1 beacon; and will prefer positions where it covers more then 1 pump. 
+    - Add options to insert modules for pumps and beacons.
+    - Module insertion will be deferred to Module Insert Extended (when enabled in settings and installed). This will hide the module selection from P.U.M.P. 
+    - Research requirements are taken into account when showing beacon and module option. This can be disabled in settings.
+    - Beacons and modules from other mods should also be available in the UI. It's untested, though. 
+  Changes:
+    - Removed the old pipe planner; as mentioned would happen in v2.1.8
+  Fixes:
+    - Fix pole poles sometimes being constructed outside of the planning area, potentially causing buildings to be deconstructed if they happen to overlap.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.10
 Date: 2025-05-17
   Fixes:
