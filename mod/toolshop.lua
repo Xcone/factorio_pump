@@ -104,9 +104,9 @@ local function add_module_options_to_flow(flow, toolbox_options)
 
     if toolbox_options.modules_pick and next(toolbox_options.modules_pick.available) then
         local module_names = {}
-        for name, _ in pairs(toolbox_options.modules_pick.available) do
+        for _, name in pairs(toolbox_options.modules_pick.available) do
             table.insert(module_names, name)
-        end
+        end        
 
         local quality_index = 1;
         local quality_texts = {}
@@ -130,11 +130,12 @@ local function add_module_options_to_flow(flow, toolbox_options)
         dropdown.style.height = 38;
         dropdown.style.width = 58;
 
+        local elem_filters = {{filter = "name", name = module_names}}
         local module_elem = flow.add {
             type = "choose-elem-button",
             name = toolbox_options.button_prefix .. "module_pick",
             elem_type = "item",
-            elem_filters = {{filter = "name", name = module_names}},
+            elem_filters = elem_filters,
             style = "slot_sized_button",
         }
         if toolbox_options.modules_pick.selected then
@@ -167,12 +168,24 @@ local function add_ui_content(options_holder, all_toolbox_options, player)
         style = "inside_shallow_frame",
     }
     
-    local right_frame = main_flow.add {
-        type = "frame",
-        name = "right_options_frame",
-        direction = "vertical",
-        style = "inside_shallow_frame",
-    }
+    -- Check if any options have modules
+    local has_modules = false
+    for _, options in pairs(all_toolbox_options) do
+        if options.modules_pick and next(options.modules_pick.available) then
+            has_modules = true
+            break
+        end
+    end
+
+    local right_frame = nil
+    if has_modules then
+        right_frame = main_flow.add {
+            type = "frame",
+            name = "right_options_frame",
+            direction = "vertical",
+            style = "inside_shallow_frame",
+        }
+    end
 
     function create_flow(options, options_frame, modules_frame)
         options_frame.add {type = "line", style = "inside_shallow_frame_with_padding_line"}

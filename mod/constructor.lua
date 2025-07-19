@@ -135,9 +135,7 @@ local function cover(player, cover_area, tile_name_when_cover_is_meltable)
 end
 
 local function add_modules(ghosts, player) 
-    local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
-
-    if setting and setting.value and remote.interfaces["ModuleInserterEx"] then
+    if assistant.use_module_inserter_ex(player) then
         remote.call("ModuleInserterEx", "apply_module_config_to_entities", player.index, ghosts)
     end
 end

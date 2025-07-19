@@ -374,7 +374,7 @@ function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
-local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure, modules_inventory_define)
+local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure, modules_inventory_define, player)
     if failure then
         return {failure = failure}
     end
@@ -385,7 +385,7 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
     end
 
     local modules_pick = nil    
-    if type == "entity" and pick.selected and pick.selected ~= "none" then        
+    if type == "entity" and pick.selected and pick.selected ~= "none" and not assistant.use_module_inserter_ex(player) then        
 
         modules_pick = get_module_pick(pick.selected)        
         modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected])
@@ -430,7 +430,8 @@ local function create_toolbox_extractor_options(player, resource_category)
         toolbox_entries,
         false,  
         failure,
-        defines.inventory.mining_drill_modules
+        defines.inventory.mining_drill_modules,
+        player
     )
 end
 
@@ -444,7 +445,9 @@ local function create_toolbox_pipe_options(player)
         get_pipe_pick(),
         toolbox_entries,
         false,
-        failure
+        failure,
+        nil,
+        player
     )
 end
 
@@ -459,7 +462,9 @@ local function create_toolbox_power_pole_options(player)
         pick,
         toolbox_entries,
         true,
-        failure
+        failure,
+        nil,
+        player
     )
 end
 
@@ -474,7 +479,9 @@ local function create_toolbox_meltable_tile_cover_options(player)
         pick,
         toolbox_entries,
         false,
-        failure
+        failure,
+        nil,
+        player
     )
 end
 
@@ -489,7 +496,8 @@ local function create_toolbox_beacon_options(player)
         toolbox_entries,
         true,
         failure,
-        defines.inventory.beacon_modules
+        defines.inventory.beacon_modules,
+        player
     )
 end
 

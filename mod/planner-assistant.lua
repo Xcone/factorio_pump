@@ -380,4 +380,12 @@ assistant.add_beacon = function(construct_entities, position)
     })
 end
 
+assistant.use_module_inserter_ex = function (player)
+    local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
+    if setting and setting.value and remote.interfaces["ModuleInserterEx"] then
+        return true
+    end
+    return false
+end
+
 return assistant
