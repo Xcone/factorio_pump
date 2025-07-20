@@ -563,7 +563,7 @@ local function try_connect_extractor_to_nearby_pipes(mod_context, extractors_loo
             table.insert(nearby_pipe_positions, p)
         end
 
-        local reached_pipe = astar(output_positions, nearby_pipe_positions, search_bounds, mod_context.blocked_positions, heuristic_score_taxicab, max_distance_from_extractor * 2)
+        local reached_pipe = astar(output_positions, nearby_pipe_positions, search_bounds, mod_context.blocked_positions, max_distance_from_extractor * 2)
         if reached_pipe then
             extractor.scored_plan = convert_astar_result_to_extractor_plan(reached_pipe, extractor)
         end
@@ -589,7 +589,7 @@ local function try_connect_extractor_to_nearby_extractors(mod_context, extractor
     end)
 
     if next(goal_positions) then
-        local reached_pipe = astar(start_positions, goal_positions, mod_context.area_bounds, mod_context.blocked_positions, heuristic_score_taxicab)
+        local reached_pipe = astar(start_positions, goal_positions, mod_context.area_bounds, mod_context.blocked_positions)
         if reached_pipe then
             extractor.scored_plan = convert_astar_result_to_extractor_plan(reached_pipe, extractor)
         end

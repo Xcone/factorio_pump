@@ -332,11 +332,11 @@ plib.bounding_box = {
                 action(position)
             end
         end
-    end,    
+    end,
 
     each_edge_position = function(bounds, action)
         for x = bounds.left_top.x, bounds.right_bottom.x do
-            if x == bounds.left_top.x or bounds.right_bottom.x then
+            if x == bounds.left_top.x or x == bounds.right_bottom.x then
                 for y = bounds.left_top.y, bounds.right_bottom.y do
                     action({
                         x = x,
@@ -370,13 +370,39 @@ plib.bounding_box = {
         bounds.left_top.y = math.max(bounds.left_top.y, other_bounds.left_top.y)
         bounds.right_bottom.x = math.min(bounds.right_bottom.x, other_bounds.right_bottom.x)
         bounds.right_bottom.y = math.min(bounds.right_bottom.y, other_bounds.right_bottom.y)
+    end,
+
+    are_touching = function (box1, box2)
+        -- Return true when boxes overlap or share an edge in cardinal directions.
+        -- Excludes diagonal-only corner contact.
+
+        -- simple overlap checks
+        local x_overlap = not (box1.right_bottom.x < box2.left_top.x or box1.left_top.x > box2.right_bottom.x)
+        local y_overlap = not (box1.right_bottom.y < box2.left_top.y or box1.left_top.y > box2.right_bottom.y)
+
+        -- adjacency checks (exactly one tile apart)
+        local x_adjacent = (box1.right_bottom.x + 1 == box2.left_top.x) or (box2.right_bottom.x + 1 == box1.left_top.x)
+        local y_adjacent = (box1.right_bottom.y + 1 == box2.left_top.y) or (box2.right_bottom.y + 1 == box1.left_top.y)
+
+        -- they touch if they overlap, or if they overlap on one axis and are adjacent on the other
+        if x_overlap and (y_overlap or y_adjacent) then
+            return true
+        end
+        if y_overlap and (x_overlap or x_adjacent) then
+            return true
+        end
+
+        return false
     end
 }
 
 plib.bounding_box.any_grid_position = function(bounds, predicate)
     for x = bounds.left_top.x, bounds.right_bottom.x do
         for y = bounds.left_top.y, bounds.right_bottom.y do
-            local position = {x = x, y = y}
+            local position = {
+                x = x,
+                y = y
+            }
             if predicate(position) then
                 return true
             end
@@ -489,15 +515,23 @@ plib.position = {
         }
     end,
 
-    taxicab_distance = function(posA, posB) 
+    taxicab_distance = function(posA, posB)
         local x = math.abs(posA.x - posB.x)
         local y = math.abs(posA.y - posB.y)
         return x + y
+    end,
+
+    are_equal = function(posA, posB)
+        return posA.x == posB.x and posA.y == posB.y
     end
 }
 
 function table.contains(table, element)
-    for _, value in pairs(table) do if value == element then return true end end
+    for _, value in pairs(table) do
+        if value == element then
+            return true
+        end
+    end
     return false
 end
 

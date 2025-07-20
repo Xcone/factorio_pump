@@ -4,6 +4,8 @@ require "prospector"
 require "plumber-pro"
 require "electrician"
 require 'constructor'
+local assistant = require 'planner-assistant'
+local heater = require "heater"
 local beaconer = require "beaconer"
 
 script.on_event({defines.events.on_player_selected_area}, function(event)
@@ -138,7 +140,7 @@ function resume_process_selected_area_with_this_mod()
     }
 
     if not current_action.failure then
-        current_action.failure = trim_selected_area(current_action, entities)
+        current_action.failure = trim_selected_area(current_action, entities, player)
     end
 
     if not current_action.failure then
@@ -159,6 +161,10 @@ function resume_process_selected_area_with_this_mod()
 
     if not current_action.failure and current_action.toolbox.beacon then
         beaconer.plan_beacons(current_action)
+    end
+
+    if not current_action.failure and current_action.toolbox.heat_pipe then
+        heater.plan_heat_pipes(current_action)
     end
 
     if not current_action.failure and current_action.toolbox.power_pole ~= nil then
@@ -202,7 +208,7 @@ function add_resource_category(current_action, entities_in_selection)
     current_action.resource_entity_name = first_entity.name
 end
 
-function trim_selected_area(current_action, entities)
+function trim_selected_area(current_action, entities, player)
     local function get_increment_from_bounds(bounds)
         if not bounds then
             return 1
@@ -238,6 +244,10 @@ function trim_selected_area(current_action, entities)
     local power_pole_bounds = current_action.toolbox.power_pole and current_action.toolbox.power_pole.relative_bounds or nil
     local beacon_bounds = current_action.toolbox.beacon and current_action.toolbox.beacon.relative_bounds or nil
     local area_increment = math.max(get_increment_from_bounds(power_pole_bounds), get_increment_from_bounds(beacon_bounds))
+
+    if assistant.surface_has_meltable_tiles(player) then
+        area_increment = area_increment + 1
+    end
 
     area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - area_increment
     area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - area_increment

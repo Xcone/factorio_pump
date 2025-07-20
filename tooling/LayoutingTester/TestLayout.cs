@@ -1,14 +1,14 @@
-﻿using System;
+﻿using KeraLua;
+using Newtonsoft.Json;
+using NLua;
+using NLua.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using KeraLua;
-using Newtonsoft.Json;
-using NLua;
-using NLua.Exceptions;
 using Lua = NLua.Lua;
 using LuaFunction = NLua.LuaFunction;
 
@@ -16,26 +16,21 @@ namespace LayoutingTester
 {
     public class TestLayout
     {
-        public TestLayoutColumn[] Columns { get; }
+        public Dictionary<float, TestLayoutColumn> Columns { get; }
         public PlannerInput PlannerInput { get; }
 
         public StringBuilder textOutputBuilder = new StringBuilder();
         public string TextualFeedback => textOutputBuilder.ToString();
 
-        public bool ProMode { get; }
-
         public DateTime startTime = DateTime.UtcNow;
         public Stopwatch stopwatch;
 
-        public TestLayout(string plannerInputAsJson, bool proMode)
+        public TestLayout(string plannerInputAsJson)
         {
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
             Columns = PlannerInput.ToColumns();
-            ProMode = proMode;
-
             RunLua();
             Print(DateTime.Now);
-
         }
 
         public void Print(object message)
@@ -181,8 +176,6 @@ northnorthwest=15
                 existingPath += $";{factorioDir}\\core\\lualib\\?.lua";
                 lua["package.path"] = existingPath;
 
-
-
                 lua.DoString("require 'util'");
                 lua.DoString("require 'math2d'");
 
@@ -190,38 +183,51 @@ northnorthwest=15
                 lua.DoString("require 'prospector'");
                 lua.DoString("require 'toolbox'");
                 lua.DoString("require 'toolshop'");
-                //lua.DoString("require 'plumber'");
                 lua.DoString("require 'plumber-pro'");
                 lua.DoString("require 'electrician'");
-
+                lua.DoString("heater = require 'heater'");
+                lua.DoString("beaconer = require 'beaconer'");
+                lua.DoString("require 'prospector'");
 
                 lua.NewTable("planner_input_stage");
                 var plannerInput = lua["planner_input_stage"] as LuaTable;
                 lua.DoString(@"planner_input_stage.warnings = {}");
                 PlannerInput.AddToTable(lua, plannerInput);
-
                 var populateBlockedPositionsFunction = lua["populate_blocked_positions_from_area"] as LuaFunction;
                 populateBlockedPositionsFunction.Call(plannerInput);
 
                 var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
                 toolboxFunction.Call(plannerInput);
 
-                // Act
                 stopwatch = Stopwatch.StartNew();
-
                 var plumberFunction = lua["plan_plumbing_pro"] as LuaFunction;
-
-                var electricianFunction = lua["plan_power"] as LuaFunction;
-                var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
+                plumberFunction.Call(plannerInput)?.FirstOrDefault();
                 var plumberDuration = stopwatch.ElapsedMilliseconds;
 
+                stopwatch.Restart();
+                var beaconerTable = (LuaTable)lua["beaconer"];
+                var planBeaconsFunction = (LuaFunction)beaconerTable["plan_beacons"];
+                planBeaconsFunction.Call(plannerInput);
+                var beaconerDuration = stopwatch.ElapsedMilliseconds;
+
+                stopwatch.Restart();
+                var heaterTable = (LuaTable)lua["heater"];
+                var planHeatPipesFunction = (LuaFunction)heaterTable["plan_heat_pipes"];
+                var heaterFailure = planHeatPipesFunction?.Call(plannerInput, null) ?? plannerInput["failure"];
+                var heaterDuration = stopwatch.ElapsedMilliseconds;
+
+                stopwatch.Restart();
+                var electricianFunction = lua["plan_power"] as LuaFunction;
                 var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
+                var electricianDuration = stopwatch.ElapsedMilliseconds;
+                stopwatch.Restart();
 
                 stopwatch.Stop();
                 Print("---");
                 Print($"'plumbing' took {plumberDuration}ms");
-                Print($"'electricity' took {stopwatch.ElapsedMilliseconds - plumberDuration}ms");
-                Print($"total {stopwatch.ElapsedMilliseconds}ms");
+                Print($"'electricity' took {electricianDuration}ms");
+                Print($"'heating' took {heaterDuration}ms");
+                Print($"'beaconing' took {beaconerDuration}ms");
                 Print("---");
 
                 foreach (var kv in Samples.Select(x => x).OrderByDescending(x => x.Value.ticks))
@@ -229,16 +235,8 @@ northnorthwest=15
                     Print($"{TimeSpan.FromTicks(kv.Value.ticks).TotalMilliseconds}ms | {kv.Value.count} samples | {kv.Key}");
                 }
 
-
-                // Extract result
-                if (plumberFailure != null)
-                {
-                    Print(plumberFailure);
-                }
-                if (electricianFailure != null)
-                {
-                    Print(electricianFailure);
-                }
+                if (plannerInput["failure"] != null)
+                    Print(plannerInput["failure"]);
 
                 Print(lua["planner_input_stage.warnings"]);
 
@@ -293,25 +291,30 @@ northnorthwest=15
             if (constructionParameters == null) return;
             var totalPlannedEntities = 0;
 
+            var left = PlannerInput.AreaBoundsFromJson.LeftTop.X;
+            var top = PlannerInput.AreaBoundsFromJson.LeftTop.Y;
+            var right = PlannerInput.AreaBoundsFromJson.RightBottom.X;
+            var bottom = PlannerInput.AreaBoundsFromJson.RightBottom.Y;
+
             foreach (var xKey in constructionParameters.Keys)
             {
+                var x = (double)xKey;
                 var tableY = (LuaTable)constructionParameters[xKey];
 
                 foreach (var yKey in tableY.Keys)
                 {
+
                     var plannedEntity = (LuaTable)tableY[yKey];
-                    var x = (double)xKey;
                     var y = (double)yKey;
                     var name = (string)plannedEntity["name"];
 
-                    try
+                    if (x < left || x > right || y < top || y > bottom)
                     {
-                        Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
+                        Print($"Entity planned out of bounds: {name} at x={x},y={y}");
+                        continue;
                     }
-                    catch (Exception ex)
-                    {
-                        Print($"Planned entity out of bounds: x={x}, y={y}");
-                    }
+
+                    Columns[(float)x].AddConstructionResult(name, y, plannedEntity);
                     totalPlannedEntities++;
                 }
             }
@@ -322,18 +325,18 @@ northnorthwest=15
 
     public class TestLayoutColumn
     {
-        public TestLayoutCell[] Cells { get; }
+        public Dictionary<float, TestLayoutCell> Cells { get; }
         public float X { get; }
 
         public TestLayoutColumn(string x, TestLayoutCell[] cells)
         {
             X = float.Parse(x, CultureInfo.InvariantCulture);
-            Cells = cells;
+            Cells = cells.ToDictionary(c => c.Y);
         }
 
         public void AddConstructionResult(string name, double y, LuaTable plannedEntity)
         {
-            Cells.First(c => c.Y == y).AddConstructionResult(name, plannedEntity);
+            Cells[(float)y].AddConstructionResult(name, plannedEntity);
         }
     }
 
@@ -363,10 +366,12 @@ northnorthwest=15
             if (name == "pipe")
             {
                 EntityToConstruct = "+";
+                Content = "pipe";
             }
             else if (name == "output")
             {
                 EntityToConstruct = "o";
+                Content = "pipe";
             }
             else if (name == "extractor")
             {
@@ -375,16 +380,28 @@ northnorthwest=15
             else if (name == "pipe_joint")
             {
                 EntityToConstruct = "x";
+                Content = "pipe";
             }
             else if (name == "pipe_tunnel")
             {
                 EntityToConstruct = "t";
+                Content = "pipe";
             }
             else if (name == "power_pole")
             {
                 var placementOrder = (long)plannedEntity["placement_order"];
                 EntityToConstruct = placementOrder.ToString();
                 Content = "power_pole";
+            }
+            else if (name == "beacon")
+            {
+                EntityToConstruct = "B";
+                Content = "beacon";
+            }
+            else if (name == "heat-pipe")
+            {
+                EntityToConstruct = plannedEntity["placement_order"].ToString();
+                Content = "heat-pipe";
             }
 
             var direction = (long)plannedEntity["direction"];
@@ -400,14 +417,18 @@ northnorthwest=15
         [JsonProperty("area_bounds")]
         public BoundingBox AreaBoundsFromJson { get; set; }
 
-        public TestLayoutColumn[] ToColumns()
+        public Dictionary<float, TestLayoutColumn> ToColumns()
         {
             return AreaFromJson
-                .Select(
-                    x_reservations => new TestLayoutColumn(x_reservations.Key, x_reservations.Value
-                        .Select(y_reservation => new TestLayoutCell(x_reservations.Key, y_reservation.Key, y_reservation.Value))
-                        .ToArray()))
-                .ToArray();
+                .ToDictionary(
+                    x_reservations => float.Parse(x_reservations.Key, CultureInfo.InvariantCulture),
+                    x_reservations => new TestLayoutColumn(
+                        x_reservations.Key,
+                        x_reservations.Value
+                            .Select(y_reservation => new TestLayoutCell(x_reservations.Key, y_reservation.Key, y_reservation.Value))
+                            .ToArray()
+                    )
+                );
         }
 
         public void AddToTable(Lua lua, LuaTable table)

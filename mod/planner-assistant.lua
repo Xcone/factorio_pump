@@ -56,6 +56,13 @@ assistant.add_connector = function(construct_entities, position)
     })
 end
 
+assistant.add_heat_pipe = function(construct_entities, position)
+    xy.set(construct_entities, position, {
+        name = "heat-pipe",
+        direction = defines.direction.east
+    })
+end
+
 assistant.add_connector_joint = function(construct_entities, position)
     xy.set(construct_entities, position, {
         name = "pipe_joint",
@@ -390,6 +397,30 @@ assistant.use_module_inserter_ex = function (player)
         return true
     end
     return false
+end
+
+assistant.get_planned_entity_bounding_box = function(mod_context, position)
+    local construction_plan = mod_context.construction_plan
+    local toolbox = mod_context.toolbox
+    local entity = plib.xy.get(construction_plan, position)
+    if not entity then
+        return nil
+    end
+    local relative_bounds
+    if entity.name == "extractor" and toolbox.extractor and toolbox.extractor.relative_bounds then
+        relative_bounds = toolbox.extractor.relative_bounds
+    elseif entity.name == "beacon" and toolbox.beacon and toolbox.beacon.relative_bounds then
+        relative_bounds = toolbox.beacon.relative_bounds
+    elseif entity.name == "power_pole" and toolbox.power_pole and toolbox.power_pole.size then
+        if toolbox.power_pole.size == 2 then
+            relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=1, y=1})
+        else
+            relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=0, y=0})
+        end
+    else
+        relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=0, y=0})
+    end
+    return plib.bounding_box.offset(relative_bounds, position)
 end
 
 return assistant

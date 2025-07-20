@@ -17,14 +17,16 @@ function add_development_toolbox(target)
         relative_bounds = {
             left_top = {x = -1, y = -1},
             right_bottom = {x = 1, y = 1}
-        }
+        },
+        needs_heat = true,
     }
 
     toolbox.connector = {
         entity_name = 'not-used-by-visualizer',
         underground_entity_name = 'not-used-by-visualizer',
         underground_distance_min = 0,
-        underground_distance_max = 9
+        underground_distance_max = 9,
+        needs_heat = true,
     }
 
     local small_pole = {
@@ -56,15 +58,24 @@ function add_development_toolbox(target)
     }
 
     toolbox.beacon = {
+        entity_name = 'not-used-by-visualizer',
         effect_radius = 4,
-        relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} }
+        relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} },
+        quality_name = 'normal',
+        needs_heat = true,
+    }
+
+    toolbox.heat_pipe = {
+        entity_name = 'not-used-by-visualizer',
+        quality_name = 'normal',
+        needs_heat = false,
     }
 
     -- toolbox.power_pole = small_pole
-    -- toolbox.power_pole = medium_pole
+    toolbox.power_pole = medium_pole
     -- toolbox.power_pole = big_pole
-    toolbox.power_pole = substation
-    toolbox.pipe_bury_distance_preference = 2
+    -- toolbox.power_pole = substation
+    toolbox.pipe_bury_distance_preference = 1
 
 
     target.toolbox = toolbox
@@ -262,6 +273,18 @@ local function add_available_beacons(available_beacons, player, quality_name)
     end    
 end
 
+local function add_available_heat_pipes(available_heat_pipes, player)
+    local all_heat_pipes = prototypes.get_entity_filtered({{filter = "type", type = "heat-pipe"}})
+    for _, heat_pipe in pairs(all_heat_pipes) do
+        if meets_tech_requirement(heat_pipe, player) then
+            available_heat_pipes[heat_pipe.name] = {
+                entity_name = heat_pipe.name
+            }
+        end
+    end
+    if next(available_heat_pipes) == nil then return {"failure.no-heat-pipe"} end
+end
+
 local function get_allowed_modules(prototype, player)
     local allowed = {}
     if not prototype.module_inventory_size or prototype.module_inventory_size == 0 then
@@ -339,6 +362,13 @@ local function get_beacon_pick()
     return storage.toolpicker_config.beacon_pick
 end
 
+local function get_heat_pipe_pick()
+    if not storage.toolpicker_config.heat_pipe_pick then
+        storage.toolpicker_config.heat_pipe_pick = {selected = nil, available = {}, quality_name = nil}
+    end
+    return storage.toolpicker_config.heat_pipe_pick
+end
+
 function get_pipe_bury_option()
     if not storage.toolpicker_config.pipe_bury_option then
         storage.toolpicker_config.pipe_bury_option = 1
@@ -378,14 +408,16 @@ function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
-local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional_behavior, failure, modules_inventory_define, player)
+-- Add needs_heat property to each toolbox entry in create_toolbox_options
+local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional_behavior, failure, modules_inventory_define, player, needs_heat)
     if failure then
         return {failure = failure}
     end
 
     local names = {}
-    for name, _ in pairs(toolbox_entries) do
+    for name, entry in pairs(toolbox_entries) do
         table.insert(names, name)
+        entry.needs_heat = needs_heat
     end
 
     -- A mod might've been removed
@@ -466,7 +498,8 @@ local function create_toolbox_extractor_options(player, resource_category)
         { is_optional = false, default_is_none = false },
         failure,
         defines.inventory.mining_drill_modules,
-        player
+        player,
+        true
     )
 end
 
@@ -481,7 +514,8 @@ local function create_toolbox_pipe_options(player)
         { is_optional = false, default_is_none = false },
         failure,
         nil,
-        player
+        player,
+        true
     )
 end
 
@@ -497,7 +531,8 @@ local function create_toolbox_power_pole_options(player)
         { is_optional = true, default_is_none = false },
         failure,
         nil,
-        player
+        player,
+        true
     )
 end
 
@@ -513,7 +548,8 @@ local function create_toolbox_meltable_tile_cover_options(player)
         { is_optional = false, default_is_none = false },
         failure,
         nil,
-        player
+        player,
+        true
     )
 end
 
@@ -529,7 +565,25 @@ local function create_toolbox_beacon_options(player)
         { is_optional = true, default_is_none = true },
         failure,
         defines.inventory.beacon_modules,
-        player
+        player,
+        true
+    )
+end
+
+local function create_toolbox_heat_pipe_options(player)
+    local toolbox_entries = {}
+    local pick = get_heat_pipe_pick()
+    local failure = add_available_heat_pipes(toolbox_entries, player)
+    return create_toolbox_options(
+        "heat_pipe",
+        "entity",
+        pick,
+        toolbox_entries,
+        { is_optional = true, default_is_none = false },
+        failure,
+        nil,
+        player,
+        false
     )
 end
 
@@ -545,6 +599,7 @@ function create_all_toolbox_options(player, resource_category)
     dump_to_file(all_toolbox_options, "all_toolbox_options")
 
     if assistant.surface_has_meltable_tiles(player) then
+        table.insert(all_toolbox_options, create_toolbox_heat_pipe_options(player))
         table.insert(all_toolbox_options, create_toolbox_meltable_tile_cover_options(player))
     end
 

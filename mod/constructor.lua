@@ -16,6 +16,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local pipe_tunnels = {}
     local power_poles = {}
     local beacons = {}
+    local heat_pipes = {}
 
     plib.xy.each(construction_plan, function(planned_entity, position)
 
@@ -89,6 +90,11 @@ local function get_planned_entities(construction_plan, toolbox)
 
             table.insert(beacons, placement)
         end
+
+        if planned_entity_name == "heat-pipe" then
+            placement.quality_name = toolbox.heat_pipe.quality_name
+            table.insert(heat_pipes, placement)
+        end
         
     end)
 
@@ -101,6 +107,10 @@ local function get_planned_entities(construction_plan, toolbox)
 
     if toolbox.power_pole ~= nil then
         result[toolbox.power_pole.entity_name] = power_poles
+    end
+
+    if toolbox.heat_pipe ~= nil then
+        result[toolbox.heat_pipe.entity_name] = heat_pipes
     end
 
     return result

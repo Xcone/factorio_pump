@@ -20,8 +20,7 @@ function add_area_information(current_action, entities, surface, player)
             local extractor_bounds = plib.bounding_box.offset(current_action.toolbox.extractor.relative_bounds, entity.position)
 
             plib.bounding_box.each_grid_position(extractor_bounds, function(position)
-                xy.set(current_action.area, position, "reserved-for-pump")
-
+                xy.set(current_action.area, position, "reserved-for-pump")                
             end)
             xy.set(current_action.area, entity.position, "oil-well")
         else
@@ -34,8 +33,7 @@ function add_area_information(current_action, entities, surface, player)
             if can_place_pipe(surface, position, player) then
                 xy.set(current_action.area, position, "can-build")
             else
-                xy.set(current_action.area, position, "can-not-build")
-
+                xy.set(current_action.area, position, "can-not-build")                
             end
         end
     end)
