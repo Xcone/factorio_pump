@@ -16,7 +16,7 @@ local function get_visible_qualities()
     return qualities
 end
 
-local function get_quality_index(quality_name)
+function get_quality_index(quality_name)
     for index, quality in pairs(get_visible_qualities()) do
         if quality_name == quality.name then
             return index;
@@ -235,36 +235,12 @@ end
 
 local function pick_tools(current_action, player, all_toolbox_options, force_ui)
     local selection_required = false
-    local new_options_available = false
+    local new_options_available = false    
 
     for _, options in pairs(all_toolbox_options) do
-
-        -- A mod might've been removed
-        reset_selection_if_pick_no_longer_available(options.pick, options.names)
-
-        -- Quality might've changed
-        if get_quality_index(options.quality_name) == 0 then
-            options.quality_name = nil
-        end
-
-        -- Multiple options available, and no previous selection is known.
-        selection_required = selection_required or (#options.names > 1 and not options.pick.selected)
-
-        -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
-        new_options_available = new_options_available or (
-            options.pick.selected and 
-            #options.names > 1 and
-            not table.compare(options.pick.available, options.names))
-
-        -- persist the available entities for next time, in order to check when new options have been added in the meantime.
-        options.pick.available = options.names
-
-        -- ensure a default selection
-        if not options.pick.selected then options.pick.selected = options.names[1] end
-
-        -- Put the picked options in toolbox. 
-        -- If the UI doesn't open this is what the planner will work with,
-        -- If the UI opens, these will be overwritten when the player changes the selected options
+        selection_required = selection_required or options.selection_required
+        new_options_available = new_options_available or options.new_options_available
+        
         update_toolbox_after_changed_options(current_action, player, options.toolbox_name)
     end
 

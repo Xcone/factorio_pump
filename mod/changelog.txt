@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.13
+Date: 2025-07-20
+  Changes:
+    - The picker for beacons will default to manual-placement when no prior selection was made. Making it more opt-in like, rather than opt-out.
+  Fixes:
+    - Fix the module-selection not showing, even though modules are available, the first time the UI is opened in a map.  
+---------------------------------------------------------------------------------------------------
 Version: 2.1.12
 Date: 2025-07-20
   Fixes:

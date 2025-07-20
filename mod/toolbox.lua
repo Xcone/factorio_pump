@@ -378,7 +378,7 @@ function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
-local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional, failure, modules_inventory_define, player)
+local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional_behavior, failure, modules_inventory_define, player)
     if failure then
         return {failure = failure}
     end
@@ -388,8 +388,36 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
         table.insert(names, name)
     end
 
+    -- A mod might've been removed
+    reset_selection_if_pick_no_longer_available(pick, names)
+
+     -- Quality might've changed
+     if get_quality_index(pick.quality_name) == 0 then
+        pick.quality_name = nil
+    end
+
+    -- Multiple options available, and no previous selection is known.
+    local selection_required = (#names > 1 and not pick.selected)
+
+    -- There's a selection, and P.U.M.P. can work. But the available tools have changed. 
+    local new_options_available = pick.selected and 
+        #names > 1 and
+        not table.compare(pick.available, names)
+
+    -- persist the available entities for next time, in order to check when new options have been added in the meantime.
+    pick.available = names
+
+    -- ensure a default selection
+    if not pick.selected then
+        if optional_behavior and optional_behavior.is_optional and optional_behavior.default_is_none then
+            pick.selected = "none"
+        else
+            pick.selected = names[1]
+        end
+    end
+
     local modules_pick = nil    
-    if type == "entity" and pick.selected and pick.selected ~= "none" and not assistant.use_module_inserter_ex(player) then        
+    if type == "entity" and pick.selected ~= "none" and not assistant.use_module_inserter_ex(player) then        
 
         modules_pick = get_module_pick(pick.selected)        
         modules_pick.available = get_allowed_modules(prototypes.entity[pick.selected], player)
@@ -415,24 +443,27 @@ local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries,
         -- Available names, can be used as keys for toolbox_entries
         names = names,
         -- Add option to the dialog to not pick anything
-        optional = optional,
+        optional = optional_behavior and optional_behavior.is_optional or false,
         -- If this option allows for modules, this will be a table of module names
         modules_pick = modules_pick,
         -- The inventory to add modules to
-        modules_inventory_define = modules_inventory_define
+        modules_inventory_define = modules_inventory_define,
+        -- Should prompt the user for a selection. This can be because the selection was never made. Or because a mod was removed.
+        selection_required = selection_required,
+        -- Whether new options are available. This can be because a mod was added or research was completed.
+        new_options_available = new_options_available
     }
 end
 
 local function create_toolbox_extractor_options(player, resource_category)
     local toolbox_entries = {}
     local failure = add_available_extractors(toolbox_entries, resource_category, player)
-
     return create_toolbox_options(
         "extractor",
         "entity",
         get_extractor_pick_for_resource(resource_category),
         toolbox_entries,
-        false,  
+        { is_optional = false, default_is_none = false },
         failure,
         defines.inventory.mining_drill_modules,
         player
@@ -442,13 +473,12 @@ end
 local function create_toolbox_pipe_options(player)
     local toolbox_entries = {}
     local failure = add_available_pipes(toolbox_entries, player)
-
     return create_toolbox_options(
         "connector",
         "entity",
         get_pipe_pick(),
         toolbox_entries,
-        false,
+        { is_optional = false, default_is_none = false },
         failure,
         nil,
         player
@@ -459,13 +489,12 @@ local function create_toolbox_power_pole_options(player)
     local toolbox_entries = {}
     local pick = get_power_pole_pick()
     local failure = add_available_power_poles(toolbox_entries, player, pick.quality_name)
-
     return create_toolbox_options(
         "power_pole",
         "entity",
         pick,
         toolbox_entries,
-        true,
+        { is_optional = true, default_is_none = false },
         failure,
         nil,
         player
@@ -476,13 +505,12 @@ local function create_toolbox_meltable_tile_cover_options(player)
     local toolbox_entries = {}
     local pick = get_meltable_tile_cover_pick()
     local failure = add_meltable_tile_covers(toolbox_entries)
-
     return create_toolbox_options(
         "meltable_tile_cover",
         "item",
         pick,
         toolbox_entries,
-        false,
+        { is_optional = false, default_is_none = false },
         failure,
         nil,
         player
@@ -498,7 +526,7 @@ local function create_toolbox_beacon_options(player)
         "entity",
         pick,
         toolbox_entries,
-        true,
+        { is_optional = true, default_is_none = true },
         failure,
         defines.inventory.beacon_modules,
         player
