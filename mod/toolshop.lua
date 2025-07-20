@@ -31,33 +31,40 @@ local function should_show_always(player)
     return mod_setting_always_show.value
 end
 
-local function add_pick_options_to_flow(flow, toolbox_options)
-    flow.clear()    
-
+-- Extracted helper for adding quality dropdown
+local function add_quality_option_to_flow(flow, dropdown_name, selected_quality_name)
     local qualities = get_visible_qualities()
-    if #qualities > 1 then
-        local quality_index = 1;
-        local quality_texts = {}
-
-        for index, quality in pairs(qualities) do               
-            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
-            if toolbox_options.pick.quality_name == quality.name then
-                quality_index = index
-            end
+    if #qualities < 2 then return end
+    local quality_index = 1
+    local quality_texts = {}
+    for index, quality in pairs(qualities) do
+        table.insert(quality_texts, "[quality=" .. quality.name .. "]")
+        if selected_quality_name == quality.name then
+            quality_index = index
         end
-
-        local dropdown = flow.add {            
-            type = "drop-down",
-            name = toolbox_options.quality_dropdown_name,
-            items = quality_texts,
-            selected_index = quality_index,
-            style = "circuit_condition_comparator_dropdown"
-        }
-
-        dropdown.style.margin = {1, 4};
-        dropdown.style.height = 38;
-        dropdown.style.width = 58;
     end
+    if quality_index > #quality_texts then
+        quality_index = 1
+    end
+    local dropdown = flow.add {
+        type = "drop-down",
+        name = dropdown_name,
+        items = quality_texts,
+        selected_index = quality_index,
+        style = "circuit_condition_comparator_dropdown"
+    }
+    dropdown.style.margin = {1, 4}
+    dropdown.style.height = 38
+    dropdown.style.width = 58
+end
+
+local function add_pick_options_to_flow(flow, toolbox_options)
+    flow.clear()
+    add_quality_option_to_flow(
+        flow,
+        toolbox_options.quality_dropdown_name,
+        toolbox_options.pick.quality_name
+    )
 
     for _, pick_name in pairs(toolbox_options.names) do
         local style = "slot_sized_button"
@@ -97,37 +104,17 @@ local function add_pick_options_to_flow(flow, toolbox_options)
 end
 
 local function add_module_options_to_flow(flow, toolbox_options)
-    flow.clear()    
-    local qualities = get_visible_qualities()
-
+    flow.clear()
     if toolbox_options.modules_pick and next(toolbox_options.modules_pick.available) then
         local module_names = {}
         for _, name in pairs(toolbox_options.modules_pick.available) do
             table.insert(module_names, name)
-        end        
-
-        local quality_index = 1;
-        local quality_texts = {}
-
-        for index, quality in pairs(qualities) do               
-            table.insert(quality_texts, "[quality=" .. quality.name .. "]")
-            if toolbox_options.modules_pick.quality_name == quality.name then
-                quality_index = index
-            end
         end
-
-        local dropdown = flow.add {            
-            type = "drop-down",
-            name = toolbox_options.quality_dropdown_name .. "module_pick",
-            items = quality_texts,
-            selected_index = quality_index,
-            style = "circuit_condition_comparator_dropdown"
-        }
-
-        dropdown.style.margin = {1, 4};
-        dropdown.style.height = 38;
-        dropdown.style.width = 58;
-
+        add_quality_option_to_flow(
+            flow,
+            toolbox_options.quality_dropdown_name .. "module_pick",
+            toolbox_options.modules_pick.quality_name
+        )
         local elem_filters = {{filter = "name", name = module_names}}
         local module_elem = flow.add {
             type = "choose-elem-button",
