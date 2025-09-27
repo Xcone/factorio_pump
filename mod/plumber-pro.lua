@@ -287,17 +287,21 @@ function create_branch_candidate(mod_context, extractors_lookup, slice, branch_l
     local extractors_in_reach = get_extractors_in_reach_of_branch(extractors_lookup, branch_candidate)
     pump_sample_finish("find_extractors_in_reach", sample_find_extractors_in_reach)
 
+    local in_reach = #extractors_in_reach
+
     for i, extractor in pairs(extractors_in_reach) do
         -- Already in reach of another branch, no need to cover it twice
         if extractor.is_in_reach_of_branch then
+            in_reach = in_reach - 1
             extractors_in_reach[i] = nil
         end
     end
 
-    branch_candidate.number_of_extractors_in_reach = #extractors_in_reach
-    if branch_candidate.number_of_extractors_in_reach < 2 then
+    branch_candidate.number_of_extractors_in_reach = in_reach
+    if in_reach < 2 then
         -- There's no point to a branch if nothing connects to it. 
         -- A single extractor would be better of directly connecting to something nearby
+        
         return nil
     end
 
@@ -446,10 +450,11 @@ function plan_branches(mod_context, extractors_lookup, branch_area, branch_direc
         return
     end
 
-    local previous_brach = nil
+    local pending_branch_area_count = #pending_branch_areas
 
-    while #pending_branch_areas > 0 do
+    while pending_branch_area_count > 0 do
         local pending_branch_area = table.remove(pending_branch_areas)
+        pending_branch_area_count = pending_branch_area_count - 1
         local branch_area = pending_branch_area.branch_area
         local branch_direction = pending_branch_area.branch_direction
 
@@ -466,6 +471,7 @@ function plan_branches(mod_context, extractors_lookup, branch_area, branch_direc
         local pending_area = split_result.right
         -- Make additional branches if the area big enough. Ideally pumps are but 1 tunnel-distance away
         if plib.bounding_box.get_cross_section_size(pending_area, plib.directions[branch_direction].next) > mod_context.toolbox.connector.underground_distance_max then
+            pending_branch_area_count = pending_branch_area_count + 1
             table.insert(pending_branch_areas, {
                 branch_area = pending_area,
                 branch_direction = branch_direction

@@ -326,16 +326,20 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     -- If there's remaining pipe-pieces, turn those into tunnels, too
     if #tunnel_positions == 0 then
         -- Make tunnels
-        while #pipe_positions >= tunnel_length_min do
+        
+        local remaining_pipe_positions = #pipe_positions
+
+        while remaining_pipe_positions >= tunnel_length_min do
             local pipe_positions_this_batch = {}
-            local take_until = #pipe_positions - tunnel_length_max
+            local take_until = remaining_pipe_positions - tunnel_length_max
             if take_until < 1 then
                 take_until = 1
             end
 
-            for i = #pipe_positions, take_until, -1 do
+            for i = remaining_pipe_positions, take_until, -1 do                
                 table.insert(pipe_positions_this_batch, pipe_positions[i])
                 pipe_positions[i] = nil
+                remaining_pipe_positions = remaining_pipe_positions - 1
             end
 
             assistant.remove_pipes(construction_plan, pipe_positions_this_batch)

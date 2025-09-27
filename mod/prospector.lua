@@ -15,14 +15,13 @@ function add_area_information(current_action, entities, surface, player)
     -- mark where the pumps will be
     for i, entity in pairs(entities) do
         local direction = defines.direction.east
-        if can_place_extractor(surface, entity.position, direction,
-                               current_action.toolbox, player) then
+        if can_place_extractor(surface, entity.position, direction, current_action.toolbox, player) then
 
             local extractor_bounds = plib.bounding_box.offset(current_action.toolbox.extractor.relative_bounds, entity.position)
 
             plib.bounding_box.each_grid_position(extractor_bounds, function(position)
                 xy.set(current_action.area, position, "reserved-for-pump")
-                xy.set(current_action.blocked_positions, position, true)
+
             end)
             xy.set(current_action.area, entity.position, "oil-well")
         else
@@ -36,8 +35,17 @@ function add_area_information(current_action, entities, surface, player)
                 xy.set(current_action.area, position, "can-build")
             else
                 xy.set(current_action.area, position, "can-not-build")
-                xy.set(current_action.blocked_positions, position, true)
+
             end
+        end
+    end)
+end
+
+function populate_blocked_positions_from_area(current_action)
+    current_action.blocked_positions = {}
+    xy.each(current_action.area, function(reservation, position)
+        if reservation ~= "can-build" then
+            xy.set(current_action.blocked_positions, position, true)
         end
     end)
 end
@@ -46,7 +54,10 @@ function pipes_present_in_area(surface, area)
     -- make search area one larger. This will make sure pipes right outside the selection are also found
     -- those might otherwise end up touching with the pipes we will add ourselves.
     local search_area = {
-        left_top = {x = area.left_top.x - 1, y = area.left_top.y - 1},
+        left_top = {
+            x = area.left_top.x - 1,
+            y = area.left_top.y - 1
+        },
         right_bottom = {
             x = area.right_bottom.x + 1,
             y = area.right_bottom.y + 1

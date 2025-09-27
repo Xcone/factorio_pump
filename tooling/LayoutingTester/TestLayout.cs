@@ -146,6 +146,7 @@ namespace LayoutingTester
                 }
 
                 lua.NewTable("pumpdebug");
+                lua.RegisterFunction("log", this, GetType().GetMethod(nameof(Print)));
                 lua.RegisterFunction("pumpdebug.log", this, GetType().GetMethod(nameof(Print)));
                 lua.RegisterFunction("pumpdebug.lap", this, GetType().GetMethod(nameof(Lap)));
                 lua.RegisterFunction("pumpdebug.sample_start", this, GetType().GetMethod(nameof(SampleStart)));
@@ -154,8 +155,22 @@ namespace LayoutingTester
                 lua.NewTable("defines");
                 lua.DoString(@"defines['direction'] = 
 {
-  north=0, northeast=1, east=2, southeast=3, south=4, southwest=5, west=6, northwest=7,
-  northnortheast=8, eastnortheast=9, eastsoutheast=10, southsoutheast=11, southsouthwest=12, westsouthwest=13, westnorthwest=14, northnorthwest=15
+north=0, 
+northnortheast=1, 
+northeast=2, 
+eastnortheast=3, 
+east=4, 
+eastsoutheast=5, 
+southeast=6, 
+southsoutheast=7, 
+south=8, 
+southsouthwest=9, 
+southwest=10, 
+westsouthwest=11, 
+west=12, 
+westnorthwest=13, 
+northwest=14,  
+northnorthwest=15
 }
 ");
 
@@ -172,8 +187,10 @@ namespace LayoutingTester
                 lua.DoString("require 'math2d'");
 
                 lua.DoString("require 'plib'");
+                lua.DoString("require 'prospector'");
                 lua.DoString("require 'toolbox'");
-                lua.DoString("require 'plumber'");
+                lua.DoString("require 'toolshop'");
+                //lua.DoString("require 'plumber'");
                 lua.DoString("require 'plumber-pro'");
                 lua.DoString("require 'electrician'");
 
@@ -183,20 +200,21 @@ namespace LayoutingTester
                 lua.DoString(@"planner_input_stage.warnings = {}");
                 PlannerInput.AddToTable(lua, plannerInput);
 
+                var populateBlockedPositionsFunction = lua["populate_blocked_positions_from_area"] as LuaFunction;
+                populateBlockedPositionsFunction.Call(plannerInput);
+
                 var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
                 toolboxFunction.Call(plannerInput);
 
                 // Act
                 stopwatch = Stopwatch.StartNew();
 
-                var plumberFunction = ProMode
-                    ? lua["plan_plumbing_pro"] as LuaFunction
-                    : lua["plan_plumbing"] as LuaFunction;
+                var plumberFunction = lua["plan_plumbing_pro"] as LuaFunction;
 
                 var electricianFunction = lua["plan_power"] as LuaFunction;
                 var plumberFailure = plumberFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
                 var plumberDuration = stopwatch.ElapsedMilliseconds;
-                
+
                 var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
 
                 stopwatch.Stop();
@@ -206,7 +224,7 @@ namespace LayoutingTester
                 Print($"total {stopwatch.ElapsedMilliseconds}ms");
                 Print("---");
 
-                foreach (var kv in Samples.Select(x=>x).OrderByDescending(x => x.Value.ticks))
+                foreach (var kv in Samples.Select(x => x).OrderByDescending(x => x.Value.ticks))
                 {
                     Print($"{TimeSpan.FromTicks(kv.Value.ticks).TotalMilliseconds}ms | {kv.Value.count} samples | {kv.Key}");
                 }
@@ -222,7 +240,7 @@ namespace LayoutingTester
                     Print(electricianFailure);
                 }
 
-                Print( lua["planner_input_stage.warnings"] );
+                Print(lua["planner_input_stage.warnings"]);
 
                 var constructEntities = lua["planner_input_stage.construction_plan"] as LuaTable;
                 AddConstructEntities(constructEntities);
@@ -286,7 +304,14 @@ namespace LayoutingTester
                     var y = (double)yKey;
                     var name = (string)plannedEntity["name"];
 
-                    Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
+                    try
+                    {
+                        Columns.First(c => c.X == x).AddConstructionResult(name, y, plannedEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Print($"Planned entity out of bounds: x={x}, y={y}");
+                    }
                     totalPlannedEntities++;
                 }
             }

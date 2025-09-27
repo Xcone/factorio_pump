@@ -50,7 +50,7 @@ function add_development_toolbox(target)
 
     local substation = {
         entity_name = "not-used-by-visualizer",
-        supply_range = 8, -- 9 from the center; but P.U.M.P.P. calculates from the edge
+        supply_range = 8, -- 9 from the center; but P.U.M.P. calculates from the edge
         wire_range = 18,
         size = 2
     }
@@ -64,7 +64,7 @@ function add_development_toolbox(target)
     -- toolbox.power_pole = medium_pole
     -- toolbox.power_pole = big_pole
     toolbox.power_pole = substation
-    toolbox.pipe_bury_distance_preference = 200
+    toolbox.pipe_bury_distance_preference = 2
 
 
     target.toolbox = toolbox
