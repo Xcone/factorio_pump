@@ -7,6 +7,14 @@ function pump_log(object_to_log)
     end
 end
 
+function plog(object_to_log)
+    if pumpdebug then
+        pumpdebug.log(object_to_log)
+    else
+        log(serpent.block(object_to_log))
+    end
+end
+
 function pump_log_position(position, object_to_log)
     if pumpdebug then
         local y = {
