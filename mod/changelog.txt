@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.14
+Date: 2025-09-27
+  Fixes:
+    - Fix false-positive in the routine that prunes dead-end pipes, causing a pipe to be removed in some cases.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.13
 Date: 2025-07-20
   Changes:

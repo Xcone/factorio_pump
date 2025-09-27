@@ -836,17 +836,7 @@ end
 
 local function bury_pipes(mod_context)
     assistant.create_tunnels_between_joints(mod_context.construction_plan, mod_context.toolbox)
-    local pipe_joint_positions = assistant.find_in_construction_plan(mod_context.construction_plan, "pipe_joint")
-    -- Remove dead ends
-    xy.each(pipe_joint_positions, function(pipe_joint, position)
-        for direction, toolbox_direction in pairs(plib.directions) do
-            local result = assistant.take_series_of_pipes(mod_context.construction_plan, position, direction)
-            if result.last_hit == nil then
-                assistant.remove_pipes(mod_context.construction_plan, result.pipe_positions)
-            end
-        end
-    end)
-    
+
     -- Pipes are now buried, so we can mark all positions as blocked
     xy.each(mod_context.construction_plan, function(_, position)
         xy.set(mod_context.blocked_positions, position, true)
