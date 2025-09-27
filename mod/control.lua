@@ -71,10 +71,12 @@ script.on_event("pump-selection-tool-toggle", function(event)
     else
         -- If the player doesn't have the tool in the cursor, place it in the cursor
         local pumpSelectionTool = "pump-selection-tool" -- Make sure this matches the item name defined in your data.lua
-        player.cursor_stack.set_stack({name = pumpSelectionTool, count = 1})
+        player.cursor_stack.set_stack({
+            name = pumpSelectionTool,
+            count = 1
+        })
     end
-end
-)
+end)
 
 script.on_event("pump-selection-tool-confirm", function(event)
     local player = game.players[event.player_index]
@@ -88,7 +90,7 @@ end)
 -- Override `Escape` on the settings page
 script.on_event("pump-selection-tool-cancel", function(event)
     local player = game.players[event.player_index]
-    
+
     if is_ui_open(player) then
         close_tool_picker_ui(player, false)
     end
@@ -98,7 +100,9 @@ function process_selected_area_with_this_mod(event, force_ui)
     local player = game.get_player(event.player_index)
 
     -- The game is not paused with a ui open. So make sure a second selection is ignore until the window is closed.
-    if is_ui_open(player) then return end
+    if is_ui_open(player) then
+        return
+    end
 
     -- Store required input in global, so it can resume after the ui is potentially shown.
     storage.current_action = {
@@ -112,8 +116,7 @@ function process_selected_area_with_this_mod(event, force_ui)
     current_action.surface_index = event.surface.index
 
     if not current_action.failure then
-        current_action.failure = add_resource_category(current_action,
-                                                       event.entities)
+        current_action.failure = add_resource_category(current_action, event.entities)
     end
 
     if not current_action.failure then
@@ -139,13 +142,13 @@ function resume_process_selected_area_with_this_mod()
     end
 
     if not current_action.failure then
-        current_action.failure = pipes_present_in_area(surface,
-                                                       current_action.area_bounds)
+        current_action.failure = pipes_present_in_area(surface, current_action.area_bounds)
+
     end
 
     if not current_action.failure then
-        current_action.failure = add_area_information(current_action, entities,
-                                                      surface, player)
+        current_action.failure = add_area_information(current_action, entities, surface, player)
+        populate_blocked_positions_from_area(current_action)
     end
 
     dump_to_file(current_action, "planner_input")
@@ -166,20 +169,22 @@ function resume_process_selected_area_with_this_mod()
     dump_to_file(current_action, "construction_plan")
 
     if not current_action.failure then
-        current_action.failure = construct_entities(
-                                     current_action.construction_plan, player,
-                                     current_action.toolbox)
+        current_action.failure = construct_entities(current_action.construction_plan, player, current_action.toolbox)
     end
 
-    for _, warning in pairs(current_action.warnings) do        
+    for _, warning in pairs(current_action.warnings) do
         local gps_tag = string.format("[gps=%d,%d,%s]", warning.position.x, warning.position.y, player.surface.name)
         player.print({warning.message, gps_tag})
     end
-    if current_action.failure then player.print(current_action.failure) end    
+    if current_action.failure then
+        player.print(current_action.failure)
+    end
 end
 
 function add_resource_category(current_action, entities_in_selection)
-    if #entities_in_selection == 0 then return {"failure.missing-resource"} end
+    if #entities_in_selection == 0 then
+        return {"failure.missing-resource"}
+    end
 
     local first_entity = nil
 
@@ -199,7 +204,9 @@ end
 
 function trim_selected_area(current_action, entities)
     local function get_increment_from_bounds(bounds)
-        if not bounds then return 1 end
+        if not bounds then
+            return 1
+        end
         local width = bounds.right_bottom.x - bounds.left_top.x + 1
         local height = bounds.right_bottom.y - bounds.left_top.y + 1
         return math.max(width, height)
@@ -230,10 +237,7 @@ function trim_selected_area(current_action, entities)
     local extractor_bounds = current_action.toolbox.extractor.relative_bounds
     local power_pole_bounds = current_action.toolbox.power_pole and current_action.toolbox.power_pole.relative_bounds or nil
     local beacon_bounds = current_action.toolbox.beacon and current_action.toolbox.beacon.relative_bounds or nil
-    local area_increment = math.max(        
-        get_increment_from_bounds(power_pole_bounds),
-        get_increment_from_bounds(beacon_bounds)
-    )
+    local area_increment = math.max(get_increment_from_bounds(power_pole_bounds), get_increment_from_bounds(beacon_bounds))
 
     area.left_top.x = (area.left_top.x + extractor_bounds.left_top.x) - area_increment
     area.left_top.y = (area.left_top.y + extractor_bounds.left_top.y) - area_increment
