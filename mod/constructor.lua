@@ -168,7 +168,7 @@ function construct_entities(construction_plan, player, toolbox)
 
     local tile_name_when_cover_is_meltable = nil
 
-    if assistant.surface_has_meltable_tiles(player) then                    
+    if assistant.surface_has_meltable_tiles(player) and toolbox.meltable_tile_cover then                    
         tile_name_when_cover_is_meltable = prototypes.item[toolbox.meltable_tile_cover.item_name].place_as_tile_result.result.name
     end  
 
