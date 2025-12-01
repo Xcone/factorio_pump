@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.16
+Date: 2025-01-12
+  Features:
+    - Added option to plan heatpipes on surfaces that require it.
+  Fixes:
+    - More proper check to test if a tile can cover ice. The new method should play more nicely with other mods.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.15
 Date: 2025-09-28
   Features:
