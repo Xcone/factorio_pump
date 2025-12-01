@@ -245,10 +245,18 @@ end
 
 local function add_meltable_tile_covers(meltable_tile_covers)
     local placable_tile_items = prototypes.get_item_filtered{{filter = "place-as-tile", comparison = ">", value = 1}}    
+
     for _, item in pairs(placable_tile_items) do
-        -- Not sure why, but if a tile has a frozen variant, it counts as meltable-protection.
-        -- Maybe it actually means something else, but it does give the expected result.
-        if item.place_as_tile_result.result.frozen_variant ~= nil then
+        local place_result = item.place_as_tile_result     
+
+        local can_cover_meltable_tile = not place_result.condition.layers["meltable"]
+        if place_result.invert then
+            can_cover_meltable_tile = not can_cover_meltable_tile
+        end
+
+        local requires_specific_tiles = next(item.place_as_tile_result.tile_condition) ~= nil
+
+        if can_cover_meltable_tile and not requires_specific_tiles then
             meltable_tile_covers[item.name] = { item_name = item.name }
         end
     end
@@ -596,12 +604,12 @@ function create_all_toolbox_options(player, resource_category)
     table.insert(all_toolbox_options, create_toolbox_power_pole_options(player))
     table.insert(all_toolbox_options, create_toolbox_beacon_options(player))
 
-    dump_to_file(all_toolbox_options, "all_toolbox_options")
-
     if assistant.surface_has_meltable_tiles(player) then
         table.insert(all_toolbox_options, create_toolbox_heat_pipe_options(player))
         table.insert(all_toolbox_options, create_toolbox_meltable_tile_cover_options(player))
     end
+
+    dump_to_file(all_toolbox_options, "all_toolbox_options")
 
     return all_toolbox_options
 end
