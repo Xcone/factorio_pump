@@ -80,7 +80,16 @@ namespace LayoutingTester
 
             if (json != null)
             {
-                var testLayout = new TestLayout(json, PlanBeacons, PlanHeatPipes, PlanPowerPoles);
+                // Read dependency properties on the UI thread to avoid cross-thread access
+                bool planBeacons = true, planHeatPipes = true, planPowerPoles = true;
+                Dispatcher.Invoke(() =>
+                {
+                    planBeacons = PlanBeacons;
+                    planHeatPipes = PlanHeatPipes;
+                    planPowerPoles = PlanPowerPoles;
+                });
+
+                var testLayout = new TestLayout(json, planBeacons, planHeatPipes, planPowerPoles);
                 Dispatcher.Invoke(() => TestLayoutResultVisualizer.TestLayout = testLayout);
             }
         }

@@ -16,7 +16,7 @@ namespace LayoutingTester
 {
     public class TestLayout
     {
-        public Dictionary<float, TestLayoutColumn> Columns { get; }
+        public LayoutResult Result { get; } = new LayoutResult();
         public PlannerInput PlannerInput { get; }
 
         public StringBuilder textOutputBuilder = new StringBuilder();
@@ -36,7 +36,7 @@ namespace LayoutingTester
             PlanPowerPoles = planPowerPoles;
 
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
-            Columns = PlannerInput.ToColumns();
+            Result.Columns = PlannerInput.ToColumns();
             RunLua();
             Print(DateTime.Now);
         }
@@ -207,6 +207,10 @@ northnorthwest=15
                 var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
                 toolboxFunction.Call(plannerInput);
 
+                var toolbox = plannerInput.GetSubTable("toolbox");
+                Result.ExtractorBoundingBox = BoundingBox.Read(toolbox.GetSubTable("extractor", "relative_bounds"));                
+                Result.BeaconBoundingBox = BoundingBox.Read(toolbox.GetSubTable("beacon", "relative_bounds"));
+
                 stopwatch = Stopwatch.StartNew();
                 var plumberFunction = lua["plan_plumbing_pro"] as LuaFunction;
                 plumberFunction.Call(plannerInput)?.FirstOrDefault();
@@ -337,7 +341,7 @@ northnorthwest=15
                         continue;
                     }
 
-                    Columns[(float)x].AddConstructionResult(name, y, plannedEntity);
+                    Result.Columns[(float)x].AddConstructionResult(name, y, plannedEntity);
                     totalPlannedEntities++;
                 }
             }
@@ -486,6 +490,15 @@ northnorthwest=15
             var rightBottomTable = LuaHelper.AddSubTable(lua, table, "right_bottom");
             RightBottom.AddToTable(lua, rightBottomTable);
         }
+
+        public static BoundingBox Read(LuaTable table)
+        {
+            return new()
+            {
+                LeftTop = Position.Read((LuaTable)table["left_top"]),
+                RightBottom = Position.Read((LuaTable)table["right_bottom"]),
+            };
+        }
     }
 
     public class Position
@@ -500,6 +513,26 @@ northnorthwest=15
         {
             table["x"] = X;
             table["y"] = Y;
+        }
+
+        public static Position Read(LuaTable table)
+        {
+            return new()
+            {
+                X = IntOrDouble(table["x"]),
+                Y = IntOrDouble(table["y"]),
+            };
+        }
+
+        private static double IntOrDouble(object intOrDouble)
+        {
+            if (intOrDouble is long l)
+                return l;
+
+            if (intOrDouble is double d)
+                return d;
+
+            throw new InvalidOperationException($"{intOrDouble.GetType().Name} is not an int64/long or a double");
         }
     }
 
@@ -517,6 +550,15 @@ northnorthwest=15
         public static LuaTable AddSubTable(this LuaTable outerTable, Lua lua, object key)
         {
             return AddSubTable(lua, outerTable, key);
+        }
+
+        public static LuaTable GetSubTable(this LuaTable outerTable, params string[] path)
+        {
+            var subTable = (LuaTable)outerTable[path[0]];
+            if (path.Length > 1)
+                subTable = GetSubTable(subTable, path.Skip(1).ToArray());
+
+            return subTable;
         }
     }
 }

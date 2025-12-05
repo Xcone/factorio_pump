@@ -13,7 +13,7 @@
         </ScrollViewer>
 
         <local:TestLayoutGridVisual
-            Columns="{Binding Columns}"
+            LayoutResult="{Binding Result}"
             MinWidth="800" MinHeight="600"/>
     </DockPanel>
 </UserControl>
