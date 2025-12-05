@@ -11,6 +11,32 @@ namespace LayoutingTester
     public partial class TestLayoutRunner : UserControl
     {
         private FileSystemWatcher watcher;
+        public static readonly DependencyProperty PlanBeaconsProperty = DependencyProperty.Register(
+            "PlanBeacons", typeof(bool), typeof(TestLayoutRunner), new PropertyMetadata(true));
+
+        public static readonly DependencyProperty PlanHeatPipesProperty = DependencyProperty.Register(
+            "PlanHeatPipes", typeof(bool), typeof(TestLayoutRunner), new PropertyMetadata(true));
+
+        public static readonly DependencyProperty PlanPowerPolesProperty = DependencyProperty.Register(
+            "PlanPowerPoles", typeof(bool), typeof(TestLayoutRunner), new PropertyMetadata(true));
+
+        public bool PlanBeacons
+        {
+            get => (bool)GetValue(PlanBeaconsProperty);
+            set => SetValue(PlanBeaconsProperty, value);
+        }
+
+        public bool PlanHeatPipes
+        {
+            get => (bool)GetValue(PlanHeatPipesProperty);
+            set => SetValue(PlanHeatPipesProperty, value);
+        }
+
+        public bool PlanPowerPoles
+        {
+            get => (bool)GetValue(PlanPowerPolesProperty);
+            set => SetValue(PlanPowerPolesProperty, value);
+        }
 
         public static readonly DependencyProperty TestLayoutInputDependencyProperty = DependencyProperty.Register(
             "TestLayoutInput", typeof(TestLayoutInput), typeof(TestLayoutRunner));
@@ -54,7 +80,7 @@ namespace LayoutingTester
 
             if (json != null)
             {
-                var testLayout = new TestLayout(json);
+                var testLayout = new TestLayout(json, PlanBeacons, PlanHeatPipes, PlanPowerPoles);
                 Dispatcher.Invoke(() => TestLayoutResultVisualizer.TestLayout = testLayout);
             }
         }

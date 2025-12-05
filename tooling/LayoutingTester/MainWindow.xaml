@@ -8,6 +8,17 @@
         Title="MainWindow" Height="900" Width="1920">
     <DockPanel>        
         <DockPanel DockPanel.Dock="Left" Width="300">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6" HorizontalAlignment="Left">
+                <CheckBox Content="Beacons" Margin="4"
+                          IsChecked="{Binding ElementName=TestLayoutRunner, Path=PlanBeacons, Mode=TwoWay}"
+                          Checked="Checkbox_OnToggled" Unchecked="Checkbox_OnToggled" />
+                <CheckBox Content="Heat pipes" Margin="4"
+                          IsChecked="{Binding ElementName=TestLayoutRunner, Path=PlanHeatPipes, Mode=TwoWay}"
+                          Checked="Checkbox_OnToggled" Unchecked="Checkbox_OnToggled" />
+                <CheckBox Content="Power poles" Margin="4"
+                          IsChecked="{Binding ElementName=TestLayoutRunner, Path=PlanPowerPoles, Mode=TwoWay}"
+                          Checked="Checkbox_OnToggled" Unchecked="Checkbox_OnToggled" />
+            </StackPanel>
             <ListView Name="TestLayouts" DockPanel.Dock="Bottom" SelectionChanged="TestLayouts_OnSelectionChanged" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                 <ListView.ItemTemplate>
                     <DataTemplate DataType="local:TestLayoutInput">

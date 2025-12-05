@@ -28,6 +28,11 @@ namespace LayoutingTester
             RefreshLayout();
         }
 
+        private void Checkbox_OnToggled(object sender, RoutedEventArgs e)
+        {
+            RefreshLayout();
+        }
+
         private void RefreshLayout()
         {
             this.TestLayoutRunner.TestLayoutInput = TestLayouts.SelectedItem as TestLayoutInput;

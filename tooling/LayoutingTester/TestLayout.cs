@@ -25,8 +25,16 @@ namespace LayoutingTester
         public DateTime startTime = DateTime.UtcNow;
         public Stopwatch stopwatch;
 
-        public TestLayout(string plannerInputAsJson)
+        public bool PlanBeacons { get; }
+        public bool PlanHeatPipes { get; }
+        public bool PlanPowerPoles { get; }
+
+        public TestLayout(string plannerInputAsJson, bool planBeacons = true, bool planHeatPipes = true, bool planPowerPoles = true)
         {
+            PlanBeacons = planBeacons;
+            PlanHeatPipes = planHeatPipes;
+            PlanPowerPoles = planPowerPoles;
+
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
             Columns = PlannerInput.ToColumns();
             RunLua();
@@ -204,22 +212,37 @@ northnorthwest=15
                 plumberFunction.Call(plannerInput)?.FirstOrDefault();
                 var plumberDuration = stopwatch.ElapsedMilliseconds;
 
-                stopwatch.Restart();
-                var beaconerTable = (LuaTable)lua["beaconer"];
-                var planBeaconsFunction = (LuaFunction)beaconerTable["plan_beacons"];
-                planBeaconsFunction.Call(plannerInput);
-                var beaconerDuration = stopwatch.ElapsedMilliseconds;
+                long beaconerDuration = 0;
+                long heaterDuration = 0;
+                long electricianDuration = 0;
+                object heaterFailure = null;
+                object electricianFailure = null;
 
-                stopwatch.Restart();
-                var heaterTable = (LuaTable)lua["heater"];
-                var planHeatPipesFunction = (LuaFunction)heaterTable["plan_heat_pipes"];
-                var heaterFailure = planHeatPipesFunction?.Call(plannerInput, null) ?? plannerInput["failure"];
-                var heaterDuration = stopwatch.ElapsedMilliseconds;
+                if (PlanBeacons)
+                {
+                    stopwatch.Restart();
+                    var beaconerTable = (LuaTable)lua["beaconer"];
+                    var planBeaconsFunction = (LuaFunction)beaconerTable["plan_beacons"];
+                    planBeaconsFunction.Call(plannerInput);
+                    beaconerDuration = stopwatch.ElapsedMilliseconds;
+                }
 
-                stopwatch.Restart();
-                var electricianFunction = lua["plan_power"] as LuaFunction;
-                var electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
-                var electricianDuration = stopwatch.ElapsedMilliseconds;
+                if (PlanHeatPipes)
+                {
+                    stopwatch.Restart();
+                    var heaterTable = (LuaTable)lua["heater"];
+                    var planHeatPipesFunction = (LuaFunction)heaterTable["plan_heat_pipes"];
+                    heaterFailure = planHeatPipesFunction?.Call(plannerInput, null) ?? plannerInput["failure"];
+                    heaterDuration = stopwatch.ElapsedMilliseconds;
+                }
+
+                if (PlanPowerPoles)
+                {
+                    stopwatch.Restart();
+                    var electricianFunction = lua["plan_power"] as LuaFunction;
+                    electricianFailure = electricianFunction.Call(plannerInput)?.FirstOrDefault() ?? plannerInput["failure"];
+                    electricianDuration = stopwatch.ElapsedMilliseconds;
+                }
                 stopwatch.Restart();
 
                 stopwatch.Stop();
