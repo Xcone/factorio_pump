@@ -372,6 +372,14 @@ plib.bounding_box = {
         bounds.right_bottom.y = math.min(bounds.right_bottom.y, other_bounds.right_bottom.y)
     end,
 
+    -- Produces an area around A. If B were at any position if that area, it would overlap A.
+    add_relative_bounds = function(bounds_a, relative_bounds)
+        return {
+            left_top = plib.position.subtract(bounds_a.left_top, relative_bounds.right_bottom),
+            right_bottom = plib.position.subtract(bounds_a.right_bottom, relative_bounds.left_top)
+        }
+    end,
+
     are_touching = function (box1, box2)
         -- Return true when boxes overlap or share an edge in cardinal directions.
         -- Excludes diagonal-only corner contact.
