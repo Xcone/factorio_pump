@@ -19,7 +19,24 @@
                           IsChecked="{Binding ElementName=TestLayoutRunner, Path=PlanPowerPoles, Mode=TwoWay}"
                           Checked="Checkbox_OnToggled" Unchecked="Checkbox_OnToggled" />
             </StackPanel>
-            <ListView Name="TestLayouts" DockPanel.Dock="Bottom" SelectionChanged="TestLayouts_OnSelectionChanged" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="8">
+                <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
+                    <TextBlock Text="Max beacons per extractor" VerticalAlignment="Center" Width="190"/>
+                    <TextBox Width="60" Margin="6,0,0,0"
+                             Text="{Binding ElementName=TestLayoutRunner, Path=MaxBeaconsPerExtractor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
+                    <TextBlock Text="Min extractors per beacon" VerticalAlignment="Center" Width="190"/>
+                    <TextBox Width="60" Margin="6,0,0,0"
+                             Text="{Binding ElementName=TestLayoutRunner, Path=MinExtractorsPerBeacon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
+                    <TextBlock Text="Preferred beacons per extractor" VerticalAlignment="Center" Width="190"/>
+                    <TextBox Width="60" Margin="6,0,0,0"
+                             Text="{Binding ElementName=TestLayoutRunner, Path=PreferredBeaconsPerExtractor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </StackPanel>
+            <ListView Name="TestLayouts" SelectionChanged="TestLayouts_OnSelectionChanged" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                 <ListView.ItemTemplate>
                     <DataTemplate DataType="local:TestLayoutInput">
                         <TextBlock Text="{Binding Name}"></TextBlock>

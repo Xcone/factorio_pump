@@ -29,11 +29,27 @@ namespace LayoutingTester
         public bool PlanHeatPipes { get; }
         public bool PlanPowerPoles { get; }
 
-        public TestLayout(string plannerInputAsJson, bool planBeacons = true, bool planHeatPipes = true, bool planPowerPoles = true)
+        public int MaxBeaconsPerExtractor { get; }
+        public int MinExtractorsPerBeacon { get; }
+        public int PreferredBeaconsPerExtractor { get; }
+
+        public TestLayout(
+            string plannerInputAsJson,
+            bool planBeacons,
+            bool planHeatPipes,
+            bool planPowerPoles,
+            int maxBeaconsPerExtractor,
+            int minExtractorsPerBeacon,
+            int preferredBeaconsPerExtractor
+            )
         {
             PlanBeacons = planBeacons;
             PlanHeatPipes = planHeatPipes;
             PlanPowerPoles = planPowerPoles;
+
+            MaxBeaconsPerExtractor = maxBeaconsPerExtractor;
+            MinExtractorsPerBeacon = minExtractorsPerBeacon;
+            PreferredBeaconsPerExtractor = preferredBeaconsPerExtractor;
 
             PlannerInput = JsonConvert.DeserializeObject<PlannerInput>(plannerInputAsJson);
             Result.Columns = PlannerInput.ToColumns();
@@ -208,8 +224,11 @@ northnorthwest=15
                 toolboxFunction.Call(plannerInput);
 
                 var toolbox = plannerInput.GetSubTable("toolbox");
-                Result.ExtractorBoundingBox = BoundingBox.Read(toolbox.GetSubTable("extractor", "relative_bounds"));                
+                Result.ExtractorBoundingBox = BoundingBox.Read(toolbox.GetSubTable("extractor", "relative_bounds"));
                 Result.BeaconBoundingBox = BoundingBox.Read(toolbox.GetSubTable("beacon", "relative_bounds"));
+                toolbox["max_beacons_per_extractor"] = MaxBeaconsPerExtractor;
+                toolbox["min_extractors_per_beacon"] = MinExtractorsPerBeacon;
+                toolbox["preferred_beacons_per_extractor"] = PreferredBeaconsPerExtractor;
 
                 stopwatch = Stopwatch.StartNew();
                 var plumberFunction = lua["plan_plumbing_pro"] as LuaFunction;

@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.17
+Date: 2025-12-06
+  Features:
+    - Added advanced settings for how beacons are planned. These are not offered in the planner-UI, but can be found in the mod settings.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.16
-Date: 2025-01-12
+Date: 2025-12-01
   Features:
     - Added option to plan heatpipes on surfaces that require it.
   Fixes:

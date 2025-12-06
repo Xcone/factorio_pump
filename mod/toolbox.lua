@@ -59,7 +59,7 @@ function add_development_toolbox(target)
 
     toolbox.beacon = {
         entity_name = 'not-used-by-visualizer',
-        effect_radius = 4,
+        effect_radius = 3,
         relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} },
         quality_name = 'normal',
         needs_heat = true,
@@ -75,7 +75,12 @@ function add_development_toolbox(target)
     toolbox.power_pole = medium_pole
     -- toolbox.power_pole = big_pole
     -- toolbox.power_pole = substation
+    
     toolbox.pipe_bury_distance_preference = 1
+
+    toolbox.max_beacons_per_extractor = 4
+    toolbox.min_extractors_per_beacon = 1
+    toolbox.preferred_beacons_per_extractor = 1
 
 
     target.toolbox = toolbox
@@ -640,6 +645,11 @@ function update_toolbox_after_changed_options(current_action, player, toolbox_na
     end   
 
     current_action.toolbox.pipe_bury_distance_preference = convert_pipe_bury_option_to_distance(get_pipe_bury_option())
+    
+    local settings = player.mod_settings
+    current_action.toolbox.max_beacons_per_extractor = settings["pump-max-beacons-per-extractor"].value
+    current_action.toolbox.min_extractors_per_beacon = settings["pump-min-extractors-per-beacon"].value
+    current_action.toolbox.preferred_beacons_per_extractor = settings["pump-preferred-beacons-per-extractor"].value
 end
 
 function get_resource_category_map_from_data()
