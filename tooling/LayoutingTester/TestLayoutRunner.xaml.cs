@@ -20,6 +20,15 @@ namespace LayoutingTester
         public static readonly DependencyProperty PlanPowerPolesProperty = DependencyProperty.Register(
             "PlanPowerPoles", typeof(bool), typeof(TestLayoutRunner), new PropertyMetadata(true));
 
+        public static readonly DependencyProperty MaxBeaconsPerExtractorProperty = DependencyProperty.Register(
+            "MaxBeaconsPerExtractor", typeof(int), typeof(TestLayoutRunner), new PropertyMetadata(4, OnOptionChanged));
+
+        public static readonly DependencyProperty MinExtractorsPerBeaconProperty = DependencyProperty.Register(
+            "MinExtractorsPerBeacon", typeof(int), typeof(TestLayoutRunner), new PropertyMetadata(1, OnOptionChanged));
+
+        public static readonly DependencyProperty PreferredBeaconsPerExtractorProperty = DependencyProperty.Register(
+            "PreferredBeaconsPerExtractor", typeof(int), typeof(TestLayoutRunner), new PropertyMetadata(1, OnOptionChanged));
+
         public bool PlanBeacons
         {
             get => (bool)GetValue(PlanBeaconsProperty);
@@ -36,6 +45,24 @@ namespace LayoutingTester
         {
             get => (bool)GetValue(PlanPowerPolesProperty);
             set => SetValue(PlanPowerPolesProperty, value);
+        }
+
+        public int MaxBeaconsPerExtractor
+        {
+            get => (int)GetValue(MaxBeaconsPerExtractorProperty);
+            set => SetValue(MaxBeaconsPerExtractorProperty, value);
+        }
+
+        public int MinExtractorsPerBeacon
+        {
+            get => (int)GetValue(MinExtractorsPerBeaconProperty);
+            set => SetValue(MinExtractorsPerBeaconProperty, value);
+        }
+
+        public int PreferredBeaconsPerExtractor
+        {
+            get => (int)GetValue(PreferredBeaconsPerExtractorProperty);
+            set => SetValue(PreferredBeaconsPerExtractorProperty, value);
         }
 
         public static readonly DependencyProperty TestLayoutInputDependencyProperty = DependencyProperty.Register(
@@ -62,6 +89,15 @@ namespace LayoutingTester
             watcher.EnableRaisingEvents = true;
         }
 
+        private static void OnOptionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is TestLayoutRunner runner)
+            {
+                // Ensure refresh runs on UI thread
+                runner.Dispatcher.Invoke(() => runner.Refresh());
+            }
+        }
+
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
             Refresh();
@@ -82,14 +118,18 @@ namespace LayoutingTester
             {
                 // Read dependency properties on the UI thread to avoid cross-thread access
                 bool planBeacons = true, planHeatPipes = true, planPowerPoles = true;
+                int maxBeacons = 4, minExtractors = 1, preferredBeacons = 1;
                 Dispatcher.Invoke(() =>
                 {
                     planBeacons = PlanBeacons;
                     planHeatPipes = PlanHeatPipes;
                     planPowerPoles = PlanPowerPoles;
+                    maxBeacons = MaxBeaconsPerExtractor;
+                    minExtractors = MinExtractorsPerBeacon;
+                    preferredBeacons = PreferredBeaconsPerExtractor;
                 });
 
-                var testLayout = new TestLayout(json, planBeacons, planHeatPipes, planPowerPoles);
+                var testLayout = new TestLayout(json, planBeacons, planHeatPipes, planPowerPoles, maxBeacons, minExtractors, preferredBeacons);
                 Dispatcher.Invoke(() => TestLayoutResultVisualizer.TestLayout = testLayout);
             }
         }
