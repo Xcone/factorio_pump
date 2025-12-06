@@ -646,9 +646,10 @@ function update_toolbox_after_changed_options(current_action, player, toolbox_na
 
     current_action.toolbox.pipe_bury_distance_preference = convert_pipe_bury_option_to_distance(get_pipe_bury_option())
     
-    current_action.toolbox.max_beacons_per_extractor = player.mod_settings["pump-max-beacons-per-extractor"].value
-    current_action.toolbox.min_extractors_per_beacon = player.mod_settings["pump-min-extractors-per-beacon"].value
-    current_action.toolbox.preferred_beacons_per_extractor = player.mod_settings["pump-preferred-beacons-per-extractor"].value
+    local settings = player.mod_settings
+    current_action.toolbox.max_beacons_per_extractor = settings["pump-max-beacons-per-extractor"].value
+    current_action.toolbox.min_extractors_per_beacon = settings["pump-min-extractors-per-beacon"].value
+    current_action.toolbox.preferred_beacons_per_extractor = settings["pump-preferred-beacons-per-extractor"].value
 end
 
 function get_resource_category_map_from_data()
