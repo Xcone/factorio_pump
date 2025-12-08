@@ -1,8 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.18
-Date: ????????
+Date: 2025-12-08
   Features:
     - Russian localisation file updated; kindly provided by https://github.com/Astorin  
+  Fixes:
+    - Fix beacon-pick not being used in construction phase.
 ---------------------------------------------------------------------------------------------------
 Version: 2.1.17
 Date: 2025-12-06

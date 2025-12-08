@@ -2,14 +2,6 @@ local math2d = require 'math2d'
 local plib = require 'plib'
 local assistant = require 'planner-assistant'
 
-
-local function expand_box(box, amount)
-    box.left_top.x = box.left_top.x - amount
-    box.left_top.y = box.left_top.y - amount
-    box.right_bottom.x = box.right_bottom.x + amount
-    box.right_bottom.y = box.right_bottom.y + amount
-end
-
 local function get_planned_entities(construction_plan, toolbox)
     local extractors = {}
     local pipes = {}
@@ -101,9 +93,12 @@ local function get_planned_entities(construction_plan, toolbox)
     local result = {
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
-        [toolbox.connector.underground_entity_name] = pipe_tunnels,
-        ["beacon"] = beacons,
+        [toolbox.connector.underground_entity_name] = pipe_tunnels        
     }
+
+    if toolbox.beacon ~= nil then
+        result[toolbox.beacon.entity_name] = beacons
+    end
 
     if toolbox.power_pole ~= nil then
         result[toolbox.power_pole.entity_name] = power_poles
