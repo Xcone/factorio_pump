@@ -78,6 +78,12 @@ end
 -- A tunnel might exit directly into the exactor when approach straigt on.
 -- But if coming from the side, it needs to bend first. 
 assistant.add_output = function(construct_entities, position, direction)
+    local internal_output_position = plib.position.subtract(position, plib.directions[direction].vector)
+    xy.set(construct_entities, internal_output_position, {
+        name = "internal_output",
+        direction = direction
+    })
+
     local current_entity = xy.get(construct_entities, position)
     if current_entity ~= nil then
         if current_entity.name == "pipe_joint" then

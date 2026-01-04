@@ -386,6 +386,14 @@ northnorthwest=15
         }
     }
 
+    public enum Direction
+    {
+        North = 0,
+        East = 4,
+        South = 8,
+        West = 12
+    }
+
     public class TestLayoutCell
     {
         public string Content { get; private set; }
@@ -393,7 +401,7 @@ northnorthwest=15
         public float Y { get; }
 
         public string EntityToConstruct { get; private set; }
-        public long EntityToConstructDirection { get; private set; } = -1;
+        public Direction EntityToConstructDirection { get; private set; } = Direction.North;
 
         public TestLayoutCell(string x, string y, string content)
         {
@@ -409,9 +417,12 @@ northnorthwest=15
                 throw new ArgumentException($"Can't add {name} at position x={X},y={Y}. A {EntityToConstruct} is already assigned here.");
             }
 
+            var direction = (Direction)(long)plannedEntity["direction"];
+            EntityToConstructDirection = direction;
+
             if (name == "pipe")
             {
-                EntityToConstruct = "+";
+                EntityToConstruct = "•";
                 Content = "pipe";
             }
             else if (name == "output")
@@ -419,18 +430,36 @@ northnorthwest=15
                 EntityToConstruct = "o";
                 Content = "pipe";
             }
+            else if (name == "internal_output")
+            {
+                EntityToConstruct = direction switch
+                {
+                    Direction.North => "↑",
+                    Direction.East => "→",
+                    Direction.South => "↓",
+                    Direction.West => "←",
+                    _ => "?"
+                };
+            }
             else if (name == "extractor")
             {
                 EntityToConstruct = "p";
             }
             else if (name == "pipe_joint")
             {
-                EntityToConstruct = "x";
+                EntityToConstruct = "+";
                 Content = "pipe";
             }
             else if (name == "pipe_tunnel")
             {
-                EntityToConstruct = "t";
+                EntityToConstruct = direction switch
+                {
+                    Direction.North => "↑",
+                    Direction.East => "→",
+                    Direction.South => "↓",
+                    Direction.West => "←",
+                    _ => "?"
+                };
                 Content = "pipe";
             }
             else if (name == "power_pole")
@@ -449,9 +478,6 @@ northnorthwest=15
                 EntityToConstruct = plannedEntity["placement_order"].ToString();
                 Content = "heat-pipe";
             }
-
-            var direction = (long)plannedEntity["direction"];
-            EntityToConstructDirection = direction;
         }
     }
 

@@ -115,19 +115,19 @@ namespace LayoutingTester
                 worldRect.Width * g.CellSize,
                 worldRect.Height * g.CellSize);
 
-            // Choose color based on Content (simplified, expand as needed)
-            Brush background = Brushes.Blue;
+            SolidColorBrush background = Brushes.Blue;
             if (cell.Content == "can-build") background = Brushes.Green;
             else if (cell.Content == "oil-well") background = Brushes.DarkGray;
             else if (cell.Content == "can-not-build") background = Brushes.DarkRed;
             else if (cell.Content == "reserved-for-pump") background = Brushes.DarkOrange;
-            else if (cell.Content == "power_pole") background = (Brush)new BrushConverter().ConvertFrom("#FF5151B3");
+            else if (cell.Content == "power_pole") background = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF5151B3");
             else if (cell.Content == "heat-pipe") background = Brighten(Brushes.Red, int.Parse(cell.EntityToConstruct));
             else if (cell.Content == "pipe") background = Brushes.Lavender;
             else if (cell.Content == "beacon") background = Brushes.Magenta;
             else if (cell.Content == "extractor") background = Brushes.DarkCyan;
+            else throw new Exception(cell.Content);
 
-            dc.DrawRectangle(background, new Pen(Brushes.White, 0.5), pixelRect);
+            dc.DrawRectangle(background, new Pen(Brighten(background, 10), 0.5), pixelRect);
 
             if (!string.IsNullOrEmpty(cell.EntityToConstruct))
             {
