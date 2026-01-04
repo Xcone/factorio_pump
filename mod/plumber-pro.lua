@@ -14,19 +14,6 @@ local function get_end_of_branch(branch)
     return plib.line.end_position(branch.start_position, branch.direction, branch.length - 1)
 end
 
-local function get_pipe_neighbours(mod_context, position)
-    local neighbour_pipe_positions = {}
-    for direction, toolbox_direction in pairs(plib.directions) do
-        local neighbour_position = plib.position.add(position, toolbox_direction.vector)
-        local planned = xy.get(mod_context.construction_plan, neighbour_position)
-        if is_pipe_or_pipe_joint(planned) then
-            neighbour_pipe_positions[direction] = neighbour_position
-        end
-    end
-
-    return neighbour_pipe_positions
-end
-
 local function can_build_connector_on_position(mod_context, position)
     local result = false
     if not assistant.is_position_blocked(mod_context.blocked_positions, position) then
@@ -127,10 +114,7 @@ end
 local function commit_extractor_output(mod_context, extractors_lookup, extractor, connected_direction)
     for output_direction, offset in pairs(mod_context.toolbox.extractor.output_offsets) do
         local output_position = plib.position.add(extractor.position, offset)
-        if connected_direction == output_direction then
-            -- Mark the connected output; keep the connected output in the lookup table as it might be useful in later steps
-            extractor.connected_output_position = output_position
-        else
+        if connected_direction ~= output_direction then
             -- Remove the candidate output position that didn't make it.
             remove_extractor_output_candidate(extractors_lookup, extractor, output_position)
         end
@@ -504,7 +488,7 @@ local function convert_astar_result_to_pipe(reached_pipe)
         local next_y_dir = current_pipe.position.y - next_pipe.position.y
 
         if x_dir ~= next_x_dir or y_dir ~= next_y_dir then
-            -- Mark every bend as joint, in to help later with burying pipes
+            -- Mark every bend as joint, to help later with burying pipes
             assistant.add_connector_joint(construction_plan, current_pipe.position)        
         else
             assistant.add_connector(construction_plan, current_pipe.position)        

@@ -17,7 +17,7 @@ assistant.is_position_blocked = function(blocked_positions, position)
 end
 
 assistant.is_area_blocked = function(blocked_positions, bounding_box)
-    return plib.bounding_box.any_grid_position(bounding_box, function(position) 
+    return plib.bounding_box.any_grid_position(bounding_box, function(position)
         return xy.get(blocked_positions, position)
     end)
 end
@@ -49,13 +49,6 @@ assistant.add_extractor = function(construct_entities, position, direction)
     })
 end
 
-assistant.add_connector = function(construct_entities, position)
-    xy.set(construct_entities, position, {
-        name = "pipe",
-        direction = defines.direction.east
-    })
-end
-
 assistant.add_heat_pipe = function(construct_entities, position)
     xy.set(construct_entities, position, {
         name = "heat-pipe",
@@ -63,6 +56,17 @@ assistant.add_heat_pipe = function(construct_entities, position)
     })
 end
 
+-- Regular pipe to go from A to B
+-- May be buried in the pipe bury phase.
+assistant.add_connector = function(construct_entities, position)
+    xy.set(construct_entities, position, {
+        name = "pipe",
+        direction = defines.direction.east
+    })
+end
+
+-- Joints are pipes that must not be buried. 
+-- Usually they involve a bend or a T-junction. 
 assistant.add_connector_joint = function(construct_entities, position)
     xy.set(construct_entities, position, {
         name = "pipe_joint",
@@ -70,7 +74,24 @@ assistant.add_connector_joint = function(construct_entities, position)
     })
 end
 
+-- Outputs may conditionally be buried, depending from which direction the pipe connects.
+-- A tunnel might exit directly into the exactor when approach straigt on.
+-- But if coming from the side, it needs to bend first. 
 assistant.add_output = function(construct_entities, position, direction)
+    local current_entity = xy.get(construct_entities, position)
+    if current_entity ~= nil then
+        if current_entity.name == "pipe_joint" then
+            -- Don't down grade from joint to output.
+            return
+        end
+
+        if current_entity.name == "output" and current_entity.direction ~= direction then
+            -- If an output in another direction already exists, consider this a joint, as it now connects from multiple sides.
+            assistant.add_connector_joint(construct_entities, position)
+            return
+        end
+    end
+
     xy.set(construct_entities, position, {
         name = "output",
         direction = direction
@@ -333,7 +354,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     -- If there's remaining pipe-pieces, turn those into tunnels, too
     if #tunnel_positions == 0 then
         -- Make tunnels
-        
+
         local remaining_pipe_positions = #pipe_positions
 
         while remaining_pipe_positions >= tunnel_length_min do
@@ -343,7 +364,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
                 take_until = 1
             end
 
-            for i = remaining_pipe_positions, take_until, -1 do                
+            for i = remaining_pipe_positions, take_until, -1 do
                 table.insert(pipe_positions_this_batch, pipe_positions[i])
                 pipe_positions[i] = nil
                 remaining_pipe_positions = remaining_pipe_positions - 1
@@ -391,7 +412,7 @@ assistant.add_beacon = function(construct_entities, position)
     })
 end
 
-assistant.use_module_inserter_ex = function (player)
+assistant.use_module_inserter_ex = function(player)
     local setting = player.mod_settings["pump-interface-with-module-inserter-mod"]
     if setting and setting.value and remote.interfaces["ModuleInserterEx"] then
         return true
@@ -413,12 +434,30 @@ assistant.get_planned_entity_bounding_box = function(mod_context, position)
         relative_bounds = toolbox.beacon.relative_bounds
     elseif entity.name == "power_pole" and toolbox.power_pole and toolbox.power_pole.size then
         if toolbox.power_pole.size == 2 then
-            relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=1, y=1})
+            relative_bounds = plib.bounding_box.create({
+                x = 0,
+                y = 0
+            }, {
+                x = 1,
+                y = 1
+            })
         else
-            relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=0, y=0})
+            relative_bounds = plib.bounding_box.create({
+                x = 0,
+                y = 0
+            }, {
+                x = 0,
+                y = 0
+            })
         end
     else
-        relative_bounds = plib.bounding_box.create({x=0, y=0}, {x=0, y=0})
+        relative_bounds = plib.bounding_box.create({
+            x = 0,
+            y = 0
+        }, {
+            x = 0,
+            y = 0
+        })
     end
     return plib.bounding_box.offset(relative_bounds, position)
 end
