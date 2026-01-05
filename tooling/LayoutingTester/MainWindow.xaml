@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LayoutingTester"
         mc:Ignorable="d"
-        Title="MainWindow" Height="900" Width="1920">
+        Title="P.U.M.P. Layout tester" Height="900" Width="1920">
     <DockPanel>        
         <DockPanel DockPanel.Dock="Left" Width="300">
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6" HorizontalAlignment="Left">
@@ -22,18 +22,15 @@
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="8">
                 <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
                     <TextBlock Text="Max beacons per extractor" VerticalAlignment="Center" Width="190"/>
-                    <TextBox Width="60" Margin="6,0,0,0"
-                             Text="{Binding ElementName=TestLayoutRunner, Path=MaxBeaconsPerExtractor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <local:SpinEdit Value="{Binding ElementName=TestLayoutRunner, Path=MaxBeaconsPerExtractor, Mode=TwoWay}" Width="80" Margin="6,0,0,0" Minimum="0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
                     <TextBlock Text="Min extractors per beacon" VerticalAlignment="Center" Width="190"/>
-                    <TextBox Width="60" Margin="6,0,0,0"
-                             Text="{Binding ElementName=TestLayoutRunner, Path=MinExtractorsPerBeacon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <local:SpinEdit Value="{Binding ElementName=TestLayoutRunner, Path=MinExtractorsPerBeacon, Mode=TwoWay}" Width="80" Margin="6,0,0,0" Minimum="0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="2" VerticalAlignment="Center">
                     <TextBlock Text="Preferred beacons per extractor" VerticalAlignment="Center" Width="190"/>
-                    <TextBox Width="60" Margin="6,0,0,0"
-                             Text="{Binding ElementName=TestLayoutRunner, Path=PreferredBeaconsPerExtractor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <local:SpinEdit Value="{Binding ElementName=TestLayoutRunner, Path=PreferredBeaconsPerExtractor, Mode=TwoWay}" Width="80" Margin="6,0,0,0" Minimum="0" />
                 </StackPanel>
             </StackPanel>
             <ListView Name="TestLayouts" SelectionChanged="TestLayouts_OnSelectionChanged" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">

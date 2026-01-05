@@ -1,0 +1,31 @@
+<UserControl x:Class="LayoutingTester.SpinEdit"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             Height="24" Width="80">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="20" />
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="PART_TextBox" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" Padding="2"/>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <RepeatButton x:Name="PART_Increase" Grid.Row="0" Padding="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Click="Increase_Click">
+                <Viewbox Width="12" Height="6">
+                    <Path Data="M0,8 L8,0 L16,8 Z" Fill="Black" Stretch="Uniform" />
+                </Viewbox>
+            </RepeatButton>
+            <RepeatButton x:Name="PART_Decrease" Grid.Row="1" Padding="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" Click="Decrease_Click">
+                <Viewbox Width="12" Height="6">
+                    <Path Data="M0,0 L8,8 L16,0 Z" Fill="Black" Stretch="Uniform" />
+                </Viewbox>
+            </RepeatButton>
+        </Grid>
+    </Grid>
+</UserControl>
