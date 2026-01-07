@@ -125,6 +125,7 @@ namespace LayoutingTester
             else if (cell.Content == "pipe") background = Brushes.Lavender;
             else if (cell.Content == "beacon") background = Brushes.Magenta;
             else if (cell.Content == "extractor") background = Brushes.DarkCyan;
+            else if (cell.Content == "undefined") background = Brushes.Black;
             else throw new Exception(cell.Content);
 
             dc.DrawRectangle(background, new Pen(Brighten(background, 10), 0.5), pixelRect);

@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.1.20
+Date: 2026-01-07
+  Changes:
+    - Don't abort on obstructed resource. Show a warning instead.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.19
-Date: 2026-01-04  
+Date: 2026-01-04
   Fixes:
     - Fix issue where a pipe to which 2 extractors output their fluid, was still allowed to be buried in the pipe-bury phase.
 ---------------------------------------------------------------------------------------------------

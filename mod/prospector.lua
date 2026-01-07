@@ -1,5 +1,6 @@
 local plib = require 'plib'
 local xy = plib.xy
+local assistant = require 'planner-assistant'
 
 function add_area_information(current_action, entities, surface, player)
     current_action.area = {}
@@ -23,8 +24,8 @@ function add_area_information(current_action, entities, surface, player)
                 xy.set(current_action.area, position, "reserved-for-pump")                
             end)
             xy.set(current_action.area, entity.position, "oil-well")
-        else
-            return {"failure.obstructed-resource"}
+        else 
+            assistant.add_warning(current_action, entity.position, "warning.resource-not-planned")                       
         end
     end
 
