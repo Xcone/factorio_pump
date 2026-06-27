@@ -440,7 +440,8 @@ plib.xy = {
                     x = x,
                     y = y
                 }
-                action(subject, position)
+                local did_break = action(subject, position)
+                if did_break then return end
             end
         end
     end,
@@ -470,6 +471,15 @@ plib.xy = {
             return nil
         end
         return subtable[position.y]
+    end,
+
+    get_or_create = function(xy_table, position, default)
+        local result = plib.xy.get(xy_table, position)
+        if not result then 
+            result = {}
+            plib.xy.set(xy_table, position, result)
+        end
+        return result
     end,
 
     any = function(xy_table)

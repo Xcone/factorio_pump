@@ -42,10 +42,11 @@ assistant.find_oilwells = function(segment)
     return oilwells
 end
 
-assistant.add_extractor = function(construct_entities, position, direction)
+assistant.add_extractor = function(construct_entities, position, direction, mirrored)
     xy.set(construct_entities, position, {
         name = "extractor",
-        direction = direction
+        direction = direction,
+        mirrored = mirrored
     })
 end
 

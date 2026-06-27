@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.1
+Date: 2026-06-28
+  Changes:
+    - Adjust pipe planner to support mirroring of extractors.
+    - Adjust pipe planner heuristics to prefer outputs that are near each other.
+---------------------------------------------------------------------------------------------------
 Version: 2.2.0
 Date: 2026-06-04
   Features:

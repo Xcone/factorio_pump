@@ -16,6 +16,7 @@ local function get_planned_entities(construction_plan, toolbox)
         local placement = {
             position = position,
             direction = planned_entity.direction,
+            mirrored = planned_entity.mirrored,
             deconstruct_area = {
                 left_top = {x = position.x - 1, y = position.y - 1},
                 right_bottom = {x = position.x + 1, y = position.y + 1}
@@ -178,6 +179,7 @@ function construct_entities(construction_plan, player, toolbox)
                 inner_name = entity_name,
                 position = parameters.position,
                 direction = parameters.direction,
+                mirror = parameters.mirrored,
                 force = player.force,
                 player = player,
                 quality = parameters.quality_name
