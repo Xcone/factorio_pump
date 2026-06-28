@@ -717,7 +717,7 @@ local function try_connect_extractor_to_branch_using_tunnels(mod_context, extrac
 end
 
 function connect_extractors(mod_context, extractors_lookup_v2, committed_branches)
-    local search_range = 15
+    local search_range = 20
 
     -- Find the quick wins. The outputs that are already directly on an existing pipe
     local sample_quick_wins = pump_sample_start()
@@ -770,29 +770,31 @@ function connect_extractors(mod_context, extractors_lookup_v2, committed_branche
                     end
                 end
 
-                xy.each(extractor.outputs_xy, function(extractor_placement_for_output, output_position)
-                    local output_search_end = plib.line.end_position(output_position, direction, search_range)
-                    intersects, intersection_point = plib.line.intersects(output_position, output_search_end, branch.start_position, branch_end)
+                if (intersects) then
+                    xy.each(extractor.outputs_xy, function(extractor_placement_for_output, output_position)
+                        local output_search_end = plib.line.end_position(output_position, direction, search_range)
+                        intersects, intersection_point = plib.line.intersects(output_position, output_search_end, branch.start_position, branch_end)
 
-                    if intersects then
-                        local new_tile_count = plib.line.count_tiles(output_position, intersection_point)
-                        if extractor_placement_for_output.branches[direction] ~= nil then
-                            if new_tile_count < extractor_placement_for_output.branches[direction].tile_count then
+                        if intersects then
+                            local new_tile_count = plib.line.count_tiles(output_position, intersection_point)
+                            if extractor_placement_for_output.branches[direction] ~= nil then
+                                if new_tile_count < extractor_placement_for_output.branches[direction].tile_count then
+                                    extractor_placement_for_output.branches[direction] = {
+                                        branch = branch,
+                                        intersection_point = intersection_point,
+                                        tile_count = new_tile_count
+                                    }
+                                end
+                            else
                                 extractor_placement_for_output.branches[direction] = {
                                     branch = branch,
                                     intersection_point = intersection_point,
                                     tile_count = new_tile_count
                                 }
                             end
-                        else
-                            extractor_placement_for_output.branches[direction] = {
-                                branch = branch,
-                                intersection_point = intersection_point,
-                                tile_count = new_tile_count
-                            }
                         end
-                    end
-                end)
+                    end)
+                end
             end
         end
         pump_sample_finish("connect_extractors.find_nearest_branches", sample_find_nearest_branches)
