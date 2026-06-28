@@ -10,7 +10,12 @@ end
 local function heuristic_score_taxicab(goals, node)
     local score = math.huge
     for _, goal in ipairs(goals) do
-        score = math.min(score, math.abs(goal.position.x - node.position.x) + math.abs(goal.position.y - node.position.y))
+        local dx = goal.position.x - node.position.x
+        local dy = goal.position.y - node.position.y
+        local distance = math.abs(dx) + math.abs(dy)
+        if distance < score then
+            score = distance
+        end
     end
     return score
 end
@@ -57,8 +62,7 @@ end
 
 local function positions_to_nodes(positions)
   local nodes = {}
-  for _, position in pairs(positions) do
-    create_node(position)
+  for _, position in pairs(positions) do    
     table.insert(nodes, create_node(position))
   end
 
@@ -78,6 +82,9 @@ function astar(start_positions, goal_positions, search_bounds, blocked_xy, max_l
     end
 
     local all_nodes_map = {}
+    local contains_point = math2d.bounding_box.contains_point
+    local is_blocked = assistant.is_position_blocked
+    local create_node_fn = create_node
 
     -- Immediate solution if any start node is also a goal node
     for _, node in ipairs(start_nodes) do
@@ -89,7 +96,7 @@ function astar(start_positions, goal_positions, search_bounds, blocked_xy, max_l
     end
 
     for _, node in ipairs(start_nodes) do
-        if not assistant.is_position_blocked(blocked_xy, node.position) then
+        if not is_blocked(blocked_xy, node.position) then
             node.g_score = 0
             node.f_score = 0 + heuristic_score_taxicab(goal_nodes, node)
             all_nodes_map[node.key] = node
@@ -102,8 +109,8 @@ function astar(start_positions, goal_positions, search_bounds, blocked_xy, max_l
         local best = search_queue:pop()
 
         for _, node in ipairs(make_neighbors(best, penalty_fn)) do
-            if math2d.bounding_box.contains_point(search_bounds, node.position) then
-                if node.g_score <= max_length and not assistant.is_position_blocked(blocked_xy, node.position) then
+            if contains_point(search_bounds, node.position) then
+                if node.g_score <= max_length and not is_blocked(blocked_xy, node.position) then
                     
                     if is_shortcut_fn and is_shortcut_fn(node.position) then
                         --pump_log(node)
