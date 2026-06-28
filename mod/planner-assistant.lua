@@ -298,7 +298,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
         if not previous_tunnel then
             previous_tunnel = tunnel
         else
-            if math2d.position.distance(previous_tunnel.down.position, tunnel.up.position) <= tunnel_length_max then
+            if plib.position.taxicab_distance(previous_tunnel.down.position, tunnel.up.position) <= tunnel_length_max then
                 xy.remove(construction_plan, previous_tunnel.up.position)
                 xy.remove(construction_plan, tunnel.down.position)
                 previous_tunnel.up = tunnel.up
@@ -328,7 +328,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
         local direction_after_up = tunnel.up.direction
         local vector_before_down = plib.directions[direction_before_down].vector
         local vector_after_up = plib.directions[direction_after_up].vector
-        local tunnel_length = math2d.position.distance(tunnel.down.position, tunnel.up.position)
+        local tunnel_length = plib.position.taxicab_distance(tunnel.down.position, tunnel.up.position)
 
         repeat
             local took_pipe = false

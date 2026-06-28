@@ -1000,7 +1000,7 @@ function plan_plumbing_pro(mod_context)
         local closest_connected_extractor_distance = nil
         local closest_connected_extractor = nil
         xy.each(extractors_lookup_v2.extractors_xy_connected, function(other_extractor, other_position)            
-            local other_connector_distance = math2d.position.distance_squared(extractor.position, other_extractor.position)
+            local other_connector_distance = plib.position.distance_squared(extractor.position, other_extractor.position)
             if not closest_connected_extractor or other_connector_distance < closest_connected_extractor_distance then
                 closest_connected_extractor_distance = other_connector_distance
                 closest_connected_extractor = other_extractor

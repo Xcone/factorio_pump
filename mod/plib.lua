@@ -502,7 +502,7 @@ plib.xy = {
         local nearest_value = nil
 
         plib.xy.each(xy_table, function(value, entry_position)
-            local d = math2d.position.distance(search_position, entry_position)
+            local d = plib.position.distance(search_position, entry_position)
             if d < nearest_distance then
                 nearest_distance = d
                 nearest_position = entry_position
@@ -541,6 +541,16 @@ plib.position = {
 
     are_equal = function(posA, posB)
         return posA.x == posB.x and posA.y == posB.y
+    end,
+
+    distance_squared = function(p1, p2)
+        local dx = p1.x - p2.x
+        local dy = p1.y - p2.y
+        return dx * dx + dy * dy
+    end,
+
+    distance = function(p1, p2)
+        return math.sqrt(plib.position.distance_squared(p1, p2))
     end
 }
 

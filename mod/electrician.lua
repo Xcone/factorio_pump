@@ -40,7 +40,7 @@ end
 local function get_consumers_in_supply_area(mod_context, power_pole_position, consumers)
     local consumer_positions_in_range = {}
     xy.each(consumers, function(consumer, consumer_position)
-        if math2d.bounding_box.contains_point(consumer.pole_in_range_bounds, power_pole_position) then
+        if plib.bounding_box.contains_position(consumer.pole_in_range_bounds, power_pole_position) then
             table.insert(consumer_positions_in_range, consumer_position)
         end
     end)
@@ -59,7 +59,7 @@ local function score_position_to_planned_poles(mod_context, score, test_position
     local has_a_pole = 0
 
     xy.each(planned_poles, function(pole, pole_position)
-        local distance = math2d.position.distance(test_position, pole_position)
+        local distance = plib.position.distance(test_position, pole_position)
         
         if distance <= wire_range and (distance <= distance_closest_pole or distance_closest_pole < 0) then
             distance_closest_pole = distance
@@ -80,7 +80,7 @@ local function score_adjacent_cells(mod_context, score, position)
     score.adjacent_pipes = 0
 
     for _, direction in pairs(plib.directions) do
-        local offset_position = math2d.position.add(position, direction.vector)
+        local offset_position = plib.position.add(position, direction.vector)
         local neighbour_cell = xy.get(mod_context.area, offset_position)
         
         if neighbour_cell ~= nil then            
@@ -202,11 +202,11 @@ function get_next_pole_search_position(mod_context, pole_and_consumer_position)
 
     local pole_position = pole_and_consumer_position.pole_position
 
-    local ideal_pole_position_unaligned = math2d.position.add(
-        pole_position, 
+    local ideal_pole_position_unaligned = plib.position.add(
+        pole_position,
         math2d.position.multiply_scalar(
             math2d.position.get_normalised(
-                math2d.position.subtract(
+                plib.position.subtract(
                     pole_and_consumer_position.consumer_position,
                     pole_position
                 )
@@ -215,7 +215,7 @@ function get_next_pole_search_position(mod_context, pole_and_consumer_position)
         )
     )
 
-    local diff = math2d.position.subtract(ideal_pole_position_unaligned, pole_position)
+    local diff = plib.position.subtract(ideal_pole_position_unaligned, pole_position)
     diff.x = math.ceil(diff.x)
     if diff.x < 0 then
         diff.x = diff.x - 1
