@@ -6,6 +6,8 @@ local PriorityQueue = require("priority-queue")
 local assistant = require 'planner-assistant'
 require "astar"
 
+local branch_min_extractors_threshold = 2
+
 local function is_pipe_or_pipe_joint(construct_entity)
     return construct_entity and (construct_entity.name == "pipe" or construct_entity.name == "pipe_joint" or construct_entity.name == "output")
 end
@@ -323,7 +325,7 @@ function create_branch_candidate(mod_context, extractors_lookup_v2, slice, branc
 
     branch_candidate.number_of_extractors_in_reach = in_reach
     branch_candidate.extractors_in_reach = extractors_in_reach
-    if in_reach < 2 then
+    if in_reach < branch_min_extractors_threshold then
         -- There's no point to a branch if nothing connects to it. 
         -- A single extractor would be better of directly connecting to something nearby
         
@@ -379,6 +381,17 @@ end
 
 function find_best_branch(mod_context, extractors_lookup_v2, search_area, branch_direction, parent_branch, committed_branches)
     local sample_start = pump_sample_start()
+
+    local extractors_in_search_area = 0
+    xy.where(extractors_lookup_v2.extractors_xy_pending_branch_coverage, function(_, extractor_position)
+        if plib.bounding_box.contains_position(search_area, extractor_position) then
+            extractors_in_search_area = extractors_in_search_area + 1
+        end
+    end)    
+
+    if extractors_in_search_area < branch_min_extractors_threshold then
+        return nil
+    end
 
     local branch_length = plib.bounding_box.get_cross_section_size(search_area, branch_direction)
     local branch_candidate_count = plib.bounding_box.get_cross_section_size(search_area, plib.directions[branch_direction].next)
