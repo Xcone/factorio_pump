@@ -3,7 +3,10 @@ Version: 2.2.1
 Date: 2026-06-28
   Changes:
     - Adjust pipe planner to support mirroring of extractors.
-    - Adjust pipe planner heuristics to prefer outputs that are near each other.
+    - Adjust pipe planner heuristics to slightly prefer outputs that are near each other.
+    - The above together should reduce the pipe-detours that sometimes happen, and slightly increase the overall sanity of the layouts.
+  Fixes:
+    - Small performance optimizations in pipe and power planning stages, to mitigate the extra calculations required for extractor mirroring.
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.0
 Date: 2026-06-04
