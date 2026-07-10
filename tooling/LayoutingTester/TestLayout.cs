@@ -430,6 +430,10 @@ northnorthwest=15
                 EntityToConstruct = "o";
                 Content = "pipe";
             }
+            else if (name == "pipe_underground")
+            {
+                Content = "pipe_underground";
+            }
             else if (name == "internal_output")
             {
                 EntityToConstruct = direction switch

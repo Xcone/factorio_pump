@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.2
+Date: 2026-07-10
+  Changes:
+    - When a pipe tunnel is planned through tiles that can't be tunneled though (i.e. lava), cover tiles are also being planned to ensure the tunnels connect.
+---------------------------------------------------------------------------------------------------
 Version: 2.2.1
 Date: 2026-06-28
   Changes:

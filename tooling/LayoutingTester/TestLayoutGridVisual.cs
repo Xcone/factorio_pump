@@ -123,6 +123,7 @@ namespace LayoutingTester
             else if (cell.Content == "power_pole") background = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF5151B3");
             else if (cell.Content == "heat-pipe") background = Brighten(Brushes.Red, int.Parse(cell.EntityToConstruct));
             else if (cell.Content == "pipe") background = Brushes.Lavender;
+            else if (cell.Content == "pipe_underground") background = Brighten(Brushes.Green, 10);
             else if (cell.Content == "beacon") background = Brushes.Magenta;
             else if (cell.Content == "extractor") background = Brushes.DarkCyan;
             else if (cell.Content == "undefined") background = Brushes.Black;

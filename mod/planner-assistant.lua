@@ -5,6 +5,56 @@ local xy = plib.xy
 
 local assistant = {}
 
+local function mark_underground_position(construction_plan, position, overwrite)
+    local current = xy.get(construction_plan, position)
+    if current == nil or overwrite then
+        xy.set(construction_plan, position, {
+            name = "pipe_underground",
+            direction = defines.direction.east
+        })
+    end
+end
+
+local function mark_underground_segment_between(construction_plan, down_position, up_position, overwrite)
+    local step = plib.position.subtract(up_position, down_position)
+
+    if step.x ~= 0 and step.y ~= 0 then
+        error("The math appears to be off. Trying to mark the undergroud segment of a diagonal tunnel; but tunnels can't be diagonal.")
+    end
+
+    local count = 0
+    if step.x > 0 then
+        count = step.x
+        step.x = 1
+    end
+    if step.x < 0 then
+        count = step.x
+        step.x = -1
+    end
+    if step.y > 0 then
+        count = step.y
+        step.y = 1
+    end
+    if step.y < 0 then
+        count = step.y
+        step.y = -1
+    end
+
+    -- Exclude the up-position from the count
+    count = math.abs(count) - 1
+    if count == 0 then
+        return
+    end
+
+    local underground_position = down_position
+    while count > 0 do
+        count = count - 1
+        underground_position = plib.position.add(underground_position, step)
+
+        mark_underground_position(construction_plan, underground_position, overwrite)
+    end
+end
+
 assistant.add_warning = function(mod_context, position, message)
     table.insert(mod_context.warnings, {
         position = position,
@@ -132,7 +182,6 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
         end
     end
 
-    diff = math.abs(diff)
     -- rationale: distance measurement is zero-based. So if the underground distance=3, the difference should be
     -- max 4 (and not 5! as with reported bug), to account underground entrances. Schematically:
     --
@@ -140,7 +189,7 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
     -- x=0 1 2 3 4
     --
     -- Therefor: 4-0 = 4, and not 5 as was assumed when the bug occurred
-    if diff > toolbox.connector.underground_distance_max + 1 then
+    if math.abs(diff) > toolbox.connector.underground_distance_max + 1 then
         error("Underground distance too far")
 
         -- it also has to be far enough apart to be able to place the entrance and the exit
@@ -160,6 +209,8 @@ assistant.add_pipe_tunnel = function(construct_entities, start_position, end_pos
         name = "pipe_tunnel",
         direction = end_direction
     })
+
+    mark_underground_segment_between(construct_entities, start_position, end_position)
 end
 
 assistant.take_series_of_pipes = function(construct_entities, start_joint_position, direction)
@@ -299,8 +350,10 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
             previous_tunnel = tunnel
         else
             if plib.position.taxicab_distance(previous_tunnel.down.position, tunnel.up.position) <= tunnel_length_max then
-                xy.remove(construction_plan, previous_tunnel.up.position)
-                xy.remove(construction_plan, tunnel.down.position)
+                mark_underground_position(construction_plan, previous_tunnel.up.position, true)
+                mark_underground_position(construction_plan, tunnel.down.position, true)
+                mark_underground_segment_between(construction_plan, previous_tunnel.up.position, tunnel.down.position, true)
+
                 previous_tunnel.up = tunnel.up
                 tunnels[i] = nil
             else
@@ -316,10 +369,14 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     end
 
     local move_tunnel_piece = function(pipe_position, tunnel_piece)
-        xy.remove(pipe_xy, pipe_position)
         local planned_tunnel_piece = xy.get(construction_plan, tunnel_piece.position)
+
+        -- Overwrite pipe with tunnel
         xy.set(construction_plan, pipe_position, planned_tunnel_piece)
-        xy.remove(construction_plan, tunnel_piece.position)
+
+        -- Overwrite tunnel_piece with underground marking
+        mark_underground_position(construction_plan, tunnel_piece.position, true)
+
         tunnel_piece.position = pipe_position
     end
 
@@ -356,7 +413,7 @@ local try_replace_pipes_with_tunnels = function(construction_plan, pipe_position
     end
 
     -- TODO:
-    -- Determine stretches of above-ground pipes that remaing after the tunneling was optimized
+    -- Determine stretches of above-ground pipes that remain after the tunneling was optimized
 
     -- If there's remaining pipe-pieces, turn those into tunnels, too
     if #tunnel_positions == 0 then
@@ -389,6 +446,7 @@ end
 
 assistant.create_tunnels_between_joints = function(construction_plan, toolbox)
     convert_outputs_to_joints_when_flanked(construction_plan)
+
     local pipe_joint_positions = assistant.find_in_construction_plan(construction_plan, "pipe_joint")
 
     xy.each(pipe_joint_positions, function(pipe_joint, position)

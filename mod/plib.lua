@@ -380,7 +380,7 @@ plib.bounding_box = {
         }
     end,
 
-    are_touching = function (box1, box2)
+    are_touching = function(box1, box2)
         -- Return true when boxes overlap or share an edge in cardinal directions.
         -- Excludes diagonal-only corner contact.
 
@@ -441,7 +441,9 @@ plib.xy = {
                     y = y
                 }
                 local did_break = action(subject, position)
-                if did_break then return end
+                if did_break then
+                    return
+                end
             end
         end
     end,
@@ -475,11 +477,12 @@ plib.xy = {
 
     get_or_create = function(xy_table, position, default)
         local result = plib.xy.get(xy_table, position)
-        if not result then 
-            result = {}
-            plib.xy.set(xy_table, position, result)
+        if result then
+            return result
         end
-        return result
+
+        plib.xy.set(xy_table, position, default)
+        return default
     end,
 
     any = function(xy_table)

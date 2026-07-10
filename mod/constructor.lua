@@ -5,7 +5,8 @@ local assistant = require 'planner-assistant'
 local function get_planned_entities(construction_plan, toolbox)
     local extractors = {}
     local pipes = {}
-    local pipe_tunnels = {}
+    local pipe_tunnels = {} -- ups/downs
+    local pipe_underground_reservations = {} -- the in-between. Doesn't build anything, but might require cover-tile to work.
     local power_poles = {}
     local beacons = {}
     local heat_pipes = {}
@@ -61,6 +62,10 @@ local function get_planned_entities(construction_plan, toolbox)
             table.insert(pipe_tunnels, placement)
         end
 
+        if planned_entity_name == "pipe_underground" then            
+            table.insert(pipe_underground_reservations, placement)
+        end
+
         if planned_entity_name == "power_pole" then            
             placement.quality_name = toolbox.power_pole.quality_name
             local size = toolbox.power_pole.size
@@ -94,7 +99,7 @@ local function get_planned_entities(construction_plan, toolbox)
     local result = {
         [toolbox.extractor.entity_name] = extractors,
         [toolbox.connector.entity_name] = pipes,
-        [toolbox.connector.underground_entity_name] = pipe_tunnels        
+        [toolbox.connector.underground_entity_name] = pipe_tunnels
     }
 
     if toolbox.beacon ~= nil then
@@ -109,7 +114,7 @@ local function get_planned_entities(construction_plan, toolbox)
         result[toolbox.heat_pipe.entity_name] = heat_pipes
     end
 
-    return result
+    return result, pipe_underground_reservations
 end
 
 local function cover(player, cover_area, tile_name_when_cover_is_meltable)
@@ -140,6 +145,32 @@ local function cover(player, cover_area, tile_name_when_cover_is_meltable)
     end )    
 end
 
+local function cover_untraversable_underground_pipes(player, toolbox, pipe_underground_reservations, tile_name_when_cover_is_meltable)
+    local underground_collision_mask = {}
+    local prototype = prototypes.entity[toolbox.connector.underground_entity_name]
+    for _, fluidbox in pairs(prototype.fluidbox_prototypes) do
+        for _, connection in pairs(fluidbox.pipe_connections) do
+            if connection.connection_type == "underground" then
+                underground_collision_mask = connection.layers
+            end
+        end
+    end
+
+    for _, underground in pairs(pipe_underground_reservations) do
+        local tile_collision_mask = player.surface.get_tile(underground.position).prototype.collision_mask.layers          
+
+        for layer_name, val in pairs(underground_collision_mask) do
+            -- if this collides, the fluid box is not made in game. So we cover it to ensure the fluidbox will be made.
+            -- This applies for instance to sulfur fields near lava. Underground pipes can't traverse lava.
+            -- So even if the pipe is underground, cover tiles are still needed.
+            if tile_collision_mask[layer_name] then     
+                cover(player, underground.cover_area, tile_name_when_cover_is_meltable)
+                break
+            end
+        end
+    end
+end
+
 local function add_modules(ghosts, player) 
     if assistant.use_module_inserter_ex(player) then
         remote.call("ModuleInserterEx", "apply_module_config_to_entities", player.index, ghosts)
@@ -147,7 +178,7 @@ local function add_modules(ghosts, player)
 end
 
 function construct_entities(construction_plan, player, toolbox)
-    local planned_entities = get_planned_entities(construction_plan, toolbox)
+    local planned_entities, pipe_underground_reservations = get_planned_entities(construction_plan, toolbox)
 
     for entity_name, entities_to_place in pairs(planned_entities) do
         local mask = prototypes.entity[entity_name].collision_mask.layers
@@ -213,4 +244,6 @@ function construct_entities(construction_plan, player, toolbox)
 
         add_modules(entity_ghosts, player)
     end
+
+    cover_untraversable_underground_pipes(player, toolbox, pipe_underground_reservations, tile_name_when_cover_is_meltable)
 end
