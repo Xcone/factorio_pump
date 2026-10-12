@@ -361,6 +361,10 @@ function plan_heat_pipes(mod_context)
             xy.set(entities_needing_heat, entity_position, entity_needing_heat)
         end
     end)
+
+    if #entities_needing_heat == 0 then 
+        return
+    end 
     
     -- Bundle entities in groups for which the the heatpipes would overlap or touch if the entities were encircled with heatpipes.
     local groups = group_entities_needing_heat(entities_needing_heat)

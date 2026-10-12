@@ -256,6 +256,10 @@ function plan_power(mod_context)
         end
     end)
 
+    if #consumer_positions == 0 then
+        return
+    end
+
     local planned_poles = {}
     local unplanned_consumer_positions = table.deepcopy(consumer_positions)
 

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.3
+Date: 2026-10-12
+  Fixes:
+    - Fix crash when all resource positions are blocked, and heatpipes and/or power poles are attempted to be planned for zero extractors.
+---------------------------------------------------------------------------------------------------
 Version: 2.2.2
 Date: 2026-07-10
   Changes:
