@@ -256,7 +256,7 @@ function plan_power(mod_context)
         end
     end)
 
-    if #consumer_positions == 0 then
+    if next(consumer_positions) == nil then
         return
     end
 

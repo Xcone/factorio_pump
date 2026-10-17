@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.4
+Date: 2026-10-17
+  Fixes:
+    - Fix the previous fix. A logic mistake caused heatpipes and/or power poles to never be placed anymore.
+---------------------------------------------------------------------------------------------------
 Version: 2.2.3
 Date: 2026-10-12
   Fixes:

@@ -362,7 +362,7 @@ function plan_heat_pipes(mod_context)
         end
     end)
 
-    if #entities_needing_heat == 0 then 
+    if next(entities_needing_heat) == nil then 
         return
     end 
     
