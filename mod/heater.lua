@@ -342,12 +342,12 @@ local function connect_connections_within_group(mod_context, group, groups, prim
     end
 end
     
-
 function plan_heat_pipes(mod_context)
     local entities_needing_heat = {}
+    local entity_names_needing_heat = assistant.create_entity_names_needing_heat(mod_context)
 
     xy.each(mod_context.construction_plan, function(entity, entity_position)
-        if entity.name ~= "power_pole" then
+        if entity_names_needing_heat[entity.name] then
             local entity_box = assistant.get_planned_entity_bounding_box(mod_context, entity_position)
             local heatpipe_box = plib.bounding_box.copy(entity_box)
             plib.bounding_box.grow(heatpipe_box, 1)

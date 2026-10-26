@@ -421,7 +421,6 @@ function reset_selection_if_pick_no_longer_available(pick, available)
     end
 end
 
--- Add needs_heat property to each toolbox entry in create_toolbox_options
 local function create_toolbox_options(toolbox_name, type, pick, toolbox_entries, optional_behavior, failure, modules_inventory_define, player, needs_heat)
     if failure then
         return {failure = failure}

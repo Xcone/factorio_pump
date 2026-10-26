@@ -470,6 +470,27 @@ assistant.surface_has_meltable_tiles = function(player)
     return player.surface.planet and player.surface.planet.prototype.entities_require_heating
 end
 
+assistant.create_entity_names_needing_heat = function(mod_context)
+    local toolbox = mod_context.toolbox;
+    local entity_names_needing_heat = {}    
+
+    -- all variations of pipe
+    local pipe_needs_heat = toolbox["connector"].needs_heat
+    entity_names_needing_heat["pipe"] = pipe_needs_heat
+    entity_names_needing_heat["pipe_joint"] = pipe_needs_heat
+    entity_names_needing_heat["pipe_tunnel"] = pipe_needs_heat
+    entity_names_needing_heat["output"] = pipe_needs_heat
+    entity_names_needing_heat["pipe_underground"] = false 
+
+    entity_names_needing_heat["extractor"] = toolbox["extractor"].needs_heat
+    entity_names_needing_heat["heat_pipe"] = toolbox["heat_pipe"].needs_heat
+    entity_names_needing_heat["beacon"] = toolbox["beacon"].needs_heat
+    entity_names_needing_heat["power_pole"] = toolbox["power_pole"].needs_heat
+
+    return entity_names_needing_heat
+
+end
+
 assistant.add_beacon = function(construct_entities, position)
     xy.set(construct_entities, position, {
         name = "beacon",

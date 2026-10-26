@@ -918,8 +918,10 @@ local function bury_pipes(mod_context)
     assistant.create_tunnels_between_joints(mod_context.construction_plan, mod_context.toolbox)
 
     -- Pipes are now buried, so we can mark all positions as blocked
-    xy.each(mod_context.construction_plan, function(_, position)
-        xy.set(mod_context.blocked_positions, position, true)
+    xy.each(mod_context.construction_plan, function(planned_entity, position)
+        if planned_entity.name ~= "pipe_underground" then
+            xy.set(mod_context.blocked_positions, position, true)    
+        end
     end)
 end
 
