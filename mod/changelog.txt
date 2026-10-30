@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.6
+Date: 2026-10-17
+  Fixes:
+    - Fix the previous fix. When beacons or power poles were disabled by user, the routine that figures out which kind of items need heating caused an error.
+---------------------------------------------------------------------------------------------------
 Version: 2.2.5
 Date: 2026-10-17
   Fixes:

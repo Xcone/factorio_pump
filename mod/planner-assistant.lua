@@ -474,21 +474,29 @@ assistant.create_entity_names_needing_heat = function(mod_context)
     local toolbox = mod_context.toolbox;
     local entity_names_needing_heat = {}    
 
-    -- all variations of pipe
-    local pipe_needs_heat = toolbox["connector"].needs_heat
+    function get_needs_heat(toolbox_item_name)
+        local toolbox_item = toolbox[toolbox_item_name];
+        if toolbox_item then
+            return toolbox_item.needs_heat
+        end
+
+        return false
+    end
+        
+    entity_names_needing_heat["extractor"] = get_needs_heat("extractor")
+    entity_names_needing_heat["heat_pipe"] = get_needs_heat("heat_pipe")
+    entity_names_needing_heat["beacon"] = get_needs_heat("beacon")
+    entity_names_needing_heat["power_pole"] = get_needs_heat("power_pole")
+
+    -- all variations of pipe use the same toolbox item
+    local pipe_needs_heat = get_needs_heat("connector")
     entity_names_needing_heat["pipe"] = pipe_needs_heat
     entity_names_needing_heat["pipe_joint"] = pipe_needs_heat
     entity_names_needing_heat["pipe_tunnel"] = pipe_needs_heat
     entity_names_needing_heat["output"] = pipe_needs_heat
     entity_names_needing_heat["pipe_underground"] = false 
 
-    entity_names_needing_heat["extractor"] = toolbox["extractor"].needs_heat
-    entity_names_needing_heat["heat_pipe"] = toolbox["heat_pipe"].needs_heat
-    entity_names_needing_heat["beacon"] = toolbox["beacon"].needs_heat
-    entity_names_needing_heat["power_pole"] = toolbox["power_pole"].needs_heat
-
     return entity_names_needing_heat
-
 end
 
 assistant.add_beacon = function(construct_entities, position)
