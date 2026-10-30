@@ -4,8 +4,9 @@ local plib = require 'plib'
 local assistant = require 'planner-assistant'
 
 -- Simplified non-dynamic variation of the toolbox used by the C# WPF application to test planner.lua without mimicing all of factorio
-function add_development_toolbox(target)
-    local toolbox = {}
+function add_development_toolbox(target, add_beacon_tool, add_powerpole_tool, add_heatpipe_tool)
+    local toolbox = {}   
+    
     toolbox.extractor = {
         entity_name = 'not-used-by-visualizer',
         output_offsets = {
@@ -20,6 +21,11 @@ function add_development_toolbox(target)
         },
         needs_heat = true,
     }
+
+    toolbox.pipe_bury_distance_preference = 1
+    toolbox.max_beacons_per_extractor = 4
+    toolbox.min_extractors_per_beacon = 1
+    toolbox.preferred_beacons_per_extractor = 1    
 
     toolbox.connector = {
         entity_name = 'not-used-by-visualizer',
@@ -55,33 +61,32 @@ function add_development_toolbox(target)
         supply_range = 8, -- 9 from the center; but P.U.M.P. calculates from the edge
         wire_range = 18,
         size = 2
-    }
+    }    
 
-    toolbox.beacon = {
-        entity_name = 'not-used-by-visualizer',
-        effect_radius = 3,
-        relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} },
-        quality_name = 'normal',
-        needs_heat = true,
-    }
+    if add_powerpole_tool then
+        -- toolbox.power_pole = small_pole
+        toolbox.power_pole = medium_pole
+        -- toolbox.power_pole = big_pole
+        -- toolbox.power_pole = substation
+    end
 
-    toolbox.heat_pipe = {
-        entity_name = 'not-used-by-visualizer',
-        quality_name = 'normal',
-        needs_heat = false,
-    }
+    if add_beacon_tool then
+        toolbox.beacon = {
+            entity_name = 'not-used-by-visualizer',
+            effect_radius = 3,
+            relative_bounds = { left_top = {x = -1, y = -1}, right_bottom = {x = 1, y = 1} },
+            quality_name = 'normal',
+            needs_heat = true,
+        }
+    end
 
-    -- toolbox.power_pole = small_pole
-    toolbox.power_pole = medium_pole
-    -- toolbox.power_pole = big_pole
-    -- toolbox.power_pole = substation
-    
-    toolbox.pipe_bury_distance_preference = 1
-
-    toolbox.max_beacons_per_extractor = 4
-    toolbox.min_extractors_per_beacon = 1
-    toolbox.preferred_beacons_per_extractor = 1
-
+    if add_heatpipe_tool then
+        toolbox.heat_pipe = {
+            entity_name = 'not-used-by-visualizer',
+            quality_name = 'normal',
+            needs_heat = false,
+        }
+    end
 
     target.toolbox = toolbox
 end

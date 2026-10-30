@@ -221,11 +221,14 @@ northnorthwest=15
                 populateBlockedPositionsFunction.Call(plannerInput);
 
                 var toolboxFunction = lua["add_development_toolbox"] as LuaFunction;
-                toolboxFunction.Call(plannerInput);
+                toolboxFunction.Call(plannerInput, PlanBeacons, PlanPowerPoles, PlanHeatPipes);
 
                 var toolbox = plannerInput.GetSubTable("toolbox");
+
                 Result.ExtractorBoundingBox = BoundingBox.Read(toolbox.GetSubTable("extractor", "relative_bounds"));
-                Result.BeaconBoundingBox = BoundingBox.Read(toolbox.GetSubTable("beacon", "relative_bounds"));
+                if (PlanBeacons)
+                    Result.BeaconBoundingBox = BoundingBox.Read(toolbox.GetSubTable("beacon", "relative_bounds"));
+
                 toolbox["max_beacons_per_extractor"] = MaxBeaconsPerExtractor;
                 toolbox["min_extractors_per_beacon"] = MinExtractorsPerBeacon;
                 toolbox["preferred_beacons_per_extractor"] = PreferredBeaconsPerExtractor;
